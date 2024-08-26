@@ -21,7 +21,7 @@ module TSOS {
         }
 
         public init() {
-            var sc: ShellCommand;
+            let sc: ShellCommand;
             //
             // Load the command list.
 
@@ -89,19 +89,19 @@ module TSOS {
             //
             // Parse the input...
             //
-            var userCommand = this.parseInput(buffer);
+            const userCommand = this.parseInput(buffer);
             // ... and assign the command and args to local variables.
-            var cmd = userCommand.command;
-            var args = userCommand.args;
+            const cmd = userCommand.command;
+            const args = userCommand.args;
             //
             // Determine the command and execute it.
             //
             // TypeScript/JavaScript may not support associative arrays in all browsers so we have to iterate over the
             // command list in attempt to find a match. 
             // TODO: Is there a better way? Probably. Someone work it out and tell me in class.
-            var index: number = 0;
-            var found: boolean = false;
-            var fn = undefined;
+            let index: number = 0;
+            let found: boolean = false;
+            let fn = undefined;
             while (!found && index < this.commandList.length) {
                 if (this.commandList[index].command === cmd) {
                     found = true;
@@ -139,7 +139,7 @@ module TSOS {
         }
 
         public parseInput(buffer: string): UserCommand {
-            var retVal = new UserCommand();
+            const retVal = new UserCommand();
 
             // 1. Remove leading and trailing spaces.
             buffer = Utils.trim(buffer);
@@ -148,18 +148,18 @@ module TSOS {
             buffer = buffer.toLowerCase();
 
             // 3. Separate on spaces so we can determine the command and command-line args, if any.
-            var tempList = buffer.split(" ");
+            const tempList = buffer.split(" ");
 
             // 4. Take the first (zeroth) element and use that as the command.
-            var cmd = tempList.shift();  // Yes, you can do that to an array in JavaScript. See the Queue class.
+            let cmd = tempList.shift();  // Yes, you can do that to an array in JavaScript. See the Queue class.
             // 4.1 Remove any left-over spaces.
             cmd = Utils.trim(cmd);
             // 4.2 Record it in the return value.
             retVal.command = cmd;
 
             // 5. Now create the args array from what's left.
-            for (var i in tempList) {
-                var arg = Utils.trim(tempList[i]);
+            for (const i in tempList) {
+                const arg = Utils.trim(tempList[i]);
                 if (arg != "") {
                     retVal.args[retVal.args.length] = tempList[i];
                 }
@@ -209,7 +209,7 @@ module TSOS {
 
         public shellHelp(args: string[]) {
             _StdOut.putText("Commands:");
-            for (var i in _OsShell.commandList) {
+            for (const i in _OsShell.commandList) {
                 _StdOut.advanceLine();
                 _StdOut.putText("  " + _OsShell.commandList[i].command + " " + _OsShell.commandList[i].description);
             }
@@ -229,7 +229,7 @@ module TSOS {
 
         public shellMan(args: string[]) {
             if (args.length > 0) {
-                var topic = args[0];
+                const topic = args[0];
                 switch (topic) {
                     case "help":
                         _StdOut.putText("Help displays a list of (hopefully) valid commands.");
@@ -245,7 +245,7 @@ module TSOS {
 
         public shellTrace(args: string[]) {
             if (args.length > 0) {
-                var setting = args[0];
+                const setting = args[0];
                 switch (setting) {
                     case "on":
                         if (_Trace && _SarcasticMode) {

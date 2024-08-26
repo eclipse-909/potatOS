@@ -1,20 +1,18 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-compile() {
-  tsc --rootDir source/ --outDir distrib/
+function run() {
+  tsc
+
+  # Windows
+  start "./index.html"
 }
 
-run() {
-  compile
-  npm start
-}
-
-push() {
+function push() {
 	git add .
 	if [ -z "$1" ]; then
 		echo "Error: Commit message is required"
 		return
 	fi
 	git commit -m "$1"
-	git push origin master
+	git push origin main
 }

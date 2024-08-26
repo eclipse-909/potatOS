@@ -42,7 +42,7 @@ let _Trace: boolean = true;              // Default the OS trace to be on.
 // The OS Kernel and its queues.
 let _Kernel: TSOS.Kernel;
 let _KernelInterruptQueue: TSOS.Queue = null;
-const _KernelInputQueue: TSOS.Queue = null;
+let _KernelInputQueue: TSOS.Queue = null;
 let _KernelBuffers = null;
 
 // Standard input and output

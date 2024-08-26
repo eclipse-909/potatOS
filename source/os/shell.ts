@@ -73,6 +73,14 @@ module TSOS {
                                   "<string> - Sets the prompt.");
             this.commandList[this.commandList.length] = sc;
 
+			// date
+	        sc = new ShellCommand(this.shellDate, "date", "- Displays the current date.");
+			this.commandList[this.commandList.length] = sc;
+
+			// whereami
+	        sc = new ShellCommand(this.shellWhereAmI, "whereami", "- Displays the current latitude and longitude.");
+			this.commandList[this.commandList.length] = sc;
+
             // ps  - list the running processes and their IDs
             // kill <id> - kills the specified process id.
 
@@ -284,5 +292,25 @@ module TSOS {
             }
         }
 
+		public shellDate(args: string[]) {
+			_StdOut.putText(new Date().toString());
+		}
+
+	    public shellWhereAmI(args: string[]) {
+		    if (!("geolocation" in navigator)) {
+			    _StdOut.putText("Location not supported by the browser");
+				return;
+		    }
+		    navigator.geolocation.getCurrentPosition(
+			    (position) => {
+				    _StdOut.putText(`Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`);
+			    },
+			    (error) => {
+				    _StdOut.putText(`Error getting location: ${error}`);
+			    }
+		    );
+	    }
+
+	    public shell__(args: string[]) {}
     }
 }

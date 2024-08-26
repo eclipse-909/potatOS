@@ -11,7 +11,7 @@ var TSOS;
 (function (TSOS) {
     class Queue {
         q;
-        constructor(q = new Array()) {
+        constructor(q = []) {
             this.q = q;
         }
         getSize() {
@@ -24,15 +24,15 @@ var TSOS;
             this.q.push(element);
         }
         dequeue() {
-            var retVal = null;
+            let retVal = null;
             if (this.q.length > 0) {
                 retVal = this.q.shift();
             }
             return retVal;
         }
         toString() {
-            var retVal = "";
-            for (var i in this.q) {
+            let retVal = "";
+            for (const i in this.q) {
                 retVal += "[" + this.q[i] + "] ";
             }
             return retVal;

@@ -18,7 +18,7 @@ var TSOS;
         constructor() {
         }
         init() {
-            var sc;
+            let sc;
             //
             // Load the command list.
             // ver
@@ -45,6 +45,12 @@ var TSOS;
             // prompt <string>
             sc = new TSOS.ShellCommand(this.shellPrompt, "prompt", "<string> - Sets the prompt.");
             this.commandList[this.commandList.length] = sc;
+            // date
+            sc = new TSOS.ShellCommand(this.shellDate, "date", "- Displays the current date.");
+            this.commandList[this.commandList.length] = sc;
+            // whereami
+            sc = new TSOS.ShellCommand(this.shellWhereAmI, "whereami", "- Displays the current latitude and longitude.");
+            this.commandList[this.commandList.length] = sc;
             // ps  - list the running processes and their IDs
             // kill <id> - kills the specified process id.
             // Display the initial prompt.
@@ -58,19 +64,19 @@ var TSOS;
             //
             // Parse the input...
             //
-            var userCommand = this.parseInput(buffer);
+            const userCommand = this.parseInput(buffer);
             // ... and assign the command and args to local variables.
-            var cmd = userCommand.command;
-            var args = userCommand.args;
+            const cmd = userCommand.command;
+            const args = userCommand.args;
             //
             // Determine the command and execute it.
             //
             // TypeScript/JavaScript may not support associative arrays in all browsers so we have to iterate over the
             // command list in attempt to find a match. 
             // TODO: Is there a better way? Probably. Someone work it out and tell me in class.
-            var index = 0;
-            var found = false;
-            var fn = undefined;
+            let index = 0;
+            let found = false;
+            let fn = undefined;
             while (!found && index < this.commandList.length) {
                 if (this.commandList[index].command === cmd) {
                     found = true;
@@ -110,22 +116,22 @@ var TSOS;
             this.putPrompt();
         }
         parseInput(buffer) {
-            var retVal = new TSOS.UserCommand();
+            const retVal = new TSOS.UserCommand();
             // 1. Remove leading and trailing spaces.
             buffer = TSOS.Utils.trim(buffer);
             // 2. Lower-case it.
             buffer = buffer.toLowerCase();
             // 3. Separate on spaces so we can determine the command and command-line args, if any.
-            var tempList = buffer.split(" ");
+            const tempList = buffer.split(" ");
             // 4. Take the first (zeroth) element and use that as the command.
-            var cmd = tempList.shift(); // Yes, you can do that to an array in JavaScript. See the Queue class.
+            let cmd = tempList.shift(); // Yes, you can do that to an array in JavaScript. See the Queue class.
             // 4.1 Remove any left-over spaces.
             cmd = TSOS.Utils.trim(cmd);
             // 4.2 Record it in the return value.
             retVal.command = cmd;
             // 5. Now create the args array from what's left.
-            for (var i in tempList) {
-                var arg = TSOS.Utils.trim(tempList[i]);
+            for (const i in tempList) {
+                const arg = TSOS.Utils.trim(tempList[i]);
                 if (arg != "") {
                     retVal.args[retVal.args.length] = tempList[i];
                 }
@@ -171,7 +177,7 @@ var TSOS;
         }
         shellHelp(args) {
             _StdOut.putText("Commands:");
-            for (var i in _OsShell.commandList) {
+            for (const i in _OsShell.commandList) {
                 _StdOut.advanceLine();
                 _StdOut.putText("  " + _OsShell.commandList[i].command + " " + _OsShell.commandList[i].description);
             }
@@ -188,7 +194,7 @@ var TSOS;
         }
         shellMan(args) {
             if (args.length > 0) {
-                var topic = args[0];
+                const topic = args[0];
                 switch (topic) {
                     case "help":
                         _StdOut.putText("Help displays a list of (hopefully) valid commands.");
@@ -204,7 +210,7 @@ var TSOS;
         }
         shellTrace(args) {
             if (args.length > 0) {
-                var setting = args[0];
+                const setting = args[0];
                 switch (setting) {
                     case "on":
                         if (_Trace && _SarcasticMode) {
@@ -244,6 +250,21 @@ var TSOS;
                 _StdOut.putText("Usage: prompt <string>  Please supply a string.");
             }
         }
+        shellDate(args) {
+            _StdOut.putText(new Date().toString());
+        }
+        shellWhereAmI(args) {
+            if (!("geolocation" in navigator)) {
+                _StdOut.putText("Location not supported by the browser");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition((position) => {
+                _StdOut.putText(`Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`);
+            }, (error) => {
+                _StdOut.putText(`Error getting location: ${error}`);
+            });
+        }
+        shell__(args) { }
     }
     TSOS.Shell = Shell;
 })(TSOS || (TSOS = {}));

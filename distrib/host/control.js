@@ -45,13 +45,13 @@ var TSOS;
         }
         static hostLog(msg, source = "?") {
             // Note the OS CLOCK.
-            var clock = _OSclock;
+            const clock = _OSclock;
             // Note the REAL clock in milliseconds since January 1, 1970.
-            var now = new Date().getTime();
+            const now = new Date().getTime();
             // Build the log string.
-            var str = "({ clock:" + clock + ", source:" + source + ", msg:" + msg + ", now:" + now + " })" + "\n";
+            const str = "({ clock:" + clock + ", source:" + source + ", msg:" + msg + ", now:" + now + " })" + "\n";
             // Update the log console.
-            var taLog = document.getElementById("taHostLog");
+            const taLog = document.getElementById("taHostLog");
             taLog.value = str + taLog.value;
             // TODO in the future: Optionally update a log database or some streaming service.
         }

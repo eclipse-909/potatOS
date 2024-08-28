@@ -9,36 +9,36 @@
    ------------ */
 
 module TSOS {
-    export class Queue {
-        constructor(public q = []) {
-        }
+	export class Queue {
+		constructor(public q = []) {
+		}
 
-        public getSize() {
-            return this.q.length;
-        }
+		public getSize() {
+			return this.q.length;
+		}
 
-        public isEmpty(){
-            return (this.q.length == 0);
-        }
+		public isEmpty(){
+			return (this.q.length == 0);
+		}
 
-        public enqueue(element) {
-            this.q.push(element);
-        }
+		public enqueue(element) {
+			this.q.push(element);
+		}
 
-        public dequeue() {
-            let retVal = null;
-            if (this.q.length > 0) {
-                retVal = this.q.shift();
-            }
-            return retVal;
-        }
+		public dequeue() {
+			let retVal = null;
+			if (this.q.length > 0) {
+				retVal = this.q.shift();
+			}
+			return retVal;
+		}
 
-        public toString() {
-            let retVal = "";
-            for (const i in this.q) {
-                retVal += "[" + this.q[i] + "] ";
-            }
-            return retVal;
-        }
-    }
+		public toString() {
+			let retVal = "";
+			for (const i in this.q) {
+				retVal += "[" + this.q[i] + "] ";
+			}
+			return retVal;
+		}
+	}
 }

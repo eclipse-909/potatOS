@@ -46,10 +46,13 @@ var TSOS;
             sc = new TSOS.ShellCommand(this.shellPrompt, "prompt", "<string> - Sets the prompt.");
             this.commandList[this.commandList.length] = sc;
             // date
-            sc = new TSOS.ShellCommand(this.shellDate, "date", "- Displays the current date.");
+            sc = new TSOS.ShellCommand(this.shellDate, "date", "- Displays the current date and time.");
             this.commandList[this.commandList.length] = sc;
             // whereami
-            sc = new TSOS.ShellCommand(this.shellWhereAmI, "whereami", "- Displays the current latitude and longitude.");
+            sc = new TSOS.ShellCommand(this.shellWhereAmI, "whereami", "- Displays the user's current location.");
+            this.commandList[this.commandList.length] = sc;
+            // echo
+            sc = new TSOS.ShellCommand(this.shellEcho, "echo", "- Displays the given text to standard output.");
             this.commandList[this.commandList.length] = sc;
             // ps  - list the running processes and their IDs
             // kill <id> - kills the specified process id.
@@ -72,7 +75,7 @@ var TSOS;
             // Determine the command and execute it.
             //
             // TypeScript/JavaScript may not support associative arrays in all browsers so we have to iterate over the
-            // command list in attempt to find a match. 
+            // command list in attempt to find a match.
             // TODO: Is there a better way? Probably. Someone work it out and tell me in class.
             let index = 0;
             let found = false;
@@ -170,7 +173,7 @@ var TSOS;
                 _StdOut.putText("For what?");
             }
         }
-        // Although args is unused in some of these functions, it is always provided in the 
+        // Although args is unused in some of these functions, it is always provided in the
         // actual parameter list when this function is called, so I feel like we need it.
         shellVer(args) {
             _StdOut.putText(APP_NAME + " version " + APP_VERSION);
@@ -264,7 +267,9 @@ var TSOS;
                 _StdOut.putText(`Error getting location: ${error}`);
             });
         }
-        shell__(args) { }
+        shellEcho(args) {
+            _StdOut.putText(args.join(" "));
+        }
     }
     TSOS.Shell = Shell;
 })(TSOS || (TSOS = {}));

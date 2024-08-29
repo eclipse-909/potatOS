@@ -33,22 +33,27 @@ module TSOS {
 		public handleInput(): void {
 			while (_KernelInputQueue.getSize() > 0) {
 				// Get the next character from the kernel input queue.
-				var chr = _KernelInputQueue.dequeue();
+				const chr = _KernelInputQueue.dequeue();
 				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
-				if (chr === String.fromCharCode(13)) { // the Enter key
-					// The enter key marks the end of a console command, so ...
-					// ... tell the shell ...
-					_OsShell.handleInput(this.buffer);
-					// ... and reset our buffer.
-					this.buffer = "";
-				} else {
-					// This is a "normal" character, so ...
-					// ... draw it on the screen...
-					this.putText(chr);
-					// ... and add it to our buffer.
-					this.buffer += chr;
+				switch (chr) {
+					case String.fromCharCode(13): // the Enter key
+						// The enter key marks the end of a console command, so ...
+						// ... tell the shell ...
+						_OsShell.handleInput(this.buffer);
+						// ... and reset our buffer.
+						this.buffer = "";
+						break;
+					case String.fromCharCode(3): // ctrl + c
+						// TODO: Add a case for Ctrl-C that would allow the user to terminate the current program.
+						break;
+					default:
+						// This is a "normal" character, so ...
+						// ... draw it on the screen...
+						this.putText(chr);
+						// ... and add it to our buffer.
+						this.buffer += chr;
+						break;
 				}
-				// TODO: Add a case for Ctrl-C that would allow the user to break the current program.
 			}
 		}
 
@@ -80,7 +85,14 @@ module TSOS {
 				_DrawingContext.fontDescent(this.currentFont, this.currentFontSize) +
 				_FontHeightMargin;
 
-			// TODO: Handle scrolling. (iProject 1)
+			//Reference: https://www.labouseur.com/commondocs/operating-systems/LuchiOS/index.html
+			if (this.currentYPosition > _Canvas.height) {
+				let offset = this.currentYPosition - _Canvas.height + _FontHeightMargin;
+				let screenData = _DrawingContext.getImageData(0, 0, _Canvas.width, this.currentYPosition + _FontHeightMargin);
+				this.clearScreen();
+				_DrawingContext.putImageData(screenData, 0, -offset);
+				this.currentYPosition -= offset;
+			}
 		}
 	}
 }

@@ -12,7 +12,7 @@
 module TSOS {
 	export class Shell {
 		// Properties
-		public promptStr = ">";
+		public promptStr = "$ ";
 		public commandList = [];
 		public curses = "[fuvg],[cvff],[shpx],[phag],[pbpxfhpxre],[zbgureshpxre],[gvgf]";
 		public apologies = "[sorry]";
@@ -83,6 +83,10 @@ module TSOS {
 
 			// echo
 			sc = new ShellCommand(this.shellEcho, "echo", "- Displays the given text to standard output.");
+			this.commandList[this.commandList.length] = sc;
+
+			//status
+			sc = new ShellCommand(this.shellStatus, "status", "- Displays a message to the task bar.");
 			this.commandList[this.commandList.length] = sc;
 
 			// ps  - list the running processes and their IDs
@@ -297,10 +301,18 @@ module TSOS {
 		}
 
 		public shellDate(args: string[]) {
+			if (args.length !== 0) {
+				_StdOut.putText("No argument required. Usage: date");
+				return;
+			}
 			_StdOut.putText(new Date().toString());
 		}
 
 		public shellWhereAmI(args: string[]) {
+			if (args.length !== 0) {
+				_StdOut.putText("No argument required. Usage: whereami");
+				return;
+			}
 			if (!("geolocation" in navigator)) {
 				_StdOut.putText("Location not supported by the browser");
 				return;
@@ -316,7 +328,19 @@ module TSOS {
 		}
 
 		public shellEcho(args: string[]) {
+			if (args.length === 0) {
+				_StdOut.putText("Usage: echo <string>");
+				return;
+			}
 			_StdOut.putText(args.join(" "));
+		}
+
+		public shellStatus(args: string[]) {
+			if (args.length === 0) {
+				_StdOut.putText("Invalid argument. Usage: status <string>");
+				return;
+			}
+			document.getElementById("footerStatus").innerHTML = args.join(" ");
 		}
 	}
 }

@@ -11,7 +11,7 @@ var TSOS;
 (function (TSOS) {
     class Shell {
         // Properties
-        promptStr = ">";
+        promptStr = "$ ";
         commandList = [];
         curses = "[fuvg],[cvff],[shpx],[phag],[pbpxfhpxre],[zbgureshpxre],[gvgf]";
         apologies = "[sorry]";
@@ -53,6 +53,9 @@ var TSOS;
             this.commandList[this.commandList.length] = sc;
             // echo
             sc = new TSOS.ShellCommand(this.shellEcho, "echo", "- Displays the given text to standard output.");
+            this.commandList[this.commandList.length] = sc;
+            //status
+            sc = new TSOS.ShellCommand(this.shellStatus, "status", "- Displays a message to the task bar.");
             this.commandList[this.commandList.length] = sc;
             // ps  - list the running processes and their IDs
             // kill <id> - kills the specified process id.
@@ -254,9 +257,17 @@ var TSOS;
             }
         }
         shellDate(args) {
+            if (args.length !== 0) {
+                _StdOut.putText("No argument required. Usage: date");
+                return;
+            }
             _StdOut.putText(new Date().toString());
         }
         shellWhereAmI(args) {
+            if (args.length !== 0) {
+                _StdOut.putText("No argument required. Usage: whereami");
+                return;
+            }
             if (!("geolocation" in navigator)) {
                 _StdOut.putText("Location not supported by the browser");
                 return;
@@ -268,7 +279,18 @@ var TSOS;
             });
         }
         shellEcho(args) {
+            if (args.length === 0) {
+                _StdOut.putText("Usage: echo <string>");
+                return;
+            }
             _StdOut.putText(args.join(" "));
+        }
+        shellStatus(args) {
+            if (args.length === 0) {
+                _StdOut.putText("Invalid argument. Usage: status <string>");
+                return;
+            }
+            document.getElementById("footerStatus").innerHTML = args.join(" ");
         }
     }
     TSOS.Shell = Shell;

@@ -50,5 +50,8 @@ const Glados = null; // This is the function Glados() in glados-ip*.js http://al
 let _GLaDOS = null; // If the above is linked in, this is the instantiated instance of Glados.
 const onDocumentLoad = function () {
     TSOS.Control.hostInit();
+    setInterval(() => {
+        document.getElementById("footerDate").innerHTML = new Date().toString();
+    }, 500);
 };
 //# sourceMappingURL=globals.js.map

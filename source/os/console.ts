@@ -46,6 +46,9 @@ module TSOS {
 					case String.fromCharCode(3): // ctrl + c
 						// TODO: Add a case for Ctrl-C that would allow the user to terminate the current program.
 						break;
+					case String.fromCharCode(8): // backspace
+						// TODO: Delete the previous  character
+						break;
 					default:
 						// This is a "normal" character, so ...
 						// ... draw it on the screen...

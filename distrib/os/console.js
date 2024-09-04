@@ -64,7 +64,31 @@ var TSOS;
                         this.backspace();
                         break;
                     case String.fromCharCode(9): // tab
-                        // TODO: autocomplete command
+                        const tokens = this.buffer.split(/\s+/); //split by 1 or more spaces
+                        if (tokens.length !== 1) {
+                            break;
+                        }
+                        const token = tokens[0];
+                        const possCmds = [];
+                        for (const cmd of _OsShell.commandList) {
+                            if (cmd.command.substring(0, token.length) === token) {
+                                possCmds.push(cmd.command);
+                            }
+                        }
+                        if (possCmds.length === 1) { // fill the command
+                            const remainder = possCmds[0].substring(token.length) + " ";
+                            this.putText(remainder);
+                            this.buffer += remainder;
+                        }
+                        else if (possCmds.length > 1) { // print all possible commands
+                            this.advanceLine();
+                            for (const cmd of possCmds) {
+                                this.putText(cmd);
+                                this.advanceLine();
+                            }
+                            _OsShell.putPrompt();
+                            this.putText(this.buffer); // preserve the input for the next prompt
+                        }
                         break;
                     case String.fromCharCode(13): // the Enter key
                         // The enter key marks the end of a console command, so ...

@@ -114,6 +114,9 @@ var TSOS;
             _StdOut.advanceLine();
             // ... call the command function passing in the args with some über-cool functional programming ...
             fn(args);
+            if (fn === this.shellShutdown) {
+                return;
+            }
             // Check to see if we need to advance the line again
             if (_StdOut.currentXPosition > 0) {
                 _StdOut.advanceLine();
@@ -263,20 +266,12 @@ var TSOS;
             }
             _StdOut.putText(new Date().toString());
         }
-        shellWhereAmI(args) {
+        async shellWhereAmI(args) {
             if (args.length !== 0) {
                 _StdOut.putText("No argument required. Usage: whereami");
                 return;
             }
-            if (!("geolocation" in navigator)) {
-                _StdOut.putText("Location not supported by the browser");
-                return;
-            }
-            navigator.geolocation.getCurrentPosition((position) => {
-                _StdOut.putText(`Latitude: ${position.coords.latitude}, Longitude: ${position.coords.longitude}`);
-            }, (error) => {
-                _StdOut.putText(`Error getting location: ${error}`);
-            });
+            _StdOut.putText("You're at your desk trying to steal my source code... STOP IT!!!");
         }
         shellEcho(args) {
             if (args.length === 0) {

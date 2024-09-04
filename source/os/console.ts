@@ -13,7 +13,9 @@ module TSOS {
 		            public currentFontSize = _DefaultFontSize,
 		            public currentXPosition = 0,
 		            public currentYPosition = _DefaultFontSize,
-		            public buffer = "") {
+		            public buffer = "",
+		            public shellHistory: string[] = [],
+					public shellHistoryIndex: number = 0) {
 		}
 
 		public init(): void {
@@ -55,9 +57,20 @@ module TSOS {
 				switch (chr) {
 					case String.fromCharCode(-1): // up arrow
 						// TODO: go back one command in history
+						if (this.shellHistoryIndex === 0) {break;}
+						this.shellHistoryIndex--;
+						this.clearPrompt();
+						this.buffer = this.shellHistory[this.shellHistoryIndex];
+						this.putText(this.buffer);
 						break;
 					case String.fromCharCode(-2): // down arrow
 						// TODO: go forward one command in history
+						if (this.shellHistoryIndex === this.shellHistory.length) {break;}
+						this.shellHistoryIndex++;
+						this.clearPrompt();
+						if (this.shellHistoryIndex === this.shellHistory.length) {break;}
+						this.buffer = this.shellHistory[this.shellHistoryIndex];
+						this.putText(this.buffer);
 						break;
 					case String.fromCharCode(3): // ctrl + c
 						// TODO: Add a case for Ctrl-C that would allow the user to terminate the current program.
@@ -93,6 +106,8 @@ module TSOS {
 						// The enter key marks the end of a console command, so ...
 						// ... tell the shell ...
 						_OsShell.handleInput(this.buffer);
+						this.shellHistory.push(this.buffer);
+						this.shellHistoryIndex = this.shellHistory.length;
 						// ... and reset our buffer.
 						this.buffer = "";
 						break;

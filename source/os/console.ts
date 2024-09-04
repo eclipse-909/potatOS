@@ -41,14 +41,6 @@ module TSOS {
 			this.buffer = "";
 		}
 
-		backspace(): void {
-			const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer.charAt(this.buffer.length - 1));
-			const xStartPos = this.currentXPosition - xSize;
-			_DrawingContext.clearRect(xStartPos, this.currentYPosition - _DefaultFontSize, xSize, _DefaultFontSize + 5);
-			this.currentXPosition = xStartPos;
-			this.buffer = this.buffer.slice(0, -1);
-		}
-
 		public handleInput(): void {
 			while (_KernelInputQueue.getSize() > 0) {
 				// Get the next character from the kernel input queue.
@@ -56,7 +48,6 @@ module TSOS {
 				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
 				switch (chr) {
 					case String.fromCharCode(-1): // up arrow
-						// TODO: go back one command in history
 						if (this.shellHistoryIndex === 0) {break;}
 						this.shellHistoryIndex--;
 						this.clearPrompt();
@@ -64,7 +55,6 @@ module TSOS {
 						this.putText(this.buffer);
 						break;
 					case String.fromCharCode(-2): // down arrow
-						// TODO: go forward one command in history
 						if (this.shellHistoryIndex === this.shellHistory.length) {break;}
 						this.shellHistoryIndex++;
 						this.clearPrompt();
@@ -76,7 +66,11 @@ module TSOS {
 						// TODO: Add a case for Ctrl-C that would allow the user to terminate the current program.
 						break;
 					case String.fromCharCode(8): // backspace
-						this.backspace();
+						const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer.charAt(this.buffer.length - 1));
+						const xStartPos = this.currentXPosition - xSize;
+						_DrawingContext.clearRect(xStartPos, this.currentYPosition - _DefaultFontSize, xSize, _DefaultFontSize + 5);
+						this.currentXPosition = xStartPos;
+						this.buffer = this.buffer.slice(0, -1);
 						break;
 					case String.fromCharCode(9): // tab
 						const tokens: string[] = this.buffer.split(/\s+/);//split by 1 or more spaces

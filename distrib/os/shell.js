@@ -60,6 +60,9 @@ var TSOS;
             //bsod
             sc = new TSOS.ShellCommand(this.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message.");
             this.commandList[this.commandList.length] = sc;
+            //load
+            sc = new TSOS.ShellCommand(this.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.");
+            this.commandList[this.commandList.length] = sc;
             // ps  - list the running processes and their IDs
             // kill <id> - kills the specified process id.
             // Display the initial prompt.
@@ -292,6 +295,31 @@ var TSOS;
         }
         shellBSOD(args) {
             _Kernel.krnTrapError("Self-induced error via shell command.");
+        }
+        //UNFINISHED
+        //TODO when the disk is set up, this function will load it into storage
+        shellLoad(args) {
+            const textArea = document.getElementById("taProgramInput");
+            let input = textArea.value;
+            input = input.replace(/\s+/g, ' ').trim();
+            const hexArray = input.split(/[\s,]+/);
+            // If you're curious why I'm also allowing hex numbers and separators to be formatted as '0xAD, 0x04, 0x00',
+            // it's because I made an assembler for this instruction set that outputs the binary this way.
+            const numberArray = hexArray.map(hex => {
+                const cleanedHex = hex.startsWith('0x') ? hex.slice(2) : hex;
+                let num = parseInt(cleanedHex, 16);
+                if (num < 0 || num > 0xff) {
+                    num = NaN;
+                }
+                return num;
+            });
+            textArea.value = "";
+            if (numberArray.some(Number.isNaN)) {
+                _StdOut.putText("Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '");
+                return;
+            }
+            // TODO do something with numberArray
+            console.log(numberArray);
         }
     }
     TSOS.Shell = Shell;

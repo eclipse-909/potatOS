@@ -30,24 +30,50 @@ module TSOS {
 			this.currentYPosition = this.currentFontSize;
 		}
 
+		//Clears the text of the current prompt
+		clearPrompt(): void {
+			const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer);
+			const xStartPos = this.currentXPosition - xSize;
+			_DrawingContext.clearRect(xStartPos, this.currentYPosition - _DefaultFontSize, xSize, _DefaultFontSize + 5);
+			this.currentXPosition = xStartPos;
+			this.buffer = "";
+		}
+
+		backspace(): void {
+			const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer.charAt(this.buffer.length - 1));
+			const xStartPos = this.currentXPosition - xSize;
+			_DrawingContext.clearRect(xStartPos, this.currentYPosition - _DefaultFontSize, xSize, _DefaultFontSize + 5);
+			this.currentXPosition = xStartPos;
+			this.buffer = this.buffer.slice(0, -1);
+		}
+
 		public handleInput(): void {
 			while (_KernelInputQueue.getSize() > 0) {
 				// Get the next character from the kernel input queue.
 				const chr = _KernelInputQueue.dequeue();
 				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
 				switch (chr) {
+					case String.fromCharCode(-1): // up arrow
+						// TODO: go back one command in history
+						break;
+					case String.fromCharCode(-2): // down arrow
+						// TODO: go forward one command in history
+						break;
+					case String.fromCharCode(3): // ctrl + c
+						// TODO: Add a case for Ctrl-C that would allow the user to terminate the current program.
+						break;
+					case String.fromCharCode(8): // backspace
+						this.backspace();
+						break;
+					case String.fromCharCode(9): // tab
+						// TODO: autocomplete command
+						break;
 					case String.fromCharCode(13): // the Enter key
 						// The enter key marks the end of a console command, so ...
 						// ... tell the shell ...
 						_OsShell.handleInput(this.buffer);
 						// ... and reset our buffer.
 						this.buffer = "";
-						break;
-					case String.fromCharCode(3): // ctrl + c
-						// TODO: Add a case for Ctrl-C that would allow the user to terminate the current program.
-						break;
-					case String.fromCharCode(8): // backspace
-						// TODO: Delete the previous  character
 						break;
 					default:
 						// This is a "normal" character, so ...

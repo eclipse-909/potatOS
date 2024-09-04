@@ -35,9 +35,10 @@ module TSOS {
 			const isShifted: boolean = params[1];
 			_Kernel.krnTrace("Key code:" + keyCode + " shifted:" + isShifted);
 			// Check to see if we even want to deal with the key that was pressed.
-			if (keyCode == 20) {
-				this.capsLock = !this.capsLock;
-				return;
+			switch (keyCode) {
+				case 20:    //caps lock
+					this.capsLock = !this.capsLock;
+					return;
 			}
 			const charCode: number = this.getCharCode(keyCode, isShifted);
 			if (charCode !== 0) {
@@ -54,7 +55,14 @@ module TSOS {
 				case 8:  return 8;     // 'Backspace' remains the same
 				case 9:  return 9;     // 'Tab' remains the same
 				case 13: return 13;    // 'Enter' remains the same
+
 				case 32: return 32;    // ' ' (space) remains the same
+
+				// I had to make up my own char codes since these aren't ascii characters,
+				//but the number still needs to make it to the kernel input queue.
+				//38 and 40 are already reserved for '&' and '(' respectively.
+				case 38: return -1;   //up arrow
+				case 40: return -2;   //down arrow
 
 				case 48: return isShifted ? 41 : 48;  // ')' or '0'
 				case 49: return isShifted ? 33 : 49;  // '!' or '1'

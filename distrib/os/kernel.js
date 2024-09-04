@@ -149,7 +149,15 @@ var TSOS;
         }
         krnTrapError(msg) {
             TSOS.Control.hostLog("OS ERROR - TRAP: " + msg);
-            // TODO: Display error on console, perhaps in some sort of colored screen. (Maybe blue?)
+            _Console.clearScreen();
+            const image = new Image();
+            image.src = './img/Bsodwindows10.png';
+            image.onload = () => {
+                _DrawingContext.drawImage(image, 0, 0);
+            };
+            image.onerror = (error) => {
+                console.error('Failed to load image:', error);
+            };
             this.krnShutdown();
         }
     }

@@ -57,6 +57,9 @@ var TSOS;
             //status
             sc = new TSOS.ShellCommand(this.shellStatus, "status", "- Displays a message to the task bar.");
             this.commandList[this.commandList.length] = sc;
+            //bsod
+            sc = new TSOS.ShellCommand(this.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message.");
+            this.commandList[this.commandList.length] = sc;
             // ps  - list the running processes and their IDs
             // kill <id> - kills the specified process id.
             // Display the initial prompt.
@@ -286,6 +289,9 @@ var TSOS;
                 return;
             }
             document.getElementById("footerStatus").innerHTML = args.join(" ");
+        }
+        shellBSOD(args) {
+            _Kernel.krnTrapError("Self-induced error via shell command.");
         }
     }
     TSOS.Shell = Shell;

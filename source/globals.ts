@@ -15,7 +15,7 @@
 const APP_NAME: string    = "potatOS";   // 'cause Bob and I were at a loss for a better name.
 const APP_VERSION: string = "0.1.4";   // What did you expect?
 
-const CPU_CLOCK_INTERVAL: number = 100;   // This is in ms (milliseconds) so 1000 = 1 second.
+const CPU_CLOCK_INTERVAL: number = 25;   // This is in ms (milliseconds) so 1000 = 1 second.
 
 const TIMER_IRQ: number = 0;  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
                               // NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
@@ -30,7 +30,7 @@ let _CPU: TSOS.Cpu;  // Utilize TypeScript's type annotation system to ensure th
 
 let _OSclock: number = 0;  // Page 23.
 
-const _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
+let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
 
 let _Canvas: HTMLCanvasElement;          // Initialized in Control.hostInit().
 let _DrawingContext: any;                // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.

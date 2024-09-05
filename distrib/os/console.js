@@ -137,8 +137,9 @@ var TSOS;
                 // Draw the text at the current X and Y coordinates.
                 _DrawingContext.drawText(this.currentFont, this.currentFontSize, this.currentXPosition, this.currentYPosition, text);
                 // Move the current X position.
-                const offset = _DrawingContext.measureText(this.currentFont, this.currentFontSize, text);
-                this.currentXPosition = this.currentXPosition + offset;
+                // This logic has been moved into the _DrawingContext.drawText function above
+                //const offset = _DrawingContext.measureText(this.currentFont, this.currentFontSize, text);
+                //this.currentXPosition = this.currentXPosition + offset;
             }
         }
         advanceLine() {

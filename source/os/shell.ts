@@ -108,7 +108,7 @@ module TSOS {
 			_StdOut.putText(this.promptStr);
 		}
 
-		public handleInput(buffer) {
+		public handleInput(buffer: string) {
 			_Kernel.krnTrace("Shell Command~" + buffer);
 			//
 			// Parse the input...
@@ -149,7 +149,7 @@ module TSOS {
 		}
 
 		// Note: args is an optional parameter, ergo the ? which allows TypeScript to understand that.
-		public execute(fn, args?) {
+		public execute(fn, args?: string[]) {
 			// We just got a command, so advance the line...
 			_StdOut.advanceLine();
 			// ... call the command function passing in the args with some über-cool functional programming ...
@@ -230,11 +230,11 @@ module TSOS {
 		// Although args is unused in some of these functions, it is always provided in the
 		// actual parameter list when this function is called, so I feel like we need it.
 
-		public shellVer(args: string[]) {
+		public shellVer(_args: string[]) {
 			_StdOut.putText(APP_NAME + " version " + APP_VERSION);
 		}
 
-		public shellHelp(args: string[]) {
+		public shellHelp(_args: string[]) {
 			_StdOut.putText("Commands:");
 			for (const i in _OsShell.commandList) {
 				_StdOut.advanceLine();
@@ -242,14 +242,14 @@ module TSOS {
 			}
 		}
 
-		public shellShutdown(args: string[]) {
+		public shellShutdown(_args: string[]) {
 			_StdOut.putText("Shutting down...");
 			// Call Kernel shutdown routine.
 			_Kernel.krnShutdown();
 			// TODO: Stop the final prompt from being displayed. If possible. Not a high priority. (Damn OCD!)
 		}
 
-		public shellCls(args: string[]) {
+		public shellCls(_args: string[]) {
 			_StdOut.clearScreen();
 			_StdOut.resetXY();
 		}
@@ -343,13 +343,13 @@ module TSOS {
 			document.getElementById("footerStatus").innerHTML = args.join(" ");
 		}
 
-		public shellBSOD(args: string[]) {
+		public shellBSOD(_args: string[]) {
 			_Kernel.krnTrapError("Self-induced error via shell command.")
 		}
 
 		//UNFINISHED
 		//TODO when the disk is set up, this function will load it into storage
-		public shellLoad(args: string[]) {
+		public shellLoad(_args: string[]) {
 			const textArea = document.getElementById("taProgramInput") as HTMLTextAreaElement;
 			let input: string = textArea.value;
 			input = input.replace(/\s+/g, ' ').trim();

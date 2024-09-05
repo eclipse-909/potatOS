@@ -187,23 +187,23 @@ var TSOS;
         }
         // Although args is unused in some of these functions, it is always provided in the
         // actual parameter list when this function is called, so I feel like we need it.
-        shellVer(args) {
+        shellVer(_args) {
             _StdOut.putText(APP_NAME + " version " + APP_VERSION);
         }
-        shellHelp(args) {
+        shellHelp(_args) {
             _StdOut.putText("Commands:");
             for (const i in _OsShell.commandList) {
                 _StdOut.advanceLine();
                 _StdOut.putText("  " + _OsShell.commandList[i].command + " " + _OsShell.commandList[i].description);
             }
         }
-        shellShutdown(args) {
+        shellShutdown(_args) {
             _StdOut.putText("Shutting down...");
             // Call Kernel shutdown routine.
             _Kernel.krnShutdown();
             // TODO: Stop the final prompt from being displayed. If possible. Not a high priority. (Damn OCD!)
         }
-        shellCls(args) {
+        shellCls(_args) {
             _StdOut.clearScreen();
             _StdOut.resetXY();
         }
@@ -293,12 +293,12 @@ var TSOS;
             }
             document.getElementById("footerStatus").innerHTML = args.join(" ");
         }
-        shellBSOD(args) {
+        shellBSOD(_args) {
             _Kernel.krnTrapError("Self-induced error via shell command.");
         }
         //UNFINISHED
         //TODO when the disk is set up, this function will load it into storage
-        shellLoad(args) {
+        shellLoad(_args) {
             const textArea = document.getElementById("taProgramInput");
             let input = textArea.value;
             input = input.replace(/\s+/g, ' ').trim();

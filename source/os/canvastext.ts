@@ -149,7 +149,7 @@ module TSOS {
 			return total;
 		}
 
-		public static draw(ctx, font, size, x, y, str) {
+		public static draw(ctx, font, size, _x, _y, str) {
 			const total = 0;
 			const len = str.length;
 			const mag = size / 25.0;
@@ -160,7 +160,17 @@ module TSOS {
 			ctx.strokeStyle = "black";
 
 			for (let i = 0; i < len; i++) {
-				const c = CanvasTextFunctions.letter(str.charAt(i));
+				//advance line if character will spill off the edge of the canvas
+				const char: string = str.charAt(i);
+				const charWidth: number = this.measure(_Console.currentFont, _Console.currentFontSize, char);
+				let offset: number = 0;
+				if (_Console.currentXPosition + charWidth >= _Canvas.width - 5) {
+					_Console.advanceLine();
+				} else {
+					offset = charWidth;
+				}
+
+				const c = CanvasTextFunctions.letter(char);
 				if (!c) {
 					continue;
 				}
@@ -174,14 +184,17 @@ module TSOS {
 						continue;
 					}
 					if (penUp) {
-						ctx.moveTo( x + a[0]*mag, y - a[1]*mag);
+						ctx.moveTo( _Console.currentXPosition + a[0]*mag, _Console.currentYPosition - a[1]*mag);
 						penUp = false;
 					} else {
-						ctx.lineTo( x + a[0]*mag, y - a[1]*mag);
+						ctx.lineTo( _Console.currentXPosition + a[0]*mag, _Console.currentYPosition - a[1]*mag);
 					}
 				}
 				ctx.stroke();
-				x += c.width*mag;
+				_Console.currentXPosition += c.width*mag;
+
+				// We're gonna offset the X pos here instead of in Console.putText to handle line-wrapping
+				//_Console.currentXPosition += offset;
 			}
 			ctx.restore();
 			return total;

@@ -116,7 +116,7 @@ module TSOS {
 			}
 		}
 
-		public putText(text): void {
+		public putText(text: string): void {
 			/*  My first inclination here was to write two functions: putChar() and putString().
 				Then I remembered that JavaScript is (sadly) untyped and it won't differentiate
 				between the two. (Although TypeScript would. But we're compiling to JavaScipt anyway.)
@@ -127,9 +127,13 @@ module TSOS {
 			if (text !== "") {
 				// Draw the text at the current X and Y coordinates.
 				_DrawingContext.drawText(this.currentFont, this.currentFontSize, this.currentXPosition, this.currentYPosition, text);
+
 				// Move the current X position.
-				const offset = _DrawingContext.measureText(this.currentFont, this.currentFontSize, text);
-				this.currentXPosition = this.currentXPosition + offset;
+
+				// This logic has been moved into the _DrawingContext.drawText function above
+
+				//const offset = _DrawingContext.measureText(this.currentFont, this.currentFontSize, text);
+				//this.currentXPosition = this.currentXPosition + offset;
 			}
 		}
 

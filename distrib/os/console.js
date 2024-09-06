@@ -73,6 +73,12 @@ var TSOS;
                         // TODO: Add a case for Ctrl-C that would allow the user to terminate the current program.
                         break;
                     case String.fromCharCode(8): // backspace
+                        if (this.currentXPosition <= 0.00001 /*floating point shenanigans*/) {
+                            this.currentXPosition = _DrawingContext.measureText(this.currentFont, this.currentFontSize, _OsShell.promptStr + this.buffer);
+                            this.currentYPosition -= _DefaultFontSize +
+                                _DrawingContext.fontDescent(this.currentFont, this.currentFontSize) +
+                                _FontHeightMargin;
+                        }
                         const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer.charAt(this.buffer.length - 1));
                         const xStartPos = this.currentXPosition - xSize;
                         _DrawingContext.clearRect(xStartPos, this.currentYPosition - _DefaultFontSize, xSize, _DefaultFontSize + 5);

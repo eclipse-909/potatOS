@@ -2,9 +2,7 @@
 
 function run() {
   tsc
-
-  # Windows
-  start ./index.html
+  firefox ./index.html || start ./index.html || xdg-open ./index.html
 }
 
 function push() {

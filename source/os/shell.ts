@@ -257,11 +257,13 @@ module TSOS {
 		public shellMan(args: string[]) {
 			if (args.length > 0) {
 				const topic = args[0];
+				const cmd: ShellCommand | undefined = _OsShell.commandList.find((item: ShellCommand) => {return item.command === topic;});
+				if (cmd) {
+					_StdOut.putText(cmd.description);
+					return;
+				}
 				switch (topic) {
-					case "help":
-						_StdOut.putText("Help displays a list of (hopefully) valid commands.");
-						break;
-					// TODO: Make descriptive MANual page entries for the the rest of the shell commands here.
+					// TODO: Make descriptive MANual page entries for topics other than shell commands.
 					default:
 						_StdOut.putText("No manual entry for " + args[0] + ".");
 				}

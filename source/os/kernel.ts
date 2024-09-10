@@ -88,7 +88,6 @@ module TSOS {
 			}
 		}
 
-
 		//
 		// Interrupt Handling
 		//
@@ -104,7 +103,7 @@ module TSOS {
 			// Put more here.
 		}
 
-		public krnInterruptHandler(irq, params) {
+		public krnInterruptHandler(irq: number, params: any[]) {
 			// This is the Interrupt Handler Routine.  See pages 8 and 560.
 			// Trace our entrance here so we can compute Interrupt Latency by analyzing the log file later on. Page 766.
 			this.krnTrace("Handling IRQ~" + irq);
@@ -114,10 +113,10 @@ module TSOS {
 			// Note: There is no need to "dismiss" or acknowledge the interrupts in our design here.
 			//       Maybe the hardware simulation will grow to support/require that in the future.
 			switch (irq) {
-				case TIMER_IRQ:
+				case IQR.timer:
 					this.krnTimerISR();               // Kernel built-in routine for timers (not the clock).
 					break;
-				case KEYBOARD_IRQ:
+				case IQR.keyboard:
 					_krnKeyboardDriver.isr(params);   // Kernel mode device driver
 					_StdIn.handleInput();
 					break;
@@ -131,22 +130,6 @@ module TSOS {
 			// Check multiprogramming parameters and enforce quanta here. Call the scheduler / context switch here if necessary.
 			// Or do it elsewhere in the Kernel. We don't really need this.
 		}
-
-		//
-		// System Calls... that generate software interrupts via tha Application Programming Interface library routines.
-		//
-		// Some ideas:
-		// - ReadConsole
-		// - WriteConsole
-		// - CreateProcess
-		// - ExitProcess
-		// - WaitForProcessToExit
-		// - CreateFile
-		// - OpenFile
-		// - ReadFile
-		// - WriteFile
-		// - CloseFile
-
 
 		//
 		// OS Utility Routines

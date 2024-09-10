@@ -29,7 +29,7 @@ module TSOS {
 			// More?
 		}
 
-		public krnKbdDispatchKeyPress(params) {
+		public krnKbdDispatchKeyPress(params: any[]) {
 			// Parse the params.  TODO: Check that the params are valid and osTrapError if not.
 			const keyCode = params[0];
 			const isShifted: boolean = params[1];

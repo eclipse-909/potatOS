@@ -13,20 +13,50 @@
 //
 
 const APP_NAME: string    = "potatOS";   // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION: string = "0.1.8";   // What did you expect?
+const APP_VERSION: string = "0.2.0";   // What did you expect?
 
 const CPU_CLOCK_INTERVAL: number = 25;   // This is in ms (milliseconds) so 1000 = 1 second.
 
-const TIMER_IRQ: number = 0;  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
-                              // NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
-const KEYBOARD_IRQ: number = 1;
+enum IQR {
+	timer,  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
+				// NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
+	keyboard,
+	kill,
+	writeIntConsole,
+	writeStrConsole
+}
 
+const MEM_SIZE: number = 0x10000;
+const nullptr: number = 0x0000;
+
+enum ExitCode {
+	success = 0x00,
+	genericError = 0x01,
+	shellMisuse = 0x02,
+	cannotExecuteCommand = 0x7E,
+	commandNotFound = 0x7F,
+	invalidArgumentToExit = 0x80,
+	terminatedByCtrlC = 0x82
+}
+enum SignalCode {
+	efault = 0x0E,
+	einval = 0x16
+}
+//Returns a signal code that represents an error code
+function fatalError(signal: SignalCode): ExitCode | SignalCode {
+	return 0x80 + signal as number;
+}
+
+//bytes are unchecked
+function leToU16(lowByte: number, highByte: number) {return (highByte << 8) | lowByte;}
 
 //
 // Global Variables
 // TODO: Make a global object and use that instead of the "_" naming convention in the global namespace.
 //
 let _CPU: TSOS.Cpu;  // Utilize TypeScript's type annotation system to ensure that _CPU is an instance of the Cpu class.
+let _MemoryController: TSOS.MemoryController;
+let _MMU: TSOS.MMU;
 
 let _OSclock: number = 0;  // Page 23.
 

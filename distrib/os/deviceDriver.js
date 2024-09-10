@@ -8,7 +8,7 @@ var TSOS;
     class DeviceDriver {
         version = '0.07';
         status = 'unloaded';
-        preemptable = false;
+        //public preemptable = false;
         driverEntry = null;
         isr = null;
     }

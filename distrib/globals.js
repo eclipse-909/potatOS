@@ -11,16 +11,47 @@
 // Global CONSTANTS (TypeScript 1.5 introduced const. Very cool.)
 //
 const APP_NAME = "potatOS"; // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION = "0.1.8"; // What did you expect?
+const APP_VERSION = "0.2.0"; // What did you expect?
 const CPU_CLOCK_INTERVAL = 25; // This is in ms (milliseconds) so 1000 = 1 second.
-const TIMER_IRQ = 0; // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
-// NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
-const KEYBOARD_IRQ = 1;
+var IQR;
+(function (IQR) {
+    IQR[IQR["timer"] = 0] = "timer";
+    // NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
+    IQR[IQR["keyboard"] = 1] = "keyboard";
+    IQR[IQR["kill"] = 2] = "kill";
+    IQR[IQR["writeIntConsole"] = 3] = "writeIntConsole";
+    IQR[IQR["writeStrConsole"] = 4] = "writeStrConsole";
+})(IQR || (IQR = {}));
+const MEM_SIZE = 0x10000;
+const nullptr = 0x0000;
+var ExitCode;
+(function (ExitCode) {
+    ExitCode[ExitCode["success"] = 0] = "success";
+    ExitCode[ExitCode["genericError"] = 1] = "genericError";
+    ExitCode[ExitCode["shellMisuse"] = 2] = "shellMisuse";
+    ExitCode[ExitCode["cannotExecuteCommand"] = 126] = "cannotExecuteCommand";
+    ExitCode[ExitCode["commandNotFound"] = 127] = "commandNotFound";
+    ExitCode[ExitCode["invalidArgumentToExit"] = 128] = "invalidArgumentToExit";
+    ExitCode[ExitCode["terminatedByCtrlC"] = 130] = "terminatedByCtrlC";
+})(ExitCode || (ExitCode = {}));
+var SignalCode;
+(function (SignalCode) {
+    SignalCode[SignalCode["efault"] = 14] = "efault";
+    SignalCode[SignalCode["einval"] = 22] = "einval";
+})(SignalCode || (SignalCode = {}));
+//Returns a signal code that represents an error code
+function fatalError(signal) {
+    return 0x80 + signal;
+}
+//bytes are unchecked
+function leToU16(lowByte, highByte) { return (highByte << 8) | lowByte; }
 //
 // Global Variables
 // TODO: Make a global object and use that instead of the "_" naming convention in the global namespace.
 //
 let _CPU; // Utilize TypeScript's type annotation system to ensure that _CPU is an instance of the Cpu class.
+let _MemoryController;
+let _MMU;
 let _OSclock = 0; // Page 23.
 let _Mode = 0; // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
 let _Canvas; // Initialized in Control.hostInit().

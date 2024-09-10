@@ -8,13 +8,14 @@
       TSOS - a browser-based virtual Operating System in TypeScript
    </title>
 
-   <!-- Globals CONSTANTS and _Variables. Must included be first. -->
+   <!-- Globals CONSTANTS and _Variables. Must be included first. -->
    <script type="text/javascript" src="distrib/globals.js"></script>
 
    <!-- Host (Virtual Machine / Hardware Simulation) Routines -->
    <script type="text/javascript" src="distrib/host/control.js"></script>
    <script type="text/javascript" src="distrib/host/devices.js"></script>
    <script type="text/javascript" src="distrib/host/cpu.js"></script>
+   <script type="text/javascript" src="distrib/host/memoryController.js"></script>
 
    <!-- Virtual OS Routines: Make sure Kernel code is last, since it needs those above it. -->
    <script type="text/javascript" src="distrib/os/interrupt.js"></script>
@@ -26,6 +27,8 @@
    <script type="text/javascript" src="distrib/os/shell.js"></script>
    <script type="text/javascript" src="distrib/os/shellCommand.js"></script>
    <script type="text/javascript" src="distrib/os/userCommand.js"></script>
+   <script type="text/javascript" src="distrib/os/mmu.js"></script>
+   <script type="text/javascript" src="distrib/os/spudAPI.js"></script>
    <script type="text/javascript" src="distrib/os/kernel.js"></script>
 
    <!-- Other Routines -->

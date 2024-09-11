@@ -92,7 +92,7 @@ var TSOS;
                         }
                         const token = tokens[0];
                         const possCmds = [];
-                        for (const cmd of _OsShell.commandList) {
+                        for (const cmd of TSOS.COMMAND_LIST) {
                             if (cmd.command.substring(0, token.length) === token) {
                                 possCmds.push(cmd.command);
                             }
@@ -112,7 +112,7 @@ var TSOS;
                             this.putText(this.buffer); // preserve the input for the next prompt
                         }
                         break;
-                    case String.fromCharCode(13): // the Enter key
+                    case String.fromCharCode(13): // the Enter key (carriage return)
                         // The enter key marks the end of a console command, so ...
                         // ... tell the shell ...
                         _OsShell.handleInput(this.buffer);
@@ -132,20 +132,14 @@ var TSOS;
             }
         }
         putText(text) {
-            /*  My first inclination here was to write two functions: putChar() and putString().
-                Then I remembered that JavaScript is (sadly) untyped and it won't differentiate
-                between the two. (Although TypeScript would. But we're compiling to JavaScipt anyway.)
-                So rather than be like PHP and write two (or more) functions that
-                do the same thing, thereby encouraging confusion and decreasing readability, I
-                decided to write one function and use the term "text" to connote string or char.
-            */
             if (text !== "") {
-                // Draw the text at the current X and Y coordinates.
-                _DrawingContext.drawText(this.currentFont, this.currentFontSize, this.currentXPosition, this.currentYPosition, text);
-                // Move the current X position.
-                // This logic has been moved into the _DrawingContext.drawText function above
-                //const offset = _DrawingContext.measureText(this.currentFont, this.currentFontSize, text);
-                //this.currentXPosition = this.currentXPosition + offset;
+                const lines = text.split(/\r?\n/); //The thing being printed might contain a carriage return or new line
+                for (let i = 0; i < lines.length; i++) {
+                    _DrawingContext.drawText(this.currentFont, this.currentFontSize, this.currentXPosition, this.currentYPosition, lines[i]);
+                    if (i !== lines.length - 1) {
+                        this.advanceLine();
+                    }
+                }
             }
         }
         advanceLine() {

@@ -29,24 +29,6 @@ enum IQR {
 const MEM_SIZE: number = 0x10000;
 const nullptr: number = 0x0000;
 
-enum ExitCode {
-	success = 0x00,
-	genericError = 0x01,
-	shellMisuse = 0x02,
-	cannotExecuteCommand = 0x7E,
-	commandNotFound = 0x7F,
-	invalidArgumentToExit = 0x80,
-	terminatedByCtrlC = 0x82
-}
-enum SignalCode {
-	efault = 0x0E,
-	einval = 0x16
-}
-//Returns a signal code that represents an error code
-function fatalError(signal: SignalCode): ExitCode | SignalCode {
-	return 0x80 + signal as number;
-}
-
 //bytes are unchecked
 function leToU16(lowByte: number, highByte: number) {return (highByte << 8) | lowByte;}
 
@@ -60,7 +42,7 @@ let _MMU: TSOS.MMU;
 
 let _OSclock: number = 0;  // Page 23.
 
-let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
+//let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
 
 let _Canvas: HTMLCanvasElement;          // Initialized in Control.hostInit().
 let _DrawingContext: any;                // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
@@ -100,5 +82,5 @@ const onDocumentLoad = function () {
 	TSOS.Control.hostInit();
 	setInterval(() => {
 		document.getElementById("footerDate").innerHTML = new Date().toString();
-	}, 500);
+	}, 1000);
 };

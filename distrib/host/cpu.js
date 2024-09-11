@@ -45,8 +45,7 @@ var TSOS;
             return buffer;
         }
         segFault() {
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, []));
-            _StdOut.putText("Process exited abnormally - segmentation fault");
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [ /*TODO get currently-running process ID*/]));
         }
         cycle() {
             _Kernel.krnTrace('CPU cycle');
@@ -198,7 +197,7 @@ var TSOS;
                     break;
                 case OpCode.NOP: break;
                 case OpCode.BRK:
-                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, []));
+                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [ /*TODO get currently-running process ID*/]));
                     break;
                 case OpCode.CPXa:
                     arg0 = this.fetch();

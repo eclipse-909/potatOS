@@ -43,8 +43,7 @@ module TSOS {
 		}
 
 		segFault(): void {
-			_KernelInterruptQueue.enqueue(new Interrupt(IQR.kill, []));
-			_StdOut.putText("Process exited abnormally - segmentation fault");
+			_KernelInterruptQueue.enqueue(new Interrupt(IQR.kill, [/*TODO get currently-running process ID*/]));
 		}
 
 		public cycle(): void {
@@ -160,7 +159,7 @@ module TSOS {
 					break;
 				case OpCode.NOP:break;
 				case OpCode.BRK:
-					_KernelInterruptQueue.enqueue(new Interrupt(IQR.kill, []));
+					_KernelInterruptQueue.enqueue(new Interrupt(IQR.kill, [/*TODO get currently-running process ID*/]));
 					break;
 				case OpCode.CPXa:
 					arg0 = this.fetch();

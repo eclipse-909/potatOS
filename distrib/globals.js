@@ -24,25 +24,6 @@ var IQR;
 })(IQR || (IQR = {}));
 const MEM_SIZE = 0x10000;
 const nullptr = 0x0000;
-var ExitCode;
-(function (ExitCode) {
-    ExitCode[ExitCode["success"] = 0] = "success";
-    ExitCode[ExitCode["genericError"] = 1] = "genericError";
-    ExitCode[ExitCode["shellMisuse"] = 2] = "shellMisuse";
-    ExitCode[ExitCode["cannotExecuteCommand"] = 126] = "cannotExecuteCommand";
-    ExitCode[ExitCode["commandNotFound"] = 127] = "commandNotFound";
-    ExitCode[ExitCode["invalidArgumentToExit"] = 128] = "invalidArgumentToExit";
-    ExitCode[ExitCode["terminatedByCtrlC"] = 130] = "terminatedByCtrlC";
-})(ExitCode || (ExitCode = {}));
-var SignalCode;
-(function (SignalCode) {
-    SignalCode[SignalCode["efault"] = 14] = "efault";
-    SignalCode[SignalCode["einval"] = 22] = "einval";
-})(SignalCode || (SignalCode = {}));
-//Returns a signal code that represents an error code
-function fatalError(signal) {
-    return 0x80 + signal;
-}
 //bytes are unchecked
 function leToU16(lowByte, highByte) { return (highByte << 8) | lowByte; }
 //
@@ -53,7 +34,7 @@ let _CPU; // Utilize TypeScript's type annotation system to ensure that _CPU is 
 let _MemoryController;
 let _MMU;
 let _OSclock = 0; // Page 23.
-let _Mode = 0; // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
+//let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
 let _Canvas; // Initialized in Control.hostInit().
 let _DrawingContext; // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
 const _DefaultFontFamily = "sans"; // Ignored, I think. The was just a place-holder in 2008, but the HTML canvas may have use for it.
@@ -83,6 +64,6 @@ const onDocumentLoad = function () {
     TSOS.Control.hostInit();
     setInterval(() => {
         document.getElementById("footerDate").innerHTML = new Date().toString();
-    }, 500);
+    }, 1000);
 };
 //# sourceMappingURL=globals.js.map

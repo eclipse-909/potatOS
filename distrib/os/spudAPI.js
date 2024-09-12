@@ -17,46 +17,65 @@ var TSOS;
     // - WriteFile
     // - CloseFile
     //User-mode system call functions
-    //@param params - process ID, exit code.
-    //@returns ExitCode | SignalCode - ExitCode; SignalCode if fatal error.
+    //Kills the process with the given process ID.
+    //@param params - [process ID, exit code].
     function kill(params) {
         if (params.length !== 2) {
-            return TSOS.SHELL_MISUSE;
+            return;
         }
-        _CPU.isExecuting = false;
-        //TODO kill the currently-running process. I might need to pass the process ID as a parameter
-        //If it tries to kill the process right before a context switch, the active process ID might change, so I should pass it in before that.
         const pid = params[0];
-        params[0].processPrintDesc();
-        return TSOS.SUCCESS;
+        if (_Scheduler.currPCB.pid === pid) {
+            _Scheduler.currPCB.free();
+            _Scheduler.currPCB = null;
+        }
+        else {
+            let queue = new TSOS.Queue();
+            while (!_Scheduler.pcbQueue.isEmpty()) {
+                let pcb = _Scheduler.pcbQueue.dequeue();
+                if (pcb.pid === pid) {
+                    pcb.free();
+                }
+                else {
+                    queue.enqueue(pcb);
+                }
+            }
+            while (!queue.isEmpty()) {
+                _Scheduler.pcbQueue.enqueue(queue.dequeue());
+            }
+        }
+        params[1].processPrintDesc();
+        _StdOut.advanceLine();
+        _OsShell.putPrompt();
     }
-    //@params params - the byte in the Y-register.
-    //@returns ExitCode | SignalCode - ExitCode; SignalCode if fatal error.
+    TSOS.kill = kill;
+    //Writes the byte in the Y-register to the standard output as an integer.
+    //@params params - [the byte in the Y-register].
     function writeIntConsole(params) {
         if (params.length !== 1) {
-            return TSOS.SHELL_MISUSE;
+            return;
         }
         _StdOut.putText(params[0].toString(16));
-        return TSOS.SUCCESS;
     }
-    //@params params - a pointer to the null-terminated string in memory, given by the indirect address in the Y-register.
-    //@returns ExitCode | SignalCode - ExitCode; SignalCode if fatal error.
+    TSOS.writeIntConsole = writeIntConsole;
+    //Writes the null-terminated-string at the pointer to the standard output given by the indirect address in the Y-register.
+    //@params params - [a pointer to the null-terminated-string in memory].
     function writeStrConsole(params) {
         if (params.length !== 1) {
-            return TSOS.SHELL_MISUSE;
+            return;
         }
         let buffer = "";
-        let strPtr = _MMU.toPhysical(params[0]);
-        if (strPtr === undefined) {
-            return TSOS.SHELL_MISUSE;
-        }
+        let strPtr = params[0];
         let char = undefined;
         while (char !== 0) {
-            char = _MemoryController.read(strPtr);
+            char = _MMU.read(strPtr);
+            if (char === undefined) {
+                return;
+            }
             buffer += String.fromCharCode(char);
+            strPtr++;
         }
         _StdOut.putText(buffer);
-        return TSOS.SUCCESS;
     }
+    TSOS.writeStrConsole = writeStrConsole;
 })(TSOS || (TSOS = {}));
 //# sourceMappingURL=spudAPI.js.map

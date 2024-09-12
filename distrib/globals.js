@@ -11,7 +11,7 @@
 // Global CONSTANTS (TypeScript 1.5 introduced const. Very cool.)
 //
 const APP_NAME = "potatOS"; // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION = "0.2.0"; // What did you expect?
+const APP_VERSION = "0.2.1"; // What did you expect?
 const CPU_CLOCK_INTERVAL = 25; // This is in ms (milliseconds) so 1000 = 1 second.
 var IQR;
 (function (IQR) {
@@ -22,7 +22,9 @@ var IQR;
     IQR[IQR["writeIntConsole"] = 3] = "writeIntConsole";
     IQR[IQR["writeStrConsole"] = 4] = "writeStrConsole";
 })(IQR || (IQR = {}));
-const MEM_SIZE = 0x10000;
+const NUM_PAGES = 0x100;
+const PAGE_SIZE = 0x100;
+const MEM_SIZE = NUM_PAGES * PAGE_SIZE;
 const nullptr = 0x0000;
 //bytes are unchecked
 function leToU16(lowByte, highByte) { return (highByte << 8) | lowByte; }
@@ -46,6 +48,7 @@ let _Kernel;
 let _KernelInterruptQueue = null;
 let _KernelInputQueue = null;
 let _KernelBuffers = null;
+let _Scheduler = null;
 // Standard input and output
 let _StdIn = null;
 let _StdOut = null;

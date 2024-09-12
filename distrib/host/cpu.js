@@ -36,16 +36,18 @@ var TSOS;
             this.isExecuting = false;
         }
         fetch() {
-            const pPtr = _MMU.toPhysical(this.PC);
-            if (pPtr === undefined) {
+            const buffer = _MMU.read(this.PC);
+            if (buffer === undefined) {
                 return undefined;
             }
-            const buffer = _MemoryController.read(pPtr);
             this.PC++;
             return buffer;
         }
         segFault() {
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [ /*TODO get currently-running process ID*/]));
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SEGMENTATION_FAULT]));
+        }
+        illegalInstruction() {
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.ILLEGAL_INSTRUCTION]));
         }
         cycle() {
             _Kernel.krnTrace('CPU cycle');
@@ -58,12 +60,10 @@ var TSOS;
             }
             const IR = byte;
             if (!Object.values(OpCode).includes(IR)) {
-                //TODO kill process and display illegal instruction
-                return;
+                return this.illegalInstruction();
             }
             let arg0;
             let arg1;
-            let pPtr;
             let buffer;
             //decode and execute
             switch (IR) {
@@ -84,11 +84,10 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    pPtr = _MMU.toPhysical(leToU16(arg0, arg1));
-                    if (pPtr === undefined) {
+                    this.Acc = _MMU.read(leToU16(arg0, arg1));
+                    if (this.Acc === undefined) {
                         return this.segFault();
                     }
-                    this.Acc = _MemoryController.read(pPtr);
                     this.Zflag = this.Acc === 0;
                     break;
                 case OpCode.STAa:
@@ -100,11 +99,9 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    pPtr = _MMU.toPhysical(leToU16(arg0, arg1));
-                    if (pPtr === undefined) {
+                    if (!_MMU.write(leToU16(arg0, arg1), this.Acc)) {
                         return this.segFault();
                     }
-                    _MemoryController.write(pPtr, this.Acc);
                     break;
                 case OpCode.TXA:
                     this.Acc = this.Xreg;
@@ -123,11 +120,10 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    pPtr = _MMU.toPhysical(leToU16(arg0, arg1));
-                    if (pPtr === undefined) {
+                    buffer = _MMU.read(leToU16(arg0, arg1));
+                    if (buffer === undefined) {
                         return this.segFault();
                     }
-                    buffer = _MemoryController.read(pPtr);
                     if (buffer < 0x80) {
                         this.Acc += buffer;
                     }
@@ -156,11 +152,10 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    pPtr = _MMU.toPhysical(leToU16(arg0, arg1));
-                    if (pPtr === undefined) {
+                    this.Xreg = _MMU.read(leToU16(arg0, arg1));
+                    if (this.Xreg === undefined) {
                         return this.segFault();
                     }
-                    this.Xreg = _MemoryController.read(pPtr);
                     this.Zflag = this.Xreg === 0;
                     break;
                 case OpCode.TAX:
@@ -184,11 +179,10 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    pPtr = _MMU.toPhysical(leToU16(arg0, arg1));
-                    if (pPtr === undefined) {
+                    this.Yreg = _MMU.read(leToU16(arg0, arg1));
+                    if (this.Yreg === undefined) {
                         return this.segFault();
                     }
-                    this.Yreg = _MemoryController.read(pPtr);
                     this.Zflag = this.Yreg === 0;
                     break;
                 case OpCode.TAY:
@@ -197,7 +191,7 @@ var TSOS;
                     break;
                 case OpCode.NOP: break;
                 case OpCode.BRK:
-                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [ /*TODO get currently-running process ID*/]));
+                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SUCCESS]));
                     break;
                 case OpCode.CPXa:
                     arg0 = this.fetch();
@@ -208,11 +202,10 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    pPtr = _MMU.toPhysical(leToU16(arg0, arg1));
-                    if (pPtr === undefined) {
+                    this.Zflag = this.Xreg === _MMU.read(leToU16(arg0, arg1));
+                    if (this.Zflag === undefined) {
                         return this.segFault();
                     }
-                    this.Zflag = this.Xreg === _MemoryController.read(pPtr);
                     break;
                 case OpCode.BNEr:
                     arg0 = this.fetch();
@@ -237,16 +230,18 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    pPtr = _MMU.toPhysical(leToU16(arg0, arg1));
-                    if (pPtr === undefined) {
+                    const vPtr = leToU16(arg0, arg1);
+                    buffer = _MMU.read(vPtr) + 1;
+                    if (buffer === undefined) {
                         return this.segFault();
                     }
-                    buffer = _MemoryController.read(pPtr) + 1;
                     if (this.Acc > 0xFF) {
                         this.Acc = 0;
                     }
                     this.Zflag = this.Acc === 0;
-                    _MemoryController.write(pPtr, buffer);
+                    if (!_MMU.write(vPtr, buffer)) {
+                        return this.segFault();
+                    }
                     break;
                 case OpCode.SYS:
                     let iqr;
@@ -266,6 +261,8 @@ var TSOS;
                     }
                     _KernelInterruptQueue.enqueue(new TSOS.Interrupt(iqr, params));
                     break;
+                default:
+                    this.illegalInstruction();
             }
         }
     }

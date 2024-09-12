@@ -19,43 +19,53 @@ module TSOS {
 
 	//User-mode system call functions
 
-	//@param params - process ID, exit code.
-	//@returns ExitCode | SignalCode - ExitCode; SignalCode if fatal error.
-	function kill(params: any[]): ExitCode {
-		if (params.length !== 2) {return SHELL_MISUSE;}
-		_CPU.isExecuting = false;
-
-		//TODO kill the currently-running process. I might need to pass the process ID as a parameter
-		//If it tries to kill the process right before a context switch, the active process ID might change, so I should pass it in before that.
-
+	//Kills the process with the given process ID.
+	//@param params - [process ID, exit code].
+	export function kill(params: any[]): void {
+		if (params.length !== 2) {return;}
 		const pid: number = params[0];
-
-		(params[0] as ExitCode).processPrintDesc();
-
-		return SUCCESS;
+		if (_Scheduler.currPCB.pid === pid) {
+			_Scheduler.currPCB.free();
+			_Scheduler.currPCB = null;
+		} else {
+			let queue: Queue<ProcessControlBlock> = new Queue<ProcessControlBlock>();
+			while (!_Scheduler.pcbQueue.isEmpty()) {
+				let pcb: ProcessControlBlock = _Scheduler.pcbQueue.dequeue();
+				if (pcb.pid === pid) {
+					pcb.free();
+				} else {
+					queue.enqueue(pcb);
+				}
+			}
+			while (!queue.isEmpty()) {
+				_Scheduler.pcbQueue.enqueue(queue.dequeue());
+			}
+		}
+		(params[1] as ExitCode).processPrintDesc();
+		_StdOut.advanceLine();
+		_OsShell.putPrompt();
 	}
 
-	//@params params - the byte in the Y-register.
-	//@returns ExitCode | SignalCode - ExitCode; SignalCode if fatal error.
-	function writeIntConsole(params: any[]): ExitCode {
-		if (params.length !== 1) {return SHELL_MISUSE;}
+	//Writes the byte in the Y-register to the standard output as an integer.
+	//@params params - [the byte in the Y-register].
+	export function writeIntConsole(params: any[]): void {
+		if (params.length !== 1) {return;}
 		_StdOut.putText((params[0] as number).toString(16));
-		return SUCCESS;
 	}
 
-	//@params params - a pointer to the null-terminated string in memory, given by the indirect address in the Y-register.
-	//@returns ExitCode | SignalCode - ExitCode; SignalCode if fatal error.
-	function writeStrConsole(params: any[]): ExitCode {
-		if (params.length !== 1) {return SHELL_MISUSE;}
+	//Writes the null-terminated-string at the pointer to the standard output given by the indirect address in the Y-register.
+	//@params params - [a pointer to the null-terminated-string in memory].
+	export function writeStrConsole(params: any[]): void {
+		if (params.length !== 1) {return;}
 		let buffer: string = "";
-		let strPtr: number | undefined = _MMU.toPhysical(params[0]);
-		if (strPtr === undefined) {return SHELL_MISUSE;}
+		let strPtr: number = params[0];
 		let char: number | undefined = undefined;
 		while (char !== 0) {
-			char = _MemoryController.read(strPtr);
+			char = _MMU.read(strPtr);
+			if (char === undefined) {return;}
 			buffer += String.fromCharCode(char);
+			strPtr++;
 		}
 		_StdOut.putText(buffer);
-		return SUCCESS;
 	}
 }

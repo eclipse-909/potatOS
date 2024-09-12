@@ -69,11 +69,28 @@ var TSOS;
                 const interrupt = _KernelInterruptQueue.dequeue();
                 this.krnInterruptHandler(interrupt.irq, interrupt.params);
             }
-            else if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
-                _CPU.cycle();
-            }
-            else { // If there are no interrupts and there is nothing being executed then just be idle.
-                this.krnTrace("Idle");
+            else {
+                //TODO this will need to be changed when the scheduler is fully implemented
+                if (!_Scheduler.currPCB) {
+                    if (!_Scheduler.pcbQueue.isEmpty()) {
+                        _Scheduler.currPCB = _Scheduler.pcbQueue.dequeue();
+                        _CPU.PC = _Scheduler.currPCB.PC;
+                        _CPU.Acc = _Scheduler.currPCB.Acc;
+                        _CPU.Xreg = _Scheduler.currPCB.Xreg;
+                        _CPU.Yreg = _Scheduler.currPCB.Yreg;
+                        _CPU.Zflag = _Scheduler.currPCB.Zflag;
+                        _CPU.isExecuting = true;
+                    }
+                    else {
+                        _CPU.isExecuting = false;
+                    }
+                }
+                if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
+                    _CPU.cycle();
+                }
+                else { // If there are no interrupts and there is nothing being executed then just be idle.
+                    this.krnTrace("Idle");
+                }
             }
         }
         //
@@ -104,6 +121,15 @@ var TSOS;
                 case IQR.keyboard:
                     _krnKeyboardDriver.isr(params); // Kernel mode device driver
                     _StdIn.handleInput();
+                    break;
+                case IQR.kill:
+                    TSOS.kill(params);
+                    break;
+                case IQR.writeIntConsole:
+                    TSOS.writeIntConsole(params);
+                    break;
+                case IQR.writeStrConsole:
+                    TSOS.writeStrConsole(params);
                     break;
                 default:
                     this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");

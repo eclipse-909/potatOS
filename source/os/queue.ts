@@ -9,23 +9,18 @@
    ------------ */
 
 module TSOS {
-	export class Queue {
-		constructor(public q = []) {
-		}
+	export class Queue<T> {
+		private q: T[];
 
-		public getSize() {
-			return this.q.length;
-		}
+		constructor() {this.q = [];}
 
-		public isEmpty(){
-			return (this.q.length == 0);
-		}
+		public getSize(): number {return this.q.length;}
 
-		public enqueue(element) {
-			this.q.push(element);
-		}
+		public isEmpty(): boolean {return (this.q.length === 0);}
 
-		public dequeue() {
+		public enqueue(element: T): void {this.q.push(element);}
+
+		public dequeue(): T | null {
 			let retVal = null;
 			if (this.q.length > 0) {
 				retVal = this.q.shift();
@@ -33,7 +28,7 @@ module TSOS {
 			return retVal;
 		}
 
-		public toString() {
+		public toString(): string {
 			let retVal = "";
 			for (const i in this.q) {
 				retVal += "[" + this.q[i] + "] ";

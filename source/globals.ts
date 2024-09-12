@@ -13,7 +13,7 @@
 //
 
 const APP_NAME: string    = "potatOS";   // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION: string = "0.2.0";   // What did you expect?
+const APP_VERSION: string = "0.2.1";   // What did you expect?
 
 const CPU_CLOCK_INTERVAL: number = 25;   // This is in ms (milliseconds) so 1000 = 1 second.
 
@@ -26,7 +26,9 @@ enum IQR {
 	writeStrConsole
 }
 
-const MEM_SIZE: number = 0x10000;
+const NUM_PAGES: number = 0x100;
+const PAGE_SIZE: number = 0x100;
+const MEM_SIZE: number = NUM_PAGES * PAGE_SIZE;
 const nullptr: number = 0x0000;
 
 //bytes are unchecked
@@ -54,9 +56,11 @@ let _Trace: boolean = true;              // Default the OS trace to be on.
 
 // The OS Kernel and its queues.
 let _Kernel: TSOS.Kernel;
-let _KernelInterruptQueue: TSOS.Queue = null;
-let _KernelInputQueue: TSOS.Queue = null;
+let _KernelInterruptQueue: TSOS.Queue<TSOS.Interrupt> = null;
+let _KernelInputQueue: TSOS.Queue<string> = null;
 let _KernelBuffers = null;
+
+let _Scheduler: TSOS.Scheduler = null;
 
 // Standard input and output
 let _StdIn: TSOS.Console = null;

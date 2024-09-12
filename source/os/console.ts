@@ -83,7 +83,7 @@ module TSOS {
 						if (tokens.length !== 1) {break;}
 						const token: string = tokens[0];
 						const possCmds: string[] = [];
-						for (const cmd of COMMAND_LIST) {
+						for (const cmd of ShellCommand.COMMAND_LIST) {
 							if (cmd.command.substring(0, token.length) === token) {
 								possCmds.push(cmd.command);
 							}

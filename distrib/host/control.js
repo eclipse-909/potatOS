@@ -66,6 +66,7 @@ var TSOS;
             document.getElementById("btnReset").disabled = false;
             // .. set focus on the OS console display ...
             document.getElementById("display").focus();
+            _Scheduler = new TSOS.Scheduler();
             _MemoryController = new TSOS.MemoryController();
             _MMU = new TSOS.MMU();
             // ... Create and initialize the CPU (because it's part of the hardware)  ...

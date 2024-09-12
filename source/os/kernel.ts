@@ -17,9 +17,9 @@ module TSOS {
 			Control.hostLog("bootstrap", "host");  // Use hostLog because we ALWAYS want this, even if _Trace is off.
 
 			// Initialize our global queues.
-			_KernelInterruptQueue = new Queue();  // A (currently) non-priority queue for interrupt requests (IRQs).
+			_KernelInterruptQueue = new Queue<Interrupt>();  // A (currently) non-priority queue for interrupt requests (IRQs).
 			_KernelBuffers = [];         // Buffers... for the kernel.
-			_KernelInputQueue = new Queue();      // Where device input lands before being processed out somewhere.
+			_KernelInputQueue = new Queue<string>();      // Where device input lands before being processed out somewhere.
 
 			// Initialize the console.
 			_Console = new Console();             // The command line interface / console I/O device.
@@ -81,10 +81,26 @@ module TSOS {
 				// TODO (maybe): Implement a priority queue based on the IRQ number/id to enforce interrupt priority.
 				const interrupt = _KernelInterruptQueue.dequeue();
 				this.krnInterruptHandler(interrupt.irq, interrupt.params);
-			} else if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
-				_CPU.cycle();
-			} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
-				this.krnTrace("Idle");
+			} else {
+				//TODO this will need to be changed when the scheduler is fully implemented
+				if (!_Scheduler.currPCB) {
+					if (!_Scheduler.pcbQueue.isEmpty()) {
+						_Scheduler.currPCB = _Scheduler.pcbQueue.dequeue();
+						_CPU.PC = _Scheduler.currPCB.PC;
+						_CPU.Acc = _Scheduler.currPCB.Acc;
+						_CPU.Xreg = _Scheduler.currPCB.Xreg;
+						_CPU.Yreg = _Scheduler.currPCB.Yreg;
+						_CPU.Zflag = _Scheduler.currPCB.Zflag;
+						_CPU.isExecuting = true;
+					} else {
+						_CPU.isExecuting = false;
+					}
+				}
+				if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
+					_CPU.cycle();
+				} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
+					this.krnTrace("Idle");
+				}
 			}
 		}
 
@@ -119,6 +135,15 @@ module TSOS {
 				case IQR.keyboard:
 					_krnKeyboardDriver.isr(params);   // Kernel mode device driver
 					_StdIn.handleInput();
+					break;
+				case IQR.kill:
+					kill(params);
+					break;
+				case IQR.writeIntConsole:
+					writeIntConsole(params);
+					break;
+				case IQR.writeStrConsole:
+					writeStrConsole(params);
 					break;
 				default:
 					this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");

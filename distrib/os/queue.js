@@ -11,18 +11,10 @@ var TSOS;
 (function (TSOS) {
     class Queue {
         q;
-        constructor(q = []) {
-            this.q = q;
-        }
-        getSize() {
-            return this.q.length;
-        }
-        isEmpty() {
-            return (this.q.length == 0);
-        }
-        enqueue(element) {
-            this.q.push(element);
-        }
+        constructor() { this.q = []; }
+        getSize() { return this.q.length; }
+        isEmpty() { return (this.q.length === 0); }
+        enqueue(element) { this.q.push(element); }
         dequeue() {
             let retVal = null;
             if (this.q.length > 0) {

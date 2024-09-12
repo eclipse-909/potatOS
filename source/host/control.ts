@@ -84,7 +84,8 @@ module TSOS {
 			// .. set focus on the OS console display ...
 			document.getElementById("display").focus();
 
-			_MemoryController = new MemoryController();
+			_Scheduler = new Scheduler();
+			_MemoryController = new TSOS.MemoryController();
 			_MMU = new MMU();
 
 			// ... Create and initialize the CPU (because it's part of the hardware)  ...

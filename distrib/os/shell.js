@@ -156,7 +156,7 @@ var TSOS;
         }
         executeCommand(command, input = []) {
             let cmd = undefined;
-            for (const c of TSOS.COMMAND_LIST) {
+            for (const c of TSOS.ShellCommand.COMMAND_LIST) {
                 if (c.command === command.name) {
                     cmd = c;
                     break;
@@ -171,7 +171,7 @@ var TSOS;
                     this.exeFnAsCmd(this.shellApology, []);
                 }
                 return {
-                    exitCode: TSOS.COMMAND_NOT_FOUND,
+                    exitCode: TSOS.ExitCode.COMMAND_NOT_FOUND,
                     retValue: _SarcasticMode
                         ? "Unbelievable. You, [subject name here],\nmust be the pride of [subject hometown here]."
                         : "Type 'help' for, well... help."
@@ -222,21 +222,24 @@ var TSOS;
             }
             //return early if shutting down the kernel
             let currCommand = command;
+            let cmd = undefined;
             do { //this is the first legitimate use of a do/while loop I've ever had
-                let cmd = undefined;
-                for (const c of TSOS.COMMAND_LIST) {
+                for (const c of TSOS.ShellCommand.COMMAND_LIST) {
                     if (c.command === command.name) {
                         cmd = c;
                         break;
                     }
                 }
-                if (cmd && cmd.func === TSOS.shellShutdown) {
+                if (cmd && cmd.func === TSOS.ShellCommand.shellShutdown) {
                     return;
                 }
                 currCommand = currCommand.next;
             } while (currCommand);
             if (_StdOut.currentXPosition > 0) {
                 _StdOut.advanceLine();
+            }
+            if (cmd && cmd.func === TSOS.ShellCommand.shellRun) {
+                return;
             }
             this.putPrompt();
         }
@@ -247,7 +250,7 @@ var TSOS;
                 _StdOut.putText(output.retValue);
             }
             //return early if shutting down the kernel
-            if (func === TSOS.shellShutdown) {
+            if (func === TSOS.ShellCommand.shellShutdown) {
                 return;
             }
             if (_StdOut.currentXPosition > 0) {
@@ -260,7 +263,7 @@ var TSOS;
             _StdOut.advanceLine();
             _StdOut.putText("Bitch.");
             _SarcasticMode = true;
-            return { exitCode: TSOS.SUCCESS, retValue: undefined };
+            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: undefined };
         }
         shellApology(_args) {
             if (_SarcasticMode) {
@@ -272,7 +275,7 @@ var TSOS;
             else {
                 _StdOut.putText("For what?");
             }
-            return { exitCode: TSOS.SUCCESS, retValue: undefined };
+            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: undefined };
         }
     }
     TSOS.Shell = Shell;

@@ -19,7 +19,7 @@ module TSOS {
 		name: string;
 		args?: string[];
 		next?: Command; // Reference to the next command (for chaining)
-		connector?: string; // Symbol like |, &&, >>
+		connector?: string; // Symbol like |, &&, ||
 	}
 
 	export class Shell {
@@ -166,7 +166,7 @@ module TSOS {
 
 		executeCommand(command: Command, input: any = []): {exitCode: ExitCode, retValue: any} {
 			let cmd: ShellCommand | undefined = undefined;
-			for (const c of COMMAND_LIST) {
+			for (const c of ShellCommand.COMMAND_LIST) {
 				if (c.command === command.name) {
 					cmd = c;
 					break;
@@ -180,7 +180,7 @@ module TSOS {
 					this.exeFnAsCmd(this.shellApology, []);
 				}
 				return {
-					exitCode: COMMAND_NOT_FOUND,
+					exitCode: ExitCode.COMMAND_NOT_FOUND,
 					retValue: _SarcasticMode
 						? "Unbelievable. You, [subject name here],\nmust be the pride of [subject hometown here]."
 						: "Type 'help' for, well... help."
@@ -231,21 +231,24 @@ module TSOS {
 			}
 			//return early if shutting down the kernel
 			let currCommand: Command = command;
+			let cmd: ShellCommand | undefined = undefined;
 			do {//this is the first legitimate use of a do/while loop I've ever had
-				let cmd: ShellCommand | undefined = undefined;
-				for (const c of COMMAND_LIST) {
+				for (const c of ShellCommand.COMMAND_LIST) {
 					if (c.command === command.name) {
 						cmd = c;
 						break;
 					}
 				}
-				if (cmd && cmd.func === shellShutdown) {
+				if (cmd && cmd.func === ShellCommand.shellShutdown) {
 					return;
 				}
 				currCommand = currCommand.next;
 			} while (currCommand);
 			if (_StdOut.currentXPosition > 0) {
 				_StdOut.advanceLine();
+			}
+			if (cmd && cmd.func === ShellCommand.shellRun) {
+				return;
 			}
 			this.putPrompt();
 		}
@@ -257,7 +260,7 @@ module TSOS {
 				_StdOut.putText(output.retValue);
 			}
 			//return early if shutting down the kernel
-			if (func === shellShutdown) {
+			if (func === ShellCommand.shellShutdown) {
 				return;
 			}
 			if (_StdOut.currentXPosition > 0) {
@@ -271,7 +274,7 @@ module TSOS {
 			_StdOut.advanceLine();
 			_StdOut.putText("Bitch.");
 			_SarcasticMode = true;
-			return {exitCode: SUCCESS, retValue: undefined};
+			return {exitCode: ExitCode.SUCCESS, retValue: undefined};
 		}
 
 		public shellApology(_args: string[]): {exitCode: ExitCode, retValue: any} {
@@ -283,7 +286,7 @@ module TSOS {
 			} else {
 				_StdOut.putText("For what?");
 			}
-			return {exitCode: SUCCESS, retValue: undefined};
+			return {exitCode: ExitCode.SUCCESS, retValue: undefined};
 		}
 	}
 }

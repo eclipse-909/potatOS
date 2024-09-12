@@ -92,7 +92,7 @@ var TSOS;
                         }
                         const token = tokens[0];
                         const possCmds = [];
-                        for (const cmd of TSOS.COMMAND_LIST) {
+                        for (const cmd of TSOS.ShellCommand.COMMAND_LIST) {
                             if (cmd.command.substring(0, token.length) === token) {
                                 possCmds.push(cmd.command);
                             }

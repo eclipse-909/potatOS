@@ -49,7 +49,7 @@ var TSOS;
                 // Note the pressed key code in the params (Mozilla-specific).
                 const params = [event.which, event.shiftKey];
                 // Enqueue this interrupt on the kernel interrupt queue so that it gets to the Interrupt handler.
-                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.keyboard, params));
+                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.keyboard, params));
             }
         }
     }

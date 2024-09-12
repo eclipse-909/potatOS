@@ -247,9 +247,9 @@ module TSOS {
 			if (_StdOut.currentXPosition > 0) {
 				_StdOut.advanceLine();
 			}
-			if (cmd && cmd.func === ShellCommand.shellRun) {
-				return;
-			}
+			// if (cmd && cmd.func === ShellCommand.shellRun) {
+			// 	return;
+			// }
 			this.putPrompt();
 		}
 

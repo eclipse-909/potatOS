@@ -40,11 +40,11 @@ module TSOS {
 		}
 
 		segFault(): void {
-			_KernelInterruptQueue.enqueue(new Interrupt(IQR.kill, [_Scheduler.currPCB.pid, ExitCode.SEGMENTATION_FAULT]));
+			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.SEGMENTATION_FAULT]));
 		}
 
 		illegalInstruction(): void {
-			_KernelInterruptQueue.enqueue(new Interrupt(IQR.kill, [_Scheduler.currPCB.pid, ExitCode.ILLEGAL_INSTRUCTION]));
+			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.ILLEGAL_INSTRUCTION]));
 		}
 
 		public cycle(): void {
@@ -152,7 +152,7 @@ module TSOS {
 					break;
 				case OpCode.NOP:break;
 				case OpCode.BRK:
-					_KernelInterruptQueue.enqueue(new Interrupt(IQR.kill, [_Scheduler.currPCB.pid, ExitCode.SUCCESS]));
+					_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.SUCCESS]));
 					break;
 				case OpCode.CPXa:
 					arg0 = this.fetch();
@@ -188,13 +188,13 @@ module TSOS {
 					if (!_MMU.write(vPtr, buffer)) {return this.segFault();}
 					break;
 				case OpCode.SYS:
-					let iqr: IQR;
+					let iqr: IRQ;
 					let params: any[] = [];
 					if (this.Xreg === 0x01) {
-						iqr = IQR.writeIntConsole;
+						iqr = IRQ.writeIntConsole;
 						params[0] = this.Yreg;
 					} else if (this.Xreg === 0x02) {
-						iqr = IQR.writeStrConsole;
+						iqr = IRQ.writeStrConsole;
 						if (this.Yreg < 0x80) {
 							params[0] = this.PC + this.Yreg;
 						} else {

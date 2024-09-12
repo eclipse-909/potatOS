@@ -32,6 +32,18 @@ module TSOS {
 			this.currentYPosition = this.currentFontSize;
 		}
 
+		//Clears the line, including the prompt
+		clearLine(): void {
+			_DrawingContext.clearRect(
+				0,
+				this.currentYPosition - _DefaultFontSize,
+				_DrawingContext.measureText(this.currentFont, this.currentFontSize, _OsShell.promptStr + this.buffer),
+				_DefaultFontSize + 5
+			);
+			this.currentXPosition = 0;
+			this.buffer = "";
+		}
+
 		//Clears the text of the current prompt
 		clearPrompt(): void {
 			const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer);
@@ -122,6 +134,7 @@ module TSOS {
 			}
 		}
 
+		//REMEMBER THIS DOES NOT ADD THE TEXT TO THE BUFFER!!!!!!!!!!!!!!!
 		public putText(text: string): void {
 			if (text !== "") {
 				const lines: string[] = text.split(/\r?\n/);//The thing being printed might contain a carriage return or new line

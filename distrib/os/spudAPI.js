@@ -28,7 +28,7 @@ var TSOS;
             _Scheduler.currPCB.free();
             _Scheduler.currPCB = null;
         }
-        else {
+        else if (!_Scheduler.idlePcbs.delete(pid)) {
             let queue = new TSOS.Queue();
             while (!_Scheduler.pcbQueue.isEmpty()) {
                 let pcb = _Scheduler.pcbQueue.dequeue();
@@ -43,9 +43,13 @@ var TSOS;
                 _Scheduler.pcbQueue.enqueue(queue.dequeue());
             }
         }
+        const buffer = _StdIn.buffer;
+        _Console.clearLine();
         params[1].processPrintDesc();
         _StdOut.advanceLine();
         _OsShell.putPrompt();
+        _StdIn.buffer = buffer;
+        _StdOut.putText(buffer);
     }
     TSOS.kill = kill;
     //Writes the byte in the Y-register to the standard output as an integer.

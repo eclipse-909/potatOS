@@ -4,7 +4,7 @@
 
 module TSOS {
 	export class Interrupt {
-		constructor(public irq: IQR, public params: any[]) {
+		constructor(public irq: IRQ, public params: any[]) {
 		}
 	}
 }

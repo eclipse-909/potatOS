@@ -11,17 +11,17 @@
 // Global CONSTANTS (TypeScript 1.5 introduced const. Very cool.)
 //
 const APP_NAME = "potatOS"; // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION = "0.2.1"; // What did you expect?
-const CPU_CLOCK_INTERVAL = 25; // This is in ms (milliseconds) so 1000 = 1 second.
-var IQR;
-(function (IQR) {
-    IQR[IQR["timer"] = 0] = "timer";
+const APP_VERSION = "0.2.2"; // What did you expect?
+const CPU_CLOCK_INTERVAL = 250; // This is in ms (milliseconds) so 1000 = 1 second.
+var IRQ;
+(function (IRQ) {
+    IRQ[IRQ["timer"] = 0] = "timer";
     // NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
-    IQR[IQR["keyboard"] = 1] = "keyboard";
-    IQR[IQR["kill"] = 2] = "kill";
-    IQR[IQR["writeIntConsole"] = 3] = "writeIntConsole";
-    IQR[IQR["writeStrConsole"] = 4] = "writeStrConsole";
-})(IQR || (IQR = {}));
+    IRQ[IRQ["keyboard"] = 1] = "keyboard";
+    IRQ[IRQ["kill"] = 2] = "kill";
+    IRQ[IRQ["writeIntConsole"] = 3] = "writeIntConsole";
+    IRQ[IRQ["writeStrConsole"] = 4] = "writeStrConsole";
+})(IRQ || (IRQ = {}));
 const NUM_PAGES = 0x100;
 const PAGE_SIZE = 0x100;
 const MEM_SIZE = NUM_PAGES * PAGE_SIZE;

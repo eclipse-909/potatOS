@@ -183,7 +183,7 @@ module TSOS {
 			}
 			const pcb: ProcessControlBlock = ProcessControlBlock.new(numberArray);
 			_Scheduler.idlePcbs.set(pcb.pid, pcb);
-			return {exitCode: ExitCode.SUCCESS, retValue: `Program loaded into memory with process ID ${pcb.pid}`};
+			return {exitCode: ExitCode.SUCCESS, retValue: `Program loaded into memory with process ID ${pcb.pid}.`};
 		}
 
 		static shellRun(args: string[]): {exitCode: ExitCode, retValue: any} {
@@ -194,7 +194,13 @@ module TSOS {
 			if (Number.isNaN(pid)) {
 				return this.shellBSOD([]);//this code should be unreachable
 			}
-			_Scheduler.pcbQueue.enqueue(_Scheduler.idlePcbs.get(pid));
+			const pcb: ProcessControlBlock | undefined = _Scheduler.idlePcbs.get(pid);
+			if (!pcb) {
+				return {exitCode: ExitCode.GENERIC_ERROR, retValue: `Could not locate process ${pid}.`};
+			}
+			_Scheduler.pcbQueue.enqueue(pcb);
+			//I assume that I unload the program from memory once it finishes running.
+			//The program should be loaded from the disk every time you want to run it.
 			_Scheduler.idlePcbs.delete(pid);
 			return {exitCode: ExitCode.SUCCESS, retValue: undefined};
 		}

@@ -27,7 +27,7 @@ module TSOS {
 		if (_Scheduler.currPCB.pid === pid) {
 			_Scheduler.currPCB.free();
 			_Scheduler.currPCB = null;
-		} else {
+		} else if (!_Scheduler.idlePcbs.delete(pid)) {
 			let queue: Queue<ProcessControlBlock> = new Queue<ProcessControlBlock>();
 			while (!_Scheduler.pcbQueue.isEmpty()) {
 				let pcb: ProcessControlBlock = _Scheduler.pcbQueue.dequeue();
@@ -41,9 +41,13 @@ module TSOS {
 				_Scheduler.pcbQueue.enqueue(queue.dequeue());
 			}
 		}
+		const buffer: string = _StdIn.buffer;
+		_Console.clearLine();
 		(params[1] as ExitCode).processPrintDesc();
 		_StdOut.advanceLine();
 		_OsShell.putPrompt();
+		_StdIn.buffer = buffer;
+		_StdOut.putText(buffer);
 	}
 
 	//Writes the byte in the Y-register to the standard output as an integer.

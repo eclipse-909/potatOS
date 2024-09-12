@@ -34,6 +34,12 @@ var TSOS;
             this.currentXPosition = 0;
             this.currentYPosition = this.currentFontSize;
         }
+        //Clears the line, including the prompt
+        clearLine() {
+            _DrawingContext.clearRect(0, this.currentYPosition - _DefaultFontSize, _DrawingContext.measureText(this.currentFont, this.currentFontSize, _OsShell.promptStr + this.buffer), _DefaultFontSize + 5);
+            this.currentXPosition = 0;
+            this.buffer = "";
+        }
         //Clears the text of the current prompt
         clearPrompt() {
             const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer);
@@ -131,6 +137,7 @@ var TSOS;
                 }
             }
         }
+        //REMEMBER THIS DOES NOT ADD THE TEXT TO THE BUFFER!!!!!!!!!!!!!!!
         putText(text) {
             if (text !== "") {
                 const lines = text.split(/\r?\n/); //The thing being printed might contain a carriage return or new line

@@ -72,6 +72,7 @@ var TSOS;
             else {
                 //TODO this will need to be changed when the scheduler is fully implemented
                 if (!_Scheduler.currPCB) {
+                    _CPU.isExecuting = false;
                     if (!_Scheduler.pcbQueue.isEmpty()) {
                         _Scheduler.currPCB = _Scheduler.pcbQueue.dequeue();
                         _CPU.PC = _Scheduler.currPCB.PC;
@@ -80,9 +81,6 @@ var TSOS;
                         _CPU.Yreg = _Scheduler.currPCB.Yreg;
                         _CPU.Zflag = _Scheduler.currPCB.Zflag;
                         _CPU.isExecuting = true;
-                    }
-                    else {
-                        _CPU.isExecuting = false;
                     }
                 }
                 if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
@@ -115,20 +113,20 @@ var TSOS;
             // Note: There is no need to "dismiss" or acknowledge the interrupts in our design here.
             //       Maybe the hardware simulation will grow to support/require that in the future.
             switch (irq) {
-                case IQR.timer:
+                case IRQ.timer:
                     this.krnTimerISR(); // Kernel built-in routine for timers (not the clock).
                     break;
-                case IQR.keyboard:
+                case IRQ.keyboard:
                     _krnKeyboardDriver.isr(params); // Kernel mode device driver
                     _StdIn.handleInput();
                     break;
-                case IQR.kill:
+                case IRQ.kill:
                     TSOS.kill(params);
                     break;
-                case IQR.writeIntConsole:
+                case IRQ.writeIntConsole:
                     TSOS.writeIntConsole(params);
                     break;
-                case IQR.writeStrConsole:
+                case IRQ.writeStrConsole:
                     TSOS.writeStrConsole(params);
                     break;
                 default:

@@ -44,10 +44,10 @@ var TSOS;
             return buffer;
         }
         segFault() {
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SEGMENTATION_FAULT]));
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SEGMENTATION_FAULT]));
         }
         illegalInstruction() {
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.ILLEGAL_INSTRUCTION]));
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.ILLEGAL_INSTRUCTION]));
         }
         cycle() {
             _Kernel.krnTrace('CPU cycle');
@@ -191,7 +191,7 @@ var TSOS;
                     break;
                 case OpCode.NOP: break;
                 case OpCode.BRK:
-                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IQR.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SUCCESS]));
+                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SUCCESS]));
                     break;
                 case OpCode.CPXa:
                     arg0 = this.fetch();
@@ -247,11 +247,11 @@ var TSOS;
                     let iqr;
                     let params = [];
                     if (this.Xreg === 0x01) {
-                        iqr = IQR.writeIntConsole;
+                        iqr = IRQ.writeIntConsole;
                         params[0] = this.Yreg;
                     }
                     else if (this.Xreg === 0x02) {
-                        iqr = IQR.writeStrConsole;
+                        iqr = IRQ.writeStrConsole;
                         if (this.Yreg < 0x80) {
                             params[0] = this.PC + this.Yreg;
                         }

@@ -29,6 +29,12 @@ var TSOS;
             }
             return retVal;
         }
+        peek() {
+            return this.q.length === 0 ? null : this.q[0];
+        }
+        clear() {
+            this.q = []; //this feels so wrong, I like manual memory management
+        }
     }
     TSOS.Queue = Queue;
 })(TSOS || (TSOS = {}));

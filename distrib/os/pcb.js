@@ -3,6 +3,9 @@ var TSOS;
     class ProcessControlBlock {
         pid;
         pageTable;
+        //stdIn: InStream;//programs don't actually have input
+        stdOut;
+        stdErr;
         PC;
         Acc;
         Xreg;
@@ -19,6 +22,8 @@ var TSOS;
             pcb.pid = ProcessControlBlock.highestPID;
             ProcessControlBlock.highestPID++;
             pcb.pageTable = new Map();
+            pcb.stdOut = _StdOut; //default to the console stdout and stderr
+            pcb.stdErr = _StdErr;
             pcb.Acc = 0x00;
             pcb.Xreg = 0x00;
             pcb.Yreg = 0x00;

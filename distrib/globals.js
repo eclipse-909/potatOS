@@ -11,8 +11,8 @@
 // Global CONSTANTS (TypeScript 1.5 introduced const. Very cool.)
 //
 const APP_NAME = "potatOS"; // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION = "0.2.2"; // What did you expect?
-const CPU_CLOCK_INTERVAL = 250; // This is in ms (milliseconds) so 1000 = 1 second.
+const APP_VERSION = "0.2.1"; // What did you expect?
+const CPU_CLOCK_INTERVAL = 25; // This is in ms (milliseconds) so 1000 = 1 second.
 var IRQ;
 (function (IRQ) {
     IRQ[IRQ["timer"] = 0] = "timer";
@@ -52,6 +52,7 @@ let _Scheduler = null;
 // Standard input and output
 let _StdIn = null;
 let _StdOut = null;
+let _StdErr = null;
 // UI
 let _Console;
 let _OsShell;

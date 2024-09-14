@@ -2,8 +2,8 @@ var TSOS;
 (function (TSOS) {
     class ShellCommand {
         func;
-        command;
-        description;
+        command = "";
+        description = "";
         constructor(func, command = "", description = "") {
             this.func = func;
             this.command = command;
@@ -16,139 +16,175 @@ var TSOS;
             new ShellCommand(ShellCommand.shellCls, "cls", "- Clears the screen and resets the cursor position."),
             new ShellCommand(ShellCommand.shellMan, "man", "<topic> - Displays the MANual page for <topic>."),
             new ShellCommand(ShellCommand.shellTrace, "trace", "<on | off> - Turns the OS trace on or off."),
-            new ShellCommand(ShellCommand.shellRot13, "rot13", "<string> - Does rot13 obfuscation on <string>."),
-            new ShellCommand(ShellCommand.shellPrompt, "prompt", "<string> - Sets the prompt."),
+            new ShellCommand(ShellCommand.shellRot13, "rot13", "<string...> - Does rot13 obfuscation on <string>."),
+            new ShellCommand(ShellCommand.shellPrompt, "prompt", "<string...> - Sets the prompt."),
             new ShellCommand(ShellCommand.shellDate, "date", "- Displays the current date and time."),
             new ShellCommand(ShellCommand.shellWhereAmI, "whereami", "- Displays the user's current location."),
             new ShellCommand(ShellCommand.shellEcho, "echo", "- Displays the given text to standard output."),
             new ShellCommand(ShellCommand.shellStatus, "status", "- Displays a message to the task bar."),
             new ShellCommand(ShellCommand.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message."),
             new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk."),
-            new ShellCommand(ShellCommand.shellRun, "run", "<process ID> - Run the program in memory with the process ID.")
+            new ShellCommand(ShellCommand.shellRun, "run", "<process ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.")
             // ps  - list the running processes and their IDs
             // kill <id> - kills the specified process id.
         ];
-        static shellVer(args) {
+        static shellVer(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: undefined };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: ver"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: APP_NAME + " version " + APP_VERSION };
+            stdout.output([APP_NAME + " version " + APP_VERSION]);
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellHelp(args) {
+        static shellHelp(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: undefined };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: help"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
-            let text = "Commands:";
+            let text = "Commands:\nKey:\n  <> = required parameter\n  ... = repeatable parameter\n  [] = optional parameter\n  / = either parameter is acceptable";
             for (const i in ShellCommand.COMMAND_LIST) {
                 text += "\n  " + ShellCommand.COMMAND_LIST[i].command + " " + ShellCommand.COMMAND_LIST[i].description;
             }
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: text };
+            stdout.output([text]);
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellShutdown(args) {
+        static shellShutdown(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: undefined };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: shutdown"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
             // Call Kernel shutdown routine.
             _Kernel.krnShutdown();
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: "Shutting down..." };
+            stdout.output(["Shutting down..."]);
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellCls(args) {
+        static shellCls(stdin, _stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: undefined };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: cls"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
             _StdOut.clearScreen();
             _StdOut.resetXY();
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: undefined };
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellMan(args) {
+        static shellMan(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 1) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "Usage: man <topic>  Please supply a topic." };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: man <topic>  Please supply a topic."]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
             const topic = args[0];
             const cmd = ShellCommand.COMMAND_LIST.find((item) => { return item.command === topic; });
             if (cmd) {
-                return { exitCode: TSOS.ExitCode.SUCCESS, retValue: cmd.description };
+                stdout.output([cmd.description]);
+                return TSOS.ExitCode.SUCCESS;
             }
-            switch (topic) {
-                // TODO: Make descriptive MANual page entries for topics other than shell commands.
-                default:
-                    return { exitCode: TSOS.ExitCode.GENERIC_ERROR, retValue: "No manual entry for " + args[0] + "." };
-            }
+            stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No manual entry for " + args[0] + "."]);
+            return TSOS.ExitCode.GENERIC_ERROR;
         }
-        static shellTrace(args) {
+        static shellTrace(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 1) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "Usage: trace <on | off>" };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: trace <on | off>"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
             const setting = args[0];
             switch (setting) {
                 case "on":
                     if (_Trace && _SarcasticMode) {
-                        return { exitCode: TSOS.ExitCode.SUCCESS, retValue: "Trace is already on, doofus." };
+                        stdout.output(["Trace is already on, doofus."]);
+                        return TSOS.ExitCode.SUCCESS;
                     }
                     else {
                         _Trace = true;
-                        return { exitCode: TSOS.ExitCode.SUCCESS, retValue: "Trace ON" };
+                        stdout.output(["Trace ON"]);
+                        return TSOS.ExitCode.SUCCESS;
                     }
                 case "off":
                     _Trace = false;
-                    return { exitCode: TSOS.ExitCode.SUCCESS, retValue: "Trace OFF" };
+                    stdout.output(["Trace OFF"]);
+                    return TSOS.ExitCode.SUCCESS;
                 default:
-                    return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "Invalid argument.  Usage: trace <on | off>." };
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument.  Usage: trace <on | off>."]);
+                    return TSOS.ExitCode.SHELL_MISUSE;
             }
         }
-        static shellRot13(args) {
+        static shellRot13(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length > 0) {
-                return { exitCode: TSOS.ExitCode.SUCCESS, retValue: args.join(' ') + " = '" + TSOS.Utils.rot13(args.join(' ')) + "'" };
+                stdout.output([args.join(' ') + " = '" + TSOS.Utils.rot13(args.join(' ')) + "'"]);
+                return TSOS.ExitCode.SUCCESS;
             }
             else {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "Usage: rot13 <string>  Please supply a string." };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: rot13 <string>  Please supply a string."]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
         }
-        static shellPrompt(args) {
+        static shellPrompt(stdin, _stdout, stderr) {
+            const args = stdin.input();
             if (args.length > 0) {
                 _OsShell.promptStr = args[0];
-                return { exitCode: TSOS.ExitCode.SUCCESS, retValue: undefined };
+                return TSOS.ExitCode.SUCCESS;
             }
             else {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "Usage: prompt <string>  Please supply a string." };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: prompt <string>  Please supply a string."]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
         }
-        static shellDate(args) {
+        static shellDate(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: date" };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: date"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: new Date().toString() };
+            stdout.output([new Date().toString()]);
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellWhereAmI(args) {
+        static shellWhereAmI(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: whereami" };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: whereami"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: "You're at your desk trying to steal my source code... STOP IT!!!" };
+            stdout.output(["You're at your desk trying to steal my source code... STOP IT!!!"]);
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellEcho(args) {
+        static shellEcho(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length === 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "Usage: echo <string>" };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: echo <string>"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _StdOut.putText(args.join(" ")); //echo directly prints to the console and cannot be piped into another command
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: undefined };
+            stdout.output([args.join(" ")]);
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellStatus(args) {
+        static shellStatus(stdin, _stdout, stderr) {
+            const args = stdin.input();
             if (args.length === 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "Invalid argument. Usage: status <string>" };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: status <string>"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
             document.getElementById("footerStatus").innerHTML = args.join(" ");
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: undefined };
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellBSOD(args) {
+        static shellBSOD(stdin, _stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: bsod" };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: bsod"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
             _Kernel.krnTrapError("Self-induced error via shell command.");
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: undefined };
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellLoad(args) {
+        static shellLoad(stdin, stdout, stderr) {
+            const args = stdin.input();
             if (args.length !== 0) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: load" };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: load"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
             const textArea = document.getElementById("taProgramInput");
             let input = textArea.value;
@@ -166,32 +202,56 @@ var TSOS;
             });
             textArea.value = "";
             if (numberArray.some(Number.isNaN)) {
-                return {
-                    exitCode: TSOS.ExitCode.GENERIC_ERROR,
-                    retValue: "Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '"
-                };
+                stderr.error([
+                    TSOS.ExitCode.SHELL_MISUSE.shellDesc()
+                        + " - Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '\""
+                ]);
+                return TSOS.ExitCode.GENERIC_ERROR;
             }
             const pcb = TSOS.ProcessControlBlock.new(numberArray);
             _Scheduler.idlePcbs.set(pcb.pid, pcb);
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: `Program loaded into memory with process ID ${pcb.pid}.` };
+            stdout.output([`Program loaded into memory with process ID ${pcb.pid}.`]);
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellRun(args) {
-            if (args.length !== 1) {
-                return { exitCode: TSOS.ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: run <pid>" };
+        //@Returns
+        // - an exit code if an error occurred before running the process.
+        // - undefined if running synchronously
+        // - null if running asynchronously
+        static shellRun(stdin, stdout, stderr) {
+            const args = stdin.input();
+            if (!(args.length === 1 || args.length === 2)) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: run <pid> [&]"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            let async = false;
+            if (args.length === 2) {
+                if (args[1] === '&') {
+                    async = true;
+                }
+                else {
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: run <pid> [&]"]);
+                    return TSOS.ExitCode.SHELL_MISUSE;
+                }
             }
             const pid = Number.parseInt(args[0]);
             if (Number.isNaN(pid)) {
-                return this.shellBSOD([]); //this code should be unreachable
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <pid>"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
             }
             const pcb = _Scheduler.idlePcbs.get(pid);
             if (!pcb) {
-                return { exitCode: TSOS.ExitCode.GENERIC_ERROR, retValue: `Could not locate process ${pid}.` };
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + ` - Could not locate process ${pid}.`]);
+                return TSOS.ExitCode.GENERIC_ERROR;
+            }
+            if (!async) { //console by default if it is async
+                pcb.stdOut = stdout;
+                pcb.stdErr = stderr;
             }
             _Scheduler.pcbQueue.enqueue(pcb);
             //I assume that I unload the program from memory once it finishes running.
             //The program should be loaded from the disk every time you want to run it.
             _Scheduler.idlePcbs.delete(pid);
-            return { exitCode: TSOS.ExitCode.SUCCESS, retValue: undefined };
+            return async ? null : undefined;
         }
     }
     TSOS.ShellCommand = ShellCommand;

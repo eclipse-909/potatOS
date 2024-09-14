@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#Just a couple of functions I find convenient
+
 # Compile TypeScript and open the OS in FireFox or your default browser.
 run() {
 	tsc

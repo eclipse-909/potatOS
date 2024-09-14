@@ -14,21 +14,26 @@ var TSOS;
 (function (TSOS) {
     class Cpu {
         PC;
+        IR;
         Acc;
         Xreg;
         Yreg;
         Zflag;
         isExecuting;
-        constructor(PC = 0, Acc = 0, Xreg = 0, Yreg = 0, Zflag = false, isExecuting = false) {
+        paused;
+        constructor(PC = 0, IR = OpCode.BRK, Acc = 0, Xreg = 0, Yreg = 0, Zflag = false, isExecuting = false, paused = false) {
             this.PC = PC;
+            this.IR = IR;
             this.Acc = Acc;
             this.Xreg = Xreg;
             this.Yreg = Yreg;
             this.Zflag = Zflag;
             this.isExecuting = isExecuting;
+            this.paused = paused;
         }
         init() {
             this.PC = 0;
+            this.IR = OpCode.BRK;
             this.Acc = 0;
             this.Xreg = 0;
             this.Yreg = 0;
@@ -58,15 +63,15 @@ var TSOS;
             if (byte === undefined) {
                 return this.segFault();
             }
-            const IR = byte;
-            if (!Object.values(OpCode).includes(IR)) {
+            this.IR = byte;
+            if (!Object.values(OpCode).includes(this.IR)) {
                 return this.illegalInstruction();
             }
             let arg0;
             let arg1;
             let buffer;
             //decode and execute
-            switch (IR) {
+            switch (this.IR) {
                 case OpCode.LDAi:
                     arg0 = this.fetch();
                     if (arg0 === undefined) {
@@ -245,18 +250,18 @@ var TSOS;
                     break;
                 case OpCode.SYS:
                     let iqr;
-                    let params = [];
+                    let params = [_Scheduler.currPCB.stdOut];
                     if (this.Xreg === 0x01) {
                         iqr = IRQ.writeIntConsole;
-                        params[0] = this.Yreg;
+                        params[1] = this.Yreg;
                     }
                     else if (this.Xreg === 0x02) {
                         iqr = IRQ.writeStrConsole;
                         if (this.Yreg < 0x80) {
-                            params[0] = this.PC + this.Yreg;
+                            params[1] = this.PC + this.Yreg;
                         }
                         else {
-                            params[0] = this.PC - 0x100 + this.Yreg;
+                            params[1] = this.PC - 0x100 + this.Yreg;
                         }
                     }
                     _KernelInterruptQueue.enqueue(new TSOS.Interrupt(iqr, params));

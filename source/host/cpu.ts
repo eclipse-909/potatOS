@@ -14,15 +14,18 @@
 module TSOS {
 	export class Cpu {
 		constructor(public PC: number = 0,
+					public IR: OpCode = OpCode.BRK,
 		            public Acc: number = 0,
 		            public Xreg: number = 0,
 		            public Yreg: number = 0,
 		            public Zflag: boolean = false,
-		            public isExecuting: boolean = false) {
+		            public isExecuting: boolean = false,
+		            public paused: boolean = false) {
 		}
 
 		public init(): void {
 			this.PC = 0;
+			this.IR = OpCode.BRK;
 			this.Acc = 0;
 			this.Xreg = 0;
 			this.Yreg = 0;
@@ -55,8 +58,8 @@ module TSOS {
 			//fetch
 			const byte: number | undefined = this.fetch();
 			if (byte === undefined) {return this.segFault();}
-			const IR: OpCode = byte as OpCode;
-			if (!Object.values(OpCode).includes(IR)) {
+			this.IR = byte as OpCode;
+			if (!Object.values(OpCode).includes(this.IR)) {
 				return this.illegalInstruction();
 			}
 			let arg0: number | undefined;
@@ -64,7 +67,7 @@ module TSOS {
 			let buffer: number;
 
 			//decode and execute
-			switch (IR) {
+			switch (this.IR) {
 				case OpCode.LDAi:
 					arg0 = this.fetch();
 					if (arg0 === undefined) {return this.segFault();}
@@ -189,16 +192,16 @@ module TSOS {
 					break;
 				case OpCode.SYS:
 					let iqr: IRQ;
-					let params: any[] = [];
+					let params: any[] = [_Scheduler.currPCB.stdOut];
 					if (this.Xreg === 0x01) {
 						iqr = IRQ.writeIntConsole;
-						params[0] = this.Yreg;
+						params[1] = this.Yreg;
 					} else if (this.Xreg === 0x02) {
 						iqr = IRQ.writeStrConsole;
 						if (this.Yreg < 0x80) {
-							params[0] = this.PC + this.Yreg;
+							params[1] = this.PC + this.Yreg;
 						} else {
-							params[0] = this.PC - 0x100 + this.Yreg;
+							params[1] = this.PC - 0x100 + this.Yreg;
 						}
 					}
 					_KernelInterruptQueue.enqueue(new Interrupt(iqr, params));

@@ -22,7 +22,7 @@ module TSOS {
 	//Kills the process with the given process ID.
 	//@param params - [process ID, exit code].
 	export function kill(params: any[]): void {
-		if (params.length !== 2) {return;}
+		if (params.length !== 2) {return /*TODO what happens when the system call arguments are invalid?*/;}
 		const pid: number = params[0];
 		if (_Scheduler.currPCB.pid === pid) {
 			_Scheduler.currPCB.free();
@@ -41,35 +41,29 @@ module TSOS {
 				_Scheduler.pcbQueue.enqueue(queue.dequeue());
 			}
 		}
-		const buffer: string = _StdIn.buffer;
-		_Console.clearLine();
-		(params[1] as ExitCode).processPrintDesc();
-		_StdOut.advanceLine();
-		_OsShell.putPrompt();
-		_StdIn.buffer = buffer;
-		_StdOut.putText(buffer);
+		_OsShell.processExitQueue.enqueue({exitCode: params[1] as ExitCode, pid: pid});
 	}
 
 	//Writes the byte in the Y-register to the standard output as an integer.
-	//@params params - [the byte in the Y-register].
-	export function writeIntConsole(params: any[]): void {
-		if (params.length !== 1) {return;}
-		_StdOut.putText((params[0] as number).toString(16));
+	//@params params - [output handle, the byte in the Y-register].
+	export function writeIntStdOut(params: any[]): void {
+		if (params.length !== 2) {return /*TODO what happens when the system call arguments are invalid?*/;}
+		(params[0] as OutStream<string>).output((params[1] as number).toString(16));
 	}
 
 	//Writes the null-terminated-string at the pointer to the standard output given by the indirect address in the Y-register.
-	//@params params - [a pointer to the null-terminated-string in memory].
-	export function writeStrConsole(params: any[]): void {
-		if (params.length !== 1) {return;}
+	//@params params - [output handle, a pointer to the null-terminated-string in memory].
+	export function writeStrStdOut(params: any[]): void {
+		if (params.length !== 2) {return /*TODO what happens when the system call arguments are invalid?*/;}
 		let buffer: string = "";
-		let strPtr: number = params[0];
+		let strPtr: number = params[1];
 		let char: number | undefined = undefined;
 		while (char !== 0) {
 			char = _MMU.read(strPtr);
-			if (char === undefined) {return;}
+			if (char === undefined) {return /*TODO what happens when the system call arguments are invalid?*/;}
 			buffer += String.fromCharCode(char);
 			strPtr++;
 		}
-		_StdOut.putText(buffer);
+		(params[0] as OutStream<string>).output(buffer);
 	}
 }

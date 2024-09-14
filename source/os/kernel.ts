@@ -28,6 +28,7 @@ module TSOS {
 			// Initialize standard input and output to the _Console.
 			_StdIn  = _Console;
 			_StdOut = _Console;
+			_StdErr = _Console;
 
 			// Load the Keyboard Device Driver
 			this.krnTrace("Loading the keyboard device driver.");
@@ -95,10 +96,12 @@ module TSOS {
 						_CPU.isExecuting = true;
 					}
 				}
-				if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
-					_CPU.cycle();
-				} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
-					this.krnTrace("Idle");
+				if (!_CPU.paused) {
+					if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
+						_CPU.cycle();
+					} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
+						this.krnTrace("Idle");
+					}
 				}
 			}
 		}
@@ -139,10 +142,10 @@ module TSOS {
 					kill(params);
 					break;
 				case IRQ.writeIntConsole:
-					writeIntConsole(params);
+					writeIntStdOut(params);
 					break;
 				case IRQ.writeStrConsole:
-					writeStrConsole(params);
+					writeStrStdOut(params);
 					break;
 				default:
 					this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");

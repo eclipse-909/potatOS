@@ -10,29 +10,23 @@ module TSOS {
 
 		public isSuccess(): boolean {return this.code === 0;}
 
-		public shellPrintDesc(): void {
-			if (this.description) {
-				_StdOut.putText(this.description);
-				_StdOut.advanceLine();
-			}
+		public shellDesc(): string {
+			return this.description? `${this.description}\n` : "";
 		}
 
-		public processPrintDesc(): void {
+		public processDesc(pid: number): string {
 			switch (this.code) {
 				case 0:
-					_StdOut.putText("Process exited successfully.");
-					break;
+					return `Process ${pid} exited successfully.`;
 				case 1:
 				case 2:
 				case 126:
 				case 127:
-					_StdOut.putText(`Error: ${this.description} - exit code ${this.code}`);
-					break;
+					return `Error in process ${pid}: ${this.description} - exit code ${this.code}`;
 				case 132:
 				case 139:
 				case 130:
-					_StdOut.putText(`Fatal error - process exited abnormally: ${this.description} - exit code ${this.code}`);
-					break;
+					return `Fatal error - process ${pid} exited abnormally: ${this.description} - exit code ${this.code}`;
 			}
 		}
 

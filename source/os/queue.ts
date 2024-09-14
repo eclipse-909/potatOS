@@ -35,5 +35,13 @@ module TSOS {
 			}
 			return retVal;
 		}
+
+		public peek(): T | null {
+			return this.q.length === 0? null : this.q[0];
+		}
+
+		public clear(): void {
+			this.q = [];//this feels so wrong, I like manual memory management
+		}
 	}
 }

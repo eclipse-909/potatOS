@@ -1,9 +1,19 @@
 module TSOS {
 	export class ShellCommand {
-		constructor(public func: (args: string[]) => {exitCode: ExitCode, retValue: any},
-		            public command: string = "",
-		            public description: string = "") {
+		public func: (stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>) => ExitCode;
+		public command: string = "";
+		public description: string = "";
+
+		constructor(
+			func: (stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>) => ExitCode,
+			command: string = "",
+			description: string = "",
+		) {
+			this.func = func;
+			this.command = command;
+			this.description = description;
 		}
+
 		public static COMMAND_LIST: ShellCommand[] = [
 			new ShellCommand(ShellCommand.shellVer, "ver", "- Displays the current version data."),
 			new ShellCommand(ShellCommand.shellHelp, "help", "- This is the help command. Seek help."),
@@ -11,151 +21,187 @@ module TSOS {
 			new ShellCommand(ShellCommand.shellCls, "cls", "- Clears the screen and resets the cursor position."),
 			new ShellCommand(ShellCommand.shellMan, "man", "<topic> - Displays the MANual page for <topic>."),
 			new ShellCommand(ShellCommand.shellTrace, "trace", "<on | off> - Turns the OS trace on or off."),
-			new ShellCommand(ShellCommand.shellRot13, "rot13", "<string> - Does rot13 obfuscation on <string>."),
-			new ShellCommand(ShellCommand.shellPrompt, "prompt", "<string> - Sets the prompt."),
+			new ShellCommand(ShellCommand.shellRot13, "rot13", "<string...> - Does rot13 obfuscation on <string>."),
+			new ShellCommand(ShellCommand.shellPrompt, "prompt", "<string...> - Sets the prompt."),
 			new ShellCommand(ShellCommand.shellDate, "date", "- Displays the current date and time."),
 			new ShellCommand(ShellCommand.shellWhereAmI, "whereami", "- Displays the user's current location."),
 			new ShellCommand(ShellCommand.shellEcho, "echo", "- Displays the given text to standard output."),
 			new ShellCommand(ShellCommand.shellStatus, "status", "- Displays a message to the task bar."),
 			new ShellCommand(ShellCommand.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message."),
 			new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk."),
-			new ShellCommand(ShellCommand.shellRun, "run", "<process ID> - Run the program in memory with the process ID.")
+			new ShellCommand(ShellCommand.shellRun, "run", "<process ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.")
 
 			// ps  - list the running processes and their IDs
 			// kill <id> - kills the specified process id.
 		];
 
-		static shellVer(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellVer(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: undefined};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: ver"]);
+				return ExitCode.SHELL_MISUSE;
 			}
-			return {exitCode: ExitCode.SUCCESS, retValue: APP_NAME + " version " + APP_VERSION};
+			stdout.output([APP_NAME + " version " + APP_VERSION]);
+			return ExitCode.SUCCESS;
 		}
 
-		static shellHelp(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellHelp(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: undefined};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: help"]);
+				return ExitCode.SHELL_MISUSE;
 			}
-			let text: string = "Commands:";
+			let text: string = "Commands:\nKey:\n  <> = required parameter\n  ... = repeatable parameter\n  [] = optional parameter\n  / = either parameter is acceptable";
 			for (const i in ShellCommand.COMMAND_LIST) {
 				text += "\n  " + ShellCommand.COMMAND_LIST[i].command + " " + ShellCommand.COMMAND_LIST[i].description;
 			}
-			return {exitCode: ExitCode.SUCCESS, retValue: text};
+			stdout.output([text]);
+			return ExitCode.SUCCESS;
 		}
 
-		public static shellShutdown(args: string[]): {exitCode: ExitCode, retValue: any} {
+		public static shellShutdown(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: undefined};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: shutdown"]);
+				return ExitCode.SHELL_MISUSE;
 			}
 			// Call Kernel shutdown routine.
 			_Kernel.krnShutdown();
-			return {exitCode: ExitCode.SUCCESS, retValue: "Shutting down..."};
+			stdout.output(["Shutting down..."]);
+			return ExitCode.SUCCESS;
 		}
 
-		static shellCls(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellCls(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: undefined};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: cls"]);
+				return ExitCode.SHELL_MISUSE;
 			}
 			_StdOut.clearScreen();
 			_StdOut.resetXY();
-			return {exitCode: ExitCode.SUCCESS, retValue: undefined};
+			return ExitCode.SUCCESS;
 		}
 
-		static shellMan(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellMan(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 1) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "Usage: man <topic>  Please supply a topic."};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: man <topic>  Please supply a topic."]);
+				return ExitCode.SHELL_MISUSE;
 			}
 			const topic = args[0];
 			const cmd: ShellCommand | undefined = ShellCommand.COMMAND_LIST.find((item: ShellCommand) => {return item.command === topic;});
 			if (cmd) {
-				return {exitCode: ExitCode.SUCCESS, retValue: cmd.description};
+				stdout.output([cmd.description]);
+				return ExitCode.SUCCESS;
 			}
-			switch (topic) {
-				// TODO: Make descriptive MANual page entries for topics other than shell commands.
-				default:
-					return {exitCode: ExitCode.GENERIC_ERROR, retValue: "No manual entry for " + args[0] + "."};
-			}
+			stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No manual entry for " + args[0] + "."]);
+			return ExitCode.GENERIC_ERROR;
 		}
 
-		static shellTrace(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellTrace(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 1) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "Usage: trace <on | off>"};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: trace <on | off>"]);
+				return ExitCode.SHELL_MISUSE;
 			}
 			const setting = args[0];
 			switch (setting) {
 				case "on":
 					if (_Trace && _SarcasticMode) {
-						return {exitCode: ExitCode.SUCCESS, retValue: "Trace is already on, doofus."};
+						stdout.output(["Trace is already on, doofus."]);
+						return ExitCode.SUCCESS;
 					} else {
 						_Trace = true;
-						return {exitCode: ExitCode.SUCCESS, retValue: "Trace ON"};
+						stdout.output(["Trace ON"]);
+						return ExitCode.SUCCESS;
 					}
 				case "off":
 					_Trace = false;
-					return {exitCode: ExitCode.SUCCESS, retValue: "Trace OFF"};
+					stdout.output(["Trace OFF"]);
+					return ExitCode.SUCCESS;
 				default:
-					return {exitCode: ExitCode.SHELL_MISUSE, retValue: "Invalid argument.  Usage: trace <on | off>."};
+					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument.  Usage: trace <on | off>."]);
+					return ExitCode.SHELL_MISUSE;
 			}
 		}
 
-		static shellRot13(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellRot13(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length > 0) {
-				return {exitCode: ExitCode.SUCCESS, retValue: args.join(' ') + " = '" + Utils.rot13(args.join(' ')) +"'"};
+				stdout.output([args.join(' ') + " = '" + Utils.rot13(args.join(' ')) +"'"]);
+				return ExitCode.SUCCESS;
 			} else {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "Usage: rot13 <string>  Please supply a string."};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: rot13 <string>  Please supply a string."]);
+				return ExitCode.SHELL_MISUSE;
 			}
 		}
 
-		static shellPrompt(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellPrompt(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length > 0) {
 				_OsShell.promptStr = args[0];
-				return {exitCode: ExitCode.SUCCESS, retValue: undefined};
+				return ExitCode.SUCCESS;
 			} else {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "Usage: prompt <string>  Please supply a string."};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: prompt <string>  Please supply a string."]);
+				return ExitCode.SHELL_MISUSE;
 			}
 		}
 
-		static shellDate(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellDate(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: date"};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: date"]);
+				return ExitCode.SHELL_MISUSE;
 			}
-			return {exitCode: ExitCode.SUCCESS, retValue: new Date().toString()};
+			stdout.output([new Date().toString()]);
+			return ExitCode.SUCCESS;
 		}
 
-		static shellWhereAmI(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellWhereAmI(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: whereami"};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: whereami"]);
+				return ExitCode.SHELL_MISUSE;
 			}
-			return {exitCode: ExitCode.SUCCESS, retValue: "You're at your desk trying to steal my source code... STOP IT!!!"};
+			stdout.output(["You're at your desk trying to steal my source code... STOP IT!!!"]);
+			return ExitCode.SUCCESS;
 		}
 
-		static shellEcho(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellEcho(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length === 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "Usage: echo <string>"};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: echo <string>"]);
+				return ExitCode.SHELL_MISUSE;
 			}
-			_StdOut.putText(args.join(" "));//echo directly prints to the console and cannot be piped into another command
-			return {exitCode: ExitCode.SUCCESS, retValue: undefined};
+			stdout.output([args.join(" ")]);
+			return ExitCode.SUCCESS;
 		}
 
-		static shellStatus(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellStatus(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length === 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "Invalid argument. Usage: status <string>"};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: status <string>"]);
+				return ExitCode.SHELL_MISUSE;
 			}
 			document.getElementById("footerStatus").innerHTML = args.join(" ");
-			return {exitCode: ExitCode.SUCCESS, retValue: undefined};
+			return ExitCode.SUCCESS;
 		}
 
-		static shellBSOD(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellBSOD(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: bsod"};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: bsod"]);
+				return ExitCode.SHELL_MISUSE;
 			}
 			_Kernel.krnTrapError("Self-induced error via shell command.")
-			return {exitCode: ExitCode.SUCCESS, retValue: undefined};
+			return ExitCode.SUCCESS;
 		}
 
-		static shellLoad(args: string[]): {exitCode: ExitCode, retValue: any} {
+		static shellLoad(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
 			if (args.length !== 0) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: load"};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: load"]);
+				return ExitCode.SHELL_MISUSE;
 			}
 			const textArea: HTMLTextAreaElement = document.getElementById("taProgramInput") as HTMLTextAreaElement;
 			let input: string = textArea.value;
@@ -175,34 +221,56 @@ module TSOS {
 			});
 			textArea.value = "";
 			if (numberArray.some(Number.isNaN)) {
-				return {
-					exitCode: ExitCode.GENERIC_ERROR,
-					retValue:
-						"Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '"
-				};
+				stderr.error([
+					ExitCode.SHELL_MISUSE.shellDesc()
+					+ " - Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '\""
+				]);
+				return ExitCode.GENERIC_ERROR;
 			}
 			const pcb: ProcessControlBlock = ProcessControlBlock.new(numberArray);
 			_Scheduler.idlePcbs.set(pcb.pid, pcb);
-			return {exitCode: ExitCode.SUCCESS, retValue: `Program loaded into memory with process ID ${pcb.pid}.`};
+			stdout.output([`Program loaded into memory with process ID ${pcb.pid}.`]);
+			return ExitCode.SUCCESS;
 		}
 
-		static shellRun(args: string[]): {exitCode: ExitCode, retValue: any} {
-			if (args.length !== 1) {
-				return {exitCode: ExitCode.SHELL_MISUSE, retValue: "No argument required. Usage: run <pid>"};
+		//@Returns
+		// - an exit code if an error occurred before running the process.
+		// - undefined if running synchronously
+		// - null if running asynchronously
+		static shellRun(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+			const args: string[] = stdin.input();
+			if (!(args.length === 1 || args.length === 2)) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: run <pid> [&]"]);
+				return ExitCode.SHELL_MISUSE;
+			}
+			let async: boolean = false;
+			if (args.length === 2) {
+				if (args[1] === '&') {
+					async  = true;
+				} else {
+					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: run <pid> [&]"]);
+					return ExitCode.SHELL_MISUSE;
+				}
 			}
 			const pid: number = Number.parseInt(args[0]);
 			if (Number.isNaN(pid)) {
-				return this.shellBSOD([]);//this code should be unreachable
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <pid>"]);
+				return ExitCode.SHELL_MISUSE;
 			}
 			const pcb: ProcessControlBlock | undefined = _Scheduler.idlePcbs.get(pid);
 			if (!pcb) {
-				return {exitCode: ExitCode.GENERIC_ERROR, retValue: `Could not locate process ${pid}.`};
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + ` - Could not locate process ${pid}.`]);
+				return ExitCode.GENERIC_ERROR;
+			}
+			if (!async) {//console by default if it is async
+				pcb.stdOut = stdout;
+				pcb.stdErr = stderr;
 			}
 			_Scheduler.pcbQueue.enqueue(pcb);
 			//I assume that I unload the program from memory once it finishes running.
 			//The program should be loaded from the disk every time you want to run it.
 			_Scheduler.idlePcbs.delete(pid);
-			return {exitCode: ExitCode.SUCCESS, retValue: undefined};
+			return async? null : undefined;
 		}
 	}
 }

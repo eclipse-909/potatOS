@@ -7,15 +7,15 @@
 
 module TSOS {
 
-	export class Console {
-
+	export class Console implements OutStream<string[]>, InStream<string[]>, ErrStream<string[]> {
 		constructor(public currentFont = _DefaultFontFamily,
 		            public currentFontSize = _DefaultFontSize,
 		            public currentXPosition = 0,
 		            public currentYPosition = _DefaultFontSize,
 		            public buffer = "",
 		            public shellHistory: string[] = [],
-					public shellHistoryIndex: number = 0) {
+					public shellHistoryIndex: number = 0,
+		            public inputEnabled = true) {
 		}
 
 		public init(): void {
@@ -44,7 +44,7 @@ module TSOS {
 			this.buffer = "";
 		}
 
-		//Clears the text of the current prompt
+		//Clears the text of the current prompt, but doesn't remove the prompt
 		clearPrompt(): void {
 			const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer);
 			const xStartPos = this.currentXPosition - xSize;
@@ -53,11 +53,12 @@ module TSOS {
 			this.buffer = "";
 		}
 
-		public handleInput(): void {
+		public handleInput(): string {
 			while (_KernelInputQueue.getSize() > 0) {
 				// Get the next character from the kernel input queue.
 				const chr = _KernelInputQueue.dequeue();
 				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
+				if (!this.inputEnabled) {continue;}
 				switch (chr) {
 					case String.fromCharCode(-1): // up arrow
 						if (this.shellHistoryIndex === 0) {break;}
@@ -75,7 +76,7 @@ module TSOS {
 						this.putText(this.buffer);
 						break;
 					case String.fromCharCode(3): // ctrl + c
-						// TODO: Add a case for Ctrl-C that would allow the user to terminate the current program.
+						//_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.TERMINATED_BY_CTRL_C]));
 						break;
 					case String.fromCharCode(8): // backspace
 						if (this.currentXPosition <= 0.00001 /*floating point shenanigans*/) {
@@ -123,15 +124,13 @@ module TSOS {
 						// ... and reset our buffer.
 						this.buffer = "";
 						break;
-					default:
-						// This is a "normal" character, so ...
-						// ... draw it on the screen...
+					default: // normal character
 						this.putText(chr);
-						// ... and add it to our buffer.
 						this.buffer += chr;
 						break;
 				}
 			}
+			return this.buffer;
 		}
 
 		//REMEMBER THIS DOES NOT ADD THE TEXT TO THE BUFFER!!!!!!!!!!!!!!!
@@ -147,17 +146,13 @@ module TSOS {
 			}
 		}
 
+		//you can also output "\n" to the console
 		public advanceLine(): void {
 			this.currentXPosition = 0;
-			/*
-			 * Font size measures from the baseline to the highest point in the font.
-			 * Font descent measures from the baseline to the lowest point in the font.
-			 * Font height margin is extra spacing between the lines.
-			 */
 			this.currentYPosition += _DefaultFontSize +
 				_DrawingContext.fontDescent(this.currentFont, this.currentFontSize) +
 				_FontHeightMargin;
-
+			//TODO expand the height of the canvas when overflowing so that scrolling works
 			//Reference: https://www.labouseur.com/commondocs/operating-systems/LuchiOS/index.html
 			if (this.currentYPosition > _Canvas.height) {
 				let offset = this.currentYPosition - _Canvas.height + _FontHeightMargin;
@@ -167,5 +162,10 @@ module TSOS {
 				this.currentYPosition -= offset;
 			}
 		}
+
+		//I/O interface functions
+		output(buffer: string[]): void {this.putText(buffer[0]);}
+		input(): string[] {return [this.handleInput()];}
+		error(buffer: string[]): void {this.putText(buffer[0]);}
 	}
 }

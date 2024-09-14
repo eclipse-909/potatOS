@@ -18,6 +18,7 @@
    <script type="text/javascript" src="distrib/host/memoryController.js"></script>
 
    <!-- Virtual OS Routines: Make sure Kernel code is last, since it needs those above it. -->
+   <script type="text/javascript" src="distrib/os/io.js"></script>
    <script type="text/javascript" src="distrib/os/exitCode.js"></script>
    <script type="text/javascript" src="distrib/os/interrupt.js"></script>
    <script type="text/javascript" src="distrib/os/canvastext.js"></script>
@@ -70,9 +71,27 @@
              value="Reset"
              tabindex="2"
              onclick="TSOS.Control.hostBtnReset_click(this);">
+<!--
+      <input type="button"
+             id = "btnPause"
+             name="brnPauseCPU"
+             class="normal_button"
+             value="Pause"
+             tabindex="3"
+             onclick="TSOS.Control.hostBtnPauseCpu(this);">
+
+      <input type="button"
+             id = "btnStep"
+             name="brnStepCPU"
+             class="normal_button"
+             disabled="disabled"
+             value="Step"
+             tabindex="4"
+             onclick="TSOS.Control.HostBtnStepCpu(this);">
+-->
    </div>
 
-   <div id="divConsole" style="margin:4px; width:500px; height:500px; float:left;">
+   <div id="divConsole" style="margin:4px; width:505px; height:510px; float:left;overflow-y: scroll;">
       <canvas id="display"
               width="500px"
               height="500px"

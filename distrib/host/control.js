@@ -91,6 +91,20 @@ var TSOS;
             // The easiest and most thorough way to do this is to reload (not refresh) the document.
             location.reload();
         }
+        static hostBtnPauseCpu(btn) {
+            _CPU.paused = !_CPU.paused;
+            Control.hostLog(`CPU paused: ${_CPU.paused}`);
+            document.getElementById("btnPause").value = _CPU.paused ? "Unpause" : "Pause";
+            document.getElementById("btnPause").disabled = !_CPU.paused;
+        }
+        static HostBtnStepCpu(btn) {
+            if (_KernelInterruptQueue.getSize() === 0) {
+                _CPU.isExecuting ? _CPU.cycle() : _Kernel.krnTrace("Idle");
+            }
+            else {
+                _Kernel.krnTrace("Processing interrupt, try again");
+            }
+        }
     }
     TSOS.Control = Control;
 })(TSOS || (TSOS = {}));

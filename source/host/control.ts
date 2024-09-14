@@ -113,5 +113,20 @@ module TSOS {
 			// The easiest and most thorough way to do this is to reload (not refresh) the document.
 			location.reload();
 		}
+
+		public static hostBtnPauseCpu(btn): void {
+			_CPU.paused = !_CPU.paused;
+			Control.hostLog(`CPU paused: ${_CPU.paused}`);
+			(document.getElementById("btnPause") as HTMLInputElement).value = _CPU.paused? "Unpause" : "Pause";
+			(document.getElementById("btnPause") as HTMLInputElement).disabled = !_CPU.paused;
+		}
+
+		public static HostBtnStepCpu(btn): void {
+			if (_KernelInterruptQueue.getSize() === 0) {
+				_CPU.isExecuting? _CPU.cycle() : _Kernel.krnTrace("Idle");
+			} else {
+				_Kernel.krnTrace("Processing interrupt, try again");
+			}
+		}
 	}
 }

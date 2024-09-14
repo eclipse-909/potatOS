@@ -163,20 +163,15 @@ module TSOS {
 				//advance line if character will spill off the edge of the canvas
 				const char: string = str.charAt(i);
 				const charWidth: number = this.measure(_Console.currentFont, _Console.currentFontSize, char);
-				//let offset: number = 0;
 				if (_Console.currentXPosition + charWidth >= _Canvas.width - 5) {
 					_Console.advanceLine();
-				} else {
-					//offset = charWidth;
 				}
-
 				const c = CanvasTextFunctions.letter(char);
 				if (!c) {
 					continue;
 				}
 				ctx.beginPath();
 				let penUp = true;
-				//const needStroke = 0;
 				for (let j = 0; j < c.points.length; j++) {
 					const a = c.points[j];
 					if (a[0] === -1 && a[1] === -1) {
@@ -191,10 +186,8 @@ module TSOS {
 					}
 				}
 				ctx.stroke();
-				_Console.currentXPosition += c.width*mag;
-
 				// We're gonna offset the X pos here instead of in Console.putText to handle line-wrapping
-				//_Console.currentXPosition += offset;
+				_Console.currentXPosition += c.width*mag;
 			}
 			ctx.restore();
 			return total;

@@ -21,7 +21,7 @@ var TSOS;
     //@param params - [process ID, exit code].
     function kill(params) {
         if (params.length !== 2) {
-            return;
+            return /*TODO what happens when the system call arguments are invalid?*/;
         }
         const pid = params[0];
         if (_Scheduler.currPCB.pid === pid) {
@@ -43,43 +43,37 @@ var TSOS;
                 _Scheduler.pcbQueue.enqueue(queue.dequeue());
             }
         }
-        const buffer = _StdIn.buffer;
-        _Console.clearLine();
-        params[1].processPrintDesc();
-        _StdOut.advanceLine();
-        _OsShell.putPrompt();
-        _StdIn.buffer = buffer;
-        _StdOut.putText(buffer);
+        _OsShell.processExitQueue.enqueue({ exitCode: params[1], pid: pid });
     }
     TSOS.kill = kill;
     //Writes the byte in the Y-register to the standard output as an integer.
-    //@params params - [the byte in the Y-register].
-    function writeIntConsole(params) {
-        if (params.length !== 1) {
-            return;
+    //@params params - [output handle, the byte in the Y-register].
+    function writeIntStdOut(params) {
+        if (params.length !== 2) {
+            return /*TODO what happens when the system call arguments are invalid?*/;
         }
-        _StdOut.putText(params[0].toString(16));
+        params[0].output(params[1].toString(16));
     }
-    TSOS.writeIntConsole = writeIntConsole;
+    TSOS.writeIntStdOut = writeIntStdOut;
     //Writes the null-terminated-string at the pointer to the standard output given by the indirect address in the Y-register.
-    //@params params - [a pointer to the null-terminated-string in memory].
-    function writeStrConsole(params) {
-        if (params.length !== 1) {
-            return;
+    //@params params - [output handle, a pointer to the null-terminated-string in memory].
+    function writeStrStdOut(params) {
+        if (params.length !== 2) {
+            return /*TODO what happens when the system call arguments are invalid?*/;
         }
         let buffer = "";
-        let strPtr = params[0];
+        let strPtr = params[1];
         let char = undefined;
         while (char !== 0) {
             char = _MMU.read(strPtr);
             if (char === undefined) {
-                return;
+                return /*TODO what happens when the system call arguments are invalid?*/;
             }
             buffer += String.fromCharCode(char);
             strPtr++;
         }
-        _StdOut.putText(buffer);
+        params[0].output(buffer);
     }
-    TSOS.writeStrConsole = writeStrConsole;
+    TSOS.writeStrStdOut = writeStrStdOut;
 })(TSOS || (TSOS = {}));
 //# sourceMappingURL=spudAPI.js.map

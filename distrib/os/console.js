@@ -14,7 +14,8 @@ var TSOS;
         buffer;
         shellHistory;
         shellHistoryIndex;
-        constructor(currentFont = _DefaultFontFamily, currentFontSize = _DefaultFontSize, currentXPosition = 0, currentYPosition = _DefaultFontSize, buffer = "", shellHistory = [], shellHistoryIndex = 0) {
+        inputEnabled;
+        constructor(currentFont = _DefaultFontFamily, currentFontSize = _DefaultFontSize, currentXPosition = 0, currentYPosition = _DefaultFontSize, buffer = "", shellHistory = [], shellHistoryIndex = 0, inputEnabled = true) {
             this.currentFont = currentFont;
             this.currentFontSize = currentFontSize;
             this.currentXPosition = currentXPosition;
@@ -22,19 +23,31 @@ var TSOS;
             this.buffer = buffer;
             this.shellHistory = shellHistory;
             this.shellHistoryIndex = shellHistoryIndex;
+            this.inputEnabled = inputEnabled;
         }
         init() {
             this.clearScreen();
             this.resetXY();
         }
         clearScreen() {
-            _DrawingContext.clearRect(0, 0, _Canvas.width, _Canvas.height);
+            _Canvas.height = CANVAS_HEIGHT;
         }
         resetXY() {
             this.currentXPosition = 0;
             this.currentYPosition = this.currentFontSize;
         }
-        //Clears the text of the current prompt
+        //Clears the line, including the prompt
+        // clearLine(): void {
+        // 	_DrawingContext.clearRect(
+        // 		0,
+        // 		this.currentYPosition - _DefaultFontSize,
+        // 		_DrawingContext.measureText(this.currentFont, this.currentFontSize, _OsShell.promptStr + this.buffer),
+        // 		_DefaultFontSize + 5
+        // 	);
+        // 	this.currentXPosition = 0;
+        // 	this.buffer = "";
+        // }
+        //Clears the text of the current prompt, but doesn't remove the prompt
         clearPrompt() {
             const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer);
             const xStartPos = this.currentXPosition - xSize;
@@ -47,6 +60,9 @@ var TSOS;
                 // Get the next character from the kernel input queue.
                 const chr = _KernelInputQueue.dequeue();
                 // Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
+                if (!this.inputEnabled) {
+                    continue;
+                }
                 switch (chr) {
                     case String.fromCharCode(-1): // up arrow
                         if (this.shellHistoryIndex === 0) {
@@ -70,7 +86,7 @@ var TSOS;
                         this.putText(this.buffer);
                         break;
                     case String.fromCharCode(3): // ctrl + c
-                        // TODO: Add a case for Ctrl-C that would allow the user to terminate the current program.
+                        //_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.TERMINATED_BY_CTRL_C]));
                         break;
                     case String.fromCharCode(8): // backspace
                         if (this.currentXPosition <= 0.00001 /*floating point shenanigans*/) {
@@ -92,7 +108,7 @@ var TSOS;
                         }
                         const token = tokens[0];
                         const possCmds = [];
-                        for (const cmd of _OsShell.commandList) {
+                        for (const cmd of TSOS.ShellCommand.COMMAND_LIST) {
                             if (cmd.command.substring(0, token.length) === token) {
                                 possCmds.push(cmd.command);
                             }
@@ -112,7 +128,7 @@ var TSOS;
                             this.putText(this.buffer); // preserve the input for the next prompt
                         }
                         break;
-                    case String.fromCharCode(13): // the Enter key
+                    case String.fromCharCode(13): // the Enter key (carriage return)
                         // The enter key marks the end of a console command, so ...
                         // ... tell the shell ...
                         _OsShell.handleInput(this.buffer);
@@ -121,52 +137,43 @@ var TSOS;
                         // ... and reset our buffer.
                         this.buffer = "";
                         break;
-                    default:
-                        // This is a "normal" character, so ...
-                        // ... draw it on the screen...
+                    default: // normal character
                         this.putText(chr);
-                        // ... and add it to our buffer.
                         this.buffer += chr;
                         break;
                 }
             }
+            return this.buffer;
         }
+        //REMEMBER THIS DOES NOT ADD THE TEXT TO THE BUFFER!!!!!!!!!!!!!!!
         putText(text) {
-            /*  My first inclination here was to write two functions: putChar() and putString().
-                Then I remembered that JavaScript is (sadly) untyped and it won't differentiate
-                between the two. (Although TypeScript would. But we're compiling to JavaScipt anyway.)
-                So rather than be like PHP and write two (or more) functions that
-                do the same thing, thereby encouraging confusion and decreasing readability, I
-                decided to write one function and use the term "text" to connote string or char.
-            */
             if (text !== "") {
-                // Draw the text at the current X and Y coordinates.
-                _DrawingContext.drawText(this.currentFont, this.currentFontSize, this.currentXPosition, this.currentYPosition, text);
-                // Move the current X position.
-                // This logic has been moved into the _DrawingContext.drawText function above
-                //const offset = _DrawingContext.measureText(this.currentFont, this.currentFontSize, text);
-                //this.currentXPosition = this.currentXPosition + offset;
+                const lines = text.split(/\r?\n/); //The thing being printed might contain a carriage return or new line
+                for (let i = 0; i < lines.length; i++) {
+                    _DrawingContext.drawText(this.currentFont, this.currentFontSize, this.currentXPosition, this.currentYPosition, lines[i]);
+                    if (i !== lines.length - 1) {
+                        this.advanceLine();
+                    }
+                }
             }
         }
+        //Alternatively, you can output "\n" to the console.
         advanceLine() {
             this.currentXPosition = 0;
-            /*
-             * Font size measures from the baseline to the highest point in the font.
-             * Font descent measures from the baseline to the lowest point in the font.
-             * Font height margin is extra spacing between the lines.
-             */
             this.currentYPosition += _DefaultFontSize +
                 _DrawingContext.fontDescent(this.currentFont, this.currentFontSize) +
                 _FontHeightMargin;
-            //Reference: https://www.labouseur.com/commondocs/operating-systems/LuchiOS/index.html
             if (this.currentYPosition > _Canvas.height) {
-                let offset = this.currentYPosition - _Canvas.height + _FontHeightMargin;
                 let screenData = _DrawingContext.getImageData(0, 0, _Canvas.width, this.currentYPosition + _FontHeightMargin);
-                this.clearScreen();
-                _DrawingContext.putImageData(screenData, 0, -offset);
-                this.currentYPosition -= offset;
+                _Canvas.height = this.currentYPosition + _FontHeightMargin;
+                _DrawingContext.putImageData(screenData, 0, 0);
+                document.getElementById("display").scrollIntoView({ behavior: 'instant', block: 'end' });
             }
         }
+        //I/O interface functions
+        output(buffer) { this.putText(buffer[0]); }
+        input() { return [this.handleInput()]; }
+        error(buffer) { this.putText(buffer[0]); }
     }
     TSOS.Console = Console;
 })(TSOS || (TSOS = {}));

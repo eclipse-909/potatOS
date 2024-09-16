@@ -124,19 +124,19 @@ module TSOS {
 			'~': { width: 24, points: [[3,6],[3,8],[4,11],[6,12],[8,12],[10,11],[14,8],[16,7],[18,7],[20,8],[21,10],[-1,-1],[3,8],[4,10],[6,11],[8,11],[10,10],[14,7],[16,6],[18,6],[20,7],[21,10],[21,12]] }
 		};
 
-		public static letter(ch) {
+		public static letter(ch: string) {
 			return CanvasTextFunctions.symbols[ch];
 		}
 
-		public static ascent(font, size) {
+		public static ascent(_font: string, size: number) {
 			return size;
 		}
 
-		public static descent(font, size) {
+		public static descent(_font: string, size: number) {
 			return 7.0*size/25.0;
 		}
 
-		public static measure(font, size, str) {
+		public static measure(_font: string, size: number, str: string) {
 			let total = 0;
 			const len = str.length;
 
@@ -149,7 +149,7 @@ module TSOS {
 			return total;
 		}
 
-		public static draw(ctx, font, size, _x, _y, str) {
+		public static draw(ctx, _font: string, size: number, _x: number, _y: number, str: string) {
 			const total = 0;
 			const len = str.length;
 			const mag = size / 25.0;
@@ -163,20 +163,15 @@ module TSOS {
 				//advance line if character will spill off the edge of the canvas
 				const char: string = str.charAt(i);
 				const charWidth: number = this.measure(_Console.currentFont, _Console.currentFontSize, char);
-				let offset: number = 0;
 				if (_Console.currentXPosition + charWidth >= _Canvas.width - 5) {
 					_Console.advanceLine();
-				} else {
-					offset = charWidth;
 				}
-
 				const c = CanvasTextFunctions.letter(char);
 				if (!c) {
 					continue;
 				}
 				ctx.beginPath();
 				let penUp = true;
-				const needStroke = 0;
 				for (let j = 0; j < c.points.length; j++) {
 					const a = c.points[j];
 					if (a[0] === -1 && a[1] === -1) {
@@ -191,25 +186,23 @@ module TSOS {
 					}
 				}
 				ctx.stroke();
-				_Console.currentXPosition += c.width*mag;
-
 				// We're gonna offset the X pos here instead of in Console.putText to handle line-wrapping
-				//_Console.currentXPosition += offset;
+				_Console.currentXPosition += c.width*mag;
 			}
 			ctx.restore();
 			return total;
 		}
 
 		public static enable(ctx) {
-			ctx.drawText = function(font,size,x,y,text) { return CanvasTextFunctions.draw( ctx, font,size,x,y,text); };
-			ctx.measureText = function(font,size,text) { return CanvasTextFunctions.measure( font,size,text); };
-			ctx.fontAscent = function(font,size) { return CanvasTextFunctions.ascent(font,size); };
-			ctx.fontDescent = function(font,size) { return CanvasTextFunctions.descent(font,size); };
-			ctx.drawTextRight = function(font,size,x,y,text) {
+			ctx.drawText = function(font: string, size: number, x: number, y: number, text: string) { return CanvasTextFunctions.draw( ctx, font,size,x,y,text); };
+			ctx.measureText = function(font: string, size: number, text: string) { return CanvasTextFunctions.measure( font,size,text); };
+			ctx.fontAscent = function(font: string, size: number) { return CanvasTextFunctions.ascent(font,size); };
+			ctx.fontDescent = function(font: string, size: number) { return CanvasTextFunctions.descent(font,size); };
+			ctx.drawTextRight = function(font: string, size: number, x: number, y: number, text: string) {
 				const w = CanvasTextFunctions.measure(font, size, text);
 				return CanvasTextFunctions.draw( ctx, font,size,x-w,y,text);
 			};
-			ctx.drawTextCenter = function(font,size,x,y,text) {
+			ctx.drawTextCenter = function(font: string, size: number, x: number, y: number, text: string) {
 				const w = CanvasTextFunctions.measure(font, size, text);
 				return CanvasTextFunctions.draw( ctx, font,size,x-w/2,y,text);
 			};

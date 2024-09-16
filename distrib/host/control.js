@@ -24,6 +24,7 @@ var TSOS;
             // This is called from index.html's onLoad event via the onDocumentLoad function pointer.
             // Get a global reference to the canvas.  TODO: Should we move this stuff into a Display Device Driver?
             _Canvas = document.getElementById('display');
+            _Canvas.height = CANVAS_HEIGHT;
             // Get a global reference to the drawing context.
             _DrawingContext = _Canvas.getContext("2d");
             // Enable the added-in canvas text functions (see canvastext.ts for provenance and details).
@@ -66,6 +67,9 @@ var TSOS;
             document.getElementById("btnReset").disabled = false;
             // .. set focus on the OS console display ...
             document.getElementById("display").focus();
+            _Scheduler = new TSOS.Scheduler();
+            _MemoryController = new TSOS.MemoryController();
+            _MMU = new TSOS.MMU();
             // ... Create and initialize the CPU (because it's part of the hardware)  ...
             _CPU = new TSOS.Cpu(); // Note: We could simulate multi-core systems by instantiating more than one instance of the CPU here.
             _CPU.init(); //       There's more to do, like dealing with scheduling and such, but this would be a start. Pretty cool.
@@ -87,6 +91,20 @@ var TSOS;
         static hostBtnReset_click(btn) {
             // The easiest and most thorough way to do this is to reload (not refresh) the document.
             location.reload();
+        }
+        static hostBtnPauseCpu(btn) {
+            _CPU.paused = !_CPU.paused;
+            Control.hostLog(`CPU paused: ${_CPU.paused}`);
+            document.getElementById("btnPause").value = _CPU.paused ? "Unpause" : "Pause";
+            document.getElementById("btnPause").disabled = !_CPU.paused;
+        }
+        static HostBtnStepCpu(btn) {
+            if (_KernelInterruptQueue.getSize() === 0) {
+                _CPU.isExecuting ? _CPU.cycle() : _Kernel.krnTrace("Idle");
+            }
+            else {
+                _Kernel.krnTrace("Processing interrupt, try again");
+            }
         }
     }
     TSOS.Control = Control;

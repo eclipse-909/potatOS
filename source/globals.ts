@@ -13,26 +13,41 @@
 //
 
 const APP_NAME: string    = "potatOS";   // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION: string = "0.1.8";   // What did you expect?
+const APP_VERSION: string = "0.2.1";   // What did you expect?
 
 const CPU_CLOCK_INTERVAL: number = 25;   // This is in ms (milliseconds) so 1000 = 1 second.
 
-const TIMER_IRQ: number = 0;  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
-                              // NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
-const KEYBOARD_IRQ: number = 1;
+enum IRQ {
+	timer,  // Pages 23 (timer), 9 (interrupts), and 561 (interrupt priority).
+				// NOTE: The timer is different from hardware/host clock pulses. Don't confuse these.
+	keyboard,
+	kill,
+	writeIntConsole,
+	writeStrConsole,
+	scheduleYield
+}
 
+const NUM_PAGES: number = 0x100;
+const PAGE_SIZE: number = 0x100;
+const MEM_SIZE: number = NUM_PAGES * PAGE_SIZE;
+
+//bytes are unchecked
+function leToU16(lowByte: number, highByte: number) {return (highByte << 8) | lowByte;}
 
 //
 // Global Variables
 // TODO: Make a global object and use that instead of the "_" naming convention in the global namespace.
 //
 let _CPU: TSOS.Cpu;  // Utilize TypeScript's type annotation system to ensure that _CPU is an instance of the Cpu class.
+let _MemoryController: TSOS.MemoryController;
+let _MMU: TSOS.MMU;
 
 let _OSclock: number = 0;  // Page 23.
 
-let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
+//let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
 
 let _Canvas: HTMLCanvasElement;          // Initialized in Control.hostInit().
+let CANVAS_HEIGHT: number = 500;
 let _DrawingContext: any;                // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
 const _DefaultFontFamily: string = "sans"; // Ignored, I think. The was just a place-holder in 2008, but the HTML canvas may have use for it.
 const _DefaultFontSize: number = 13;
@@ -42,13 +57,16 @@ let _Trace: boolean = true;              // Default the OS trace to be on.
 
 // The OS Kernel and its queues.
 let _Kernel: TSOS.Kernel;
-let _KernelInterruptQueue: TSOS.Queue = null;
-let _KernelInputQueue: TSOS.Queue = null;
+let _KernelInterruptQueue: TSOS.Queue<TSOS.Interrupt> = null;
+let _KernelInputQueue: TSOS.Queue<string> = null;
 let _KernelBuffers = null;
+
+let _Scheduler: TSOS.Scheduler = null;
 
 // Standard input and output
 let _StdIn: TSOS.Console = null;
 let _StdOut: TSOS.Console = null;
+let _StdErr: TSOS.Console = null;
 
 // UI
 let _Console: TSOS.Console;
@@ -70,5 +88,5 @@ const onDocumentLoad = function () {
 	TSOS.Control.hostInit();
 	setInterval(() => {
 		document.getElementById("footerDate").innerHTML = new Date().toString();
-	}, 500);
+	}, 1000);
 };

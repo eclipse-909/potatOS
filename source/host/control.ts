@@ -27,6 +27,7 @@ module TSOS {
 
 			// Get a global reference to the canvas.  TODO: Should we move this stuff into a Display Device Driver?
 			_Canvas = <HTMLCanvasElement>document.getElementById('display');
+			_Canvas.height = CANVAS_HEIGHT;
 
 			// Get a global reference to the drawing context.
 			_DrawingContext = _Canvas.getContext("2d");
@@ -84,6 +85,10 @@ module TSOS {
 			// .. set focus on the OS console display ...
 			document.getElementById("display").focus();
 
+			_Scheduler = new Scheduler();
+			_MemoryController = new TSOS.MemoryController();
+			_MMU = new MMU();
+
 			// ... Create and initialize the CPU (because it's part of the hardware)  ...
 			_CPU = new Cpu();  // Note: We could simulate multi-core systems by instantiating more than one instance of the CPU here.
 			_CPU.init();       //       There's more to do, like dealing with scheduling and such, but this would be a start. Pretty cool.
@@ -108,6 +113,21 @@ module TSOS {
 		public static hostBtnReset_click(btn): void {
 			// The easiest and most thorough way to do this is to reload (not refresh) the document.
 			location.reload();
+		}
+
+		public static hostBtnPauseCpu(btn): void {
+			_CPU.paused = !_CPU.paused;
+			Control.hostLog(`CPU paused: ${_CPU.paused}`);
+			(document.getElementById("btnPause") as HTMLInputElement).value = _CPU.paused? "Unpause" : "Pause";
+			(document.getElementById("btnPause") as HTMLInputElement).disabled = !_CPU.paused;
+		}
+
+		public static HostBtnStepCpu(btn): void {
+			if (_KernelInterruptQueue.getSize() === 0) {
+				_CPU.isExecuting? _CPU.cycle() : _Kernel.krnTrace("Idle");
+			} else {
+				_Kernel.krnTrace("Processing interrupt, try again");
+			}
 		}
 	}
 }

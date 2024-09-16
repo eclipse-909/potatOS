@@ -17,9 +17,9 @@ module TSOS {
 			Control.hostLog("bootstrap", "host");  // Use hostLog because we ALWAYS want this, even if _Trace is off.
 
 			// Initialize our global queues.
-			_KernelInterruptQueue = new Queue();  // A (currently) non-priority queue for interrupt requests (IRQs).
+			_KernelInterruptQueue = new Queue<Interrupt>();  // A (currently) non-priority queue for interrupt requests (IRQs).
 			_KernelBuffers = [];         // Buffers... for the kernel.
-			_KernelInputQueue = new Queue();      // Where device input lands before being processed out somewhere.
+			_KernelInputQueue = new Queue<string>();      // Where device input lands before being processed out somewhere.
 
 			// Initialize the console.
 			_Console = new Console();             // The command line interface / console I/O device.
@@ -28,6 +28,7 @@ module TSOS {
 			// Initialize standard input and output to the _Console.
 			_StdIn  = _Console;
 			_StdOut = _Console;
+			_StdErr = _Console;
 
 			// Load the Keyboard Device Driver
 			this.krnTrace("Loading the keyboard device driver.");
@@ -81,13 +82,29 @@ module TSOS {
 				// TODO (maybe): Implement a priority queue based on the IRQ number/id to enforce interrupt priority.
 				const interrupt = _KernelInterruptQueue.dequeue();
 				this.krnInterruptHandler(interrupt.irq, interrupt.params);
-			} else if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
-				_CPU.cycle();
-			} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
-				this.krnTrace("Idle");
+			} else {
+				//TODO this will need to be changed when the scheduler is fully implemented
+				if (!_Scheduler.currPCB) {
+					_CPU.isExecuting = false;
+					if (!_Scheduler.pcbQueue.isEmpty()) {
+						_Scheduler.currPCB = _Scheduler.pcbQueue.dequeue();
+						_CPU.PC = _Scheduler.currPCB.PC;
+						_CPU.Acc = _Scheduler.currPCB.Acc;
+						_CPU.Xreg = _Scheduler.currPCB.Xreg;
+						_CPU.Yreg = _Scheduler.currPCB.Yreg;
+						_CPU.Zflag = _Scheduler.currPCB.Zflag;
+						_CPU.isExecuting = true;
+					}
+				}
+				if (!_CPU.paused) {
+					if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
+						_CPU.cycle();
+					} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
+						this.krnTrace("Idle");
+					}
+				}
 			}
 		}
-
 
 		//
 		// Interrupt Handling
@@ -104,7 +121,7 @@ module TSOS {
 			// Put more here.
 		}
 
-		public krnInterruptHandler(irq, params) {
+		public krnInterruptHandler(irq: number, params: any[]) {
 			// This is the Interrupt Handler Routine.  See pages 8 and 560.
 			// Trace our entrance here so we can compute Interrupt Latency by analyzing the log file later on. Page 766.
 			this.krnTrace("Handling IRQ~" + irq);
@@ -114,12 +131,21 @@ module TSOS {
 			// Note: There is no need to "dismiss" or acknowledge the interrupts in our design here.
 			//       Maybe the hardware simulation will grow to support/require that in the future.
 			switch (irq) {
-				case TIMER_IRQ:
+				case IRQ.timer:
 					this.krnTimerISR();               // Kernel built-in routine for timers (not the clock).
 					break;
-				case KEYBOARD_IRQ:
+				case IRQ.keyboard:
 					_krnKeyboardDriver.isr(params);   // Kernel mode device driver
 					_StdIn.handleInput();
+					break;
+				case IRQ.kill:
+					kill(params);
+					break;
+				case IRQ.writeIntConsole:
+					writeIntStdOut(params);
+					break;
+				case IRQ.writeStrConsole:
+					writeStrStdOut(params);
 					break;
 				default:
 					this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");
@@ -131,22 +157,6 @@ module TSOS {
 			// Check multiprogramming parameters and enforce quanta here. Call the scheduler / context switch here if necessary.
 			// Or do it elsewhere in the Kernel. We don't really need this.
 		}
-
-		//
-		// System Calls... that generate software interrupts via tha Application Programming Interface library routines.
-		//
-		// Some ideas:
-		// - ReadConsole
-		// - WriteConsole
-		// - CreateProcess
-		// - ExitProcess
-		// - WaitForProcessToExit
-		// - CreateFile
-		// - OpenFile
-		// - ReadFile
-		// - WriteFile
-		// - CloseFile
-
 
 		//
 		// OS Utility Routines

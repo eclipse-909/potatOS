@@ -1,6 +1,18 @@
 module TSOS {
+	export enum Status {
+		//process is loaded into memory but not ready for execution
+		sleeping,
+		//ready to be executed by scheduler
+		ready,
+		//currently being executed
+		running,
+		//process was killed
+		terminated
+	}
+
 	export class ProcessControlBlock {
 		pid: number;
+		status: Status;
 		pageTable: Map<number, number>;
 		//stdIn: InStream;//programs don't actually have input
 		stdOut: OutStream<string[]>;
@@ -24,6 +36,7 @@ module TSOS {
 			let pcb: ProcessControlBlock = new ProcessControlBlock();
 			pcb.pid = ProcessControlBlock.highestPID;
 			ProcessControlBlock.highestPID++;
+			pcb.status = Status.sleeping;
 			pcb.pageTable = new Map<number, number>();
 			pcb.stdOut = _StdOut;//default to the console stdout and stderr
 			pcb.stdErr = _StdErr;

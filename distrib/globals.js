@@ -21,11 +21,11 @@ var IRQ;
     IRQ[IRQ["kill"] = 2] = "kill";
     IRQ[IRQ["writeIntConsole"] = 3] = "writeIntConsole";
     IRQ[IRQ["writeStrConsole"] = 4] = "writeStrConsole";
+    IRQ[IRQ["scheduleYield"] = 5] = "scheduleYield";
 })(IRQ || (IRQ = {}));
 const NUM_PAGES = 0x100;
 const PAGE_SIZE = 0x100;
 const MEM_SIZE = NUM_PAGES * PAGE_SIZE;
-const nullptr = 0x0000;
 //bytes are unchecked
 function leToU16(lowByte, highByte) { return (highByte << 8) | lowByte; }
 //
@@ -38,6 +38,7 @@ let _MMU;
 let _OSclock = 0; // Page 23.
 //let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
 let _Canvas; // Initialized in Control.hostInit().
+let CANVAS_HEIGHT = 500;
 let _DrawingContext; // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
 const _DefaultFontFamily = "sans"; // Ignored, I think. The was just a place-holder in 2008, but the HTML canvas may have use for it.
 const _DefaultFontSize = 13;

@@ -23,13 +23,13 @@ enum IRQ {
 	keyboard,
 	kill,
 	writeIntConsole,
-	writeStrConsole
+	writeStrConsole,
+	scheduleYield
 }
 
 const NUM_PAGES: number = 0x100;
 const PAGE_SIZE: number = 0x100;
 const MEM_SIZE: number = NUM_PAGES * PAGE_SIZE;
-const nullptr: number = 0x0000;
 
 //bytes are unchecked
 function leToU16(lowByte: number, highByte: number) {return (highByte << 8) | lowByte;}
@@ -47,6 +47,7 @@ let _OSclock: number = 0;  // Page 23.
 //let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
 
 let _Canvas: HTMLCanvasElement;          // Initialized in Control.hostInit().
+let CANVAS_HEIGHT: number = 500;
 let _DrawingContext: any;                // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
 const _DefaultFontFamily: string = "sans"; // Ignored, I think. The was just a place-holder in 2008, but the HTML canvas may have use for it.
 const _DefaultFontSize: number = 13;

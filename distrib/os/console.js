@@ -30,18 +30,23 @@ var TSOS;
             this.resetXY();
         }
         clearScreen() {
-            _DrawingContext.clearRect(0, 0, _Canvas.width, _Canvas.height);
+            _Canvas.height = CANVAS_HEIGHT;
         }
         resetXY() {
             this.currentXPosition = 0;
             this.currentYPosition = this.currentFontSize;
         }
         //Clears the line, including the prompt
-        clearLine() {
-            _DrawingContext.clearRect(0, this.currentYPosition - _DefaultFontSize, _DrawingContext.measureText(this.currentFont, this.currentFontSize, _OsShell.promptStr + this.buffer), _DefaultFontSize + 5);
-            this.currentXPosition = 0;
-            this.buffer = "";
-        }
+        // clearLine(): void {
+        // 	_DrawingContext.clearRect(
+        // 		0,
+        // 		this.currentYPosition - _DefaultFontSize,
+        // 		_DrawingContext.measureText(this.currentFont, this.currentFontSize, _OsShell.promptStr + this.buffer),
+        // 		_DefaultFontSize + 5
+        // 	);
+        // 	this.currentXPosition = 0;
+        // 	this.buffer = "";
+        // }
         //Clears the text of the current prompt, but doesn't remove the prompt
         clearPrompt() {
             const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer);
@@ -152,20 +157,17 @@ var TSOS;
                 }
             }
         }
-        //you can also output "\n" to the console
+        //Alternatively, you can output "\n" to the console.
         advanceLine() {
             this.currentXPosition = 0;
             this.currentYPosition += _DefaultFontSize +
                 _DrawingContext.fontDescent(this.currentFont, this.currentFontSize) +
                 _FontHeightMargin;
-            //TODO expand the height of the canvas when overflowing so that scrolling works
-            //Reference: https://www.labouseur.com/commondocs/operating-systems/LuchiOS/index.html
             if (this.currentYPosition > _Canvas.height) {
-                let offset = this.currentYPosition - _Canvas.height + _FontHeightMargin;
                 let screenData = _DrawingContext.getImageData(0, 0, _Canvas.width, this.currentYPosition + _FontHeightMargin);
-                this.clearScreen();
-                _DrawingContext.putImageData(screenData, 0, -offset);
-                this.currentYPosition -= offset;
+                _Canvas.height = this.currentYPosition + _FontHeightMargin;
+                _DrawingContext.putImageData(screenData, 0, 0);
+                document.getElementById("display").scrollIntoView({ behavior: 'instant', block: 'end' });
             }
         }
         //I/O interface functions

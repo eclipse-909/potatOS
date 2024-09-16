@@ -1,7 +1,19 @@
 var TSOS;
 (function (TSOS) {
+    let Status;
+    (function (Status) {
+        //process is loaded into memory but not ready for execution
+        Status[Status["sleeping"] = 0] = "sleeping";
+        //ready to be executed by scheduler
+        Status[Status["ready"] = 1] = "ready";
+        //currently being executed
+        Status[Status["running"] = 2] = "running";
+        //process was killed
+        Status[Status["terminated"] = 3] = "terminated";
+    })(Status = TSOS.Status || (TSOS.Status = {}));
     class ProcessControlBlock {
         pid;
+        status;
         pageTable;
         //stdIn: InStream;//programs don't actually have input
         stdOut;
@@ -21,6 +33,7 @@ var TSOS;
             let pcb = new ProcessControlBlock();
             pcb.pid = ProcessControlBlock.highestPID;
             ProcessControlBlock.highestPID++;
+            pcb.status = Status.sleeping;
             pcb.pageTable = new Map();
             pcb.stdOut = _StdOut; //default to the console stdout and stderr
             pcb.stdErr = _StdErr;

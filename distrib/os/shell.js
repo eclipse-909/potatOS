@@ -15,18 +15,20 @@ var TSOS;
         curses = "[fuvg],[cvff],[shpx],[phag],[pbpxfhpxre],[zbgureshpxre],[gvgf]";
         apologies = "[sorry]";
         cmdQueue = new TSOS.Queue();
-        ioQueue = new TSOS.Queue();
+        ioBuffer = null;
         processExitQueue = new TSOS.Queue();
         pidsWaitingOn = [];
         //The shell is used as I/O when piping the output of one command to the input of another command.
         output(buffer) {
-            this.ioQueue.enqueue(buffer);
+            this.ioBuffer = this.ioBuffer === null ? buffer : this.ioBuffer.concat(buffer);
         }
         input() {
-            return this.ioQueue.dequeue();
+            let buffer = this.ioBuffer ?? [];
+            this.ioBuffer = null;
+            return buffer;
         }
         error(buffer) {
-            this.ioQueue.enqueue(buffer);
+            this.ioBuffer = this.ioBuffer === null ? buffer : this.ioBuffer.concat(buffer);
         }
         //Must be used in between two commands.
         connectors = [
@@ -49,24 +51,11 @@ var TSOS;
         }
         putPrompt() {
             _StdOut.putText(this.promptStr);
+            _StdIn.inputEnabled = true;
         }
         handleInput(input) {
             _StdOut.advanceLine();
-            if (!this.processExitQueue.isEmpty()) {
-                while (!this.processExitQueue.isEmpty()) {
-                    const exit = this.processExitQueue.dequeue();
-                    _StdOut.output([exit.exitCode.processDesc(exit.pid) + "\n"]);
-                    const i = this.pidsWaitingOn.findIndex((item) => {
-                        return item.pid === exit.pid;
-                    });
-                    if (i !== -1) {
-                        this.pidsWaitingOn.splice(i, 1);
-                    }
-                    if (this.pidsWaitingOn.length === 0) {
-                        _StdIn.inputEnabled = true;
-                    }
-                }
-            }
+            this.checkProcessFinished();
             if (input === "") {
                 return this.putPrompt();
             }
@@ -194,8 +183,9 @@ var TSOS;
                 this.cmdQueue.enqueue(cmd);
             }
             this.executeCmdQueue();
+            this.checkWaiting();
         }
-        executeCmdQueue(prevCmd = null) {
+        executeCmdQueue() {
             _StdIn.inputEnabled = false;
             if (this.cmdQueue.isEmpty()) {
                 return;
@@ -208,51 +198,17 @@ var TSOS;
                 let stdout = _StdOut;
                 let stderr = _StdErr;
                 //if the previous command is being piped into this one
-                //add the arguments of this command before the output of the previous command
-                if (this.ioQueue.isEmpty()) {
-                    this.ioQueue.enqueue(currCmd.args);
+                //add the arguments of this command before the output of the previous command.
+                //The output of the previous command should already be in the buffer
+                if (this.ioBuffer === null) {
+                    this.ioBuffer = currCmd.args;
                 }
                 else {
                     for (let i = currCmd.args.length - 1; i >= 0; i--) {
-                        this.ioQueue.peek().unshift(currCmd.args[i]);
+                        this.ioBuffer.unshift(currCmd.args[i]);
                     }
                 }
-                // if (prevCmd) {
-                // 	if (prevCmd.redirector === "|") {
-                // 		stdin = this;
-                // 		for (let i: number = currCmd.args.length - 1; i >= 0; i--) {
-                // 			this.ioQueue.peek().unshift(currCmd.args[i]);
-                // 		}
-                // 	}
-                // } else {
-                // 	stdin.input = (): string[] => {return [];};//the first argument shouldn't have any
-                // }
-                //redirect io
-                switch (currCmd.redirector) {
-                    case ">>":
-                        //TODO file system not supported yet
-                        break;
-                    case ">":
-                        //TODO file system not supported yet
-                        break;
-                    case "2>&1":
-                        stderr.error = stdout.output;
-                        break;
-                    case "2>":
-                        //TODO file system not supported yet
-                        break;
-                    case "<":
-                        //TODO file system not supported yet
-                        break;
-                    case "|":
-                        if (!nextCmd) {
-                            //TODO syntax error: expected command after '|'
-                            return;
-                        }
-                        stdout = this;
-                        break;
-                }
-                //execute command
+                //verify command
                 let exitCode;
                 if (!command) {
                     if (this.curses.indexOf("[" + TSOS.Utils.rot13(currCmd.name) + "]") >= 0) { // Check for curses.
@@ -261,16 +217,43 @@ var TSOS;
                     else if (this.apologies.indexOf("[" + currCmd.name + "]") >= 0) { // Check for apologies.
                         exitCode = this.shellApology(stdin, stdout, stderr);
                     }
-                    exitCode = TSOS.ExitCode.COMMAND_NOT_FOUND;
-                    stderr.error([
-                        _SarcasticMode
-                            ? "Unbelievable. You, [subject name here],\nmust be the pride of [subject hometown here]."
-                            : "Type 'help' for, well... help."
-                    ]);
+                    else {
+                        exitCode = TSOS.ExitCode.COMMAND_NOT_FOUND;
+                        stderr.error([
+                            _SarcasticMode
+                                ? "Unbelievable. You, [subject name here],\nmust be the pride of [subject hometown here]."
+                                : "Type 'help' for, well... help.\n"
+                        ]);
+                        return;
+                    }
                 }
-                else {
-                    exitCode = command.func(stdin, stdout, stderr);
+                //redirect io
+                switch (currCmd.redirector) {
+                    case ">>":
+                        _StdErr.error(["Syntax error - unimplemented operator: >> - file redirection is not supported yet.\n"]);
+                        return;
+                    case ">":
+                        _StdErr.error(["Syntax error - unimplemented operator: > - file redirection is not supported yet.\n"]);
+                        return;
+                    case "2>&1":
+                        stderr.error = stdout.output;
+                        break;
+                    case "2>":
+                        _StdErr.error(["Syntax error - unimplemented operator: 2> - file redirection is not supported yet.\n"]);
+                        return;
+                    case "<":
+                        _StdErr.error(["Syntax error - unimplemented operator: < - file redirection is not supported yet.\n"]);
+                        return;
+                    case "|":
+                        if (!nextCmd) {
+                            _StdErr.error(["Syntax error - token expected: | <command> - expected command.\n"]);
+                            return;
+                        }
+                        stdout = this;
+                        break;
                 }
+                //execute command
+                exitCode = command.func(stdin, stdout, stderr);
                 //if we are executing a process,
                 //add the pid and connector to the queue so we can wait for it to finish.
                 //then keep executing remaining chained commands.
@@ -283,7 +266,7 @@ var TSOS;
                         else if (exitCode === null) { //asynchronous
                             this.pidsWaitingOn.push({ pid: pid, connector: null });
                             _StdIn.inputEnabled = true;
-                            this.continueExecution(); //make a semi-recursive call because the pipeline is broken, even in async processes
+                            this.continueExecution(); //make a recursive call because the pipeline is broken, even in async processes
                         }
                         return;
                     }
@@ -303,50 +286,60 @@ var TSOS;
                         }
                         break;
                 }
-                prevCmd = currCmd;
-                currCmd = nextCmd;
-                nextCmd = this.cmdQueue.dequeue();
+                currCmd = this.cmdQueue.dequeue();
+                nextCmd = this.cmdQueue.peek();
             }
-            //debug:
-            if (!this.ioQueue.isEmpty()) {
-                console.error("IO queue wasn't cleared and commands are done executing");
+            //debug - TODO remove this after testing:
+            if (this.ioBuffer !== null) {
+                console.error("IO buffer wasn't cleared even though commands are done executing");
             }
             //if everything finished executing, and we aren't waiting on any processes, allow input
-            _StdIn.inputEnabled = this.cmdQueue.isEmpty() && this.ioQueue.isEmpty() && this.processExitQueue.isEmpty() && this.pidsWaitingOn.length === 0;
-            _StdOut.advanceLine();
+            //_StdOut.advanceLine();
             this.putPrompt();
+        }
+        checkProcessFinished() {
+            const process = this.processExitQueue.dequeue();
+            if (!process) {
+                return false;
+            }
+            _StdOut.output([process.exitCode.processDesc(process.pid) + "\n"]);
+            let pidIndex = this.pidsWaitingOn.findIndex((item) => {
+                return item.pid === process.pid;
+            });
+            if (pidIndex === -1) {
+                return false;
+            }
+            let cmdData = this.pidsWaitingOn.splice(pidIndex, 1);
+            return cmdData.length === 1;
         }
         //Continues shell execution, if need be, after a process finishes
         continueExecution() {
-            const process = this.processExitQueue.dequeue();
-            if (!process) {
+            if (!this.checkProcessFinished()) {
                 return;
             }
-            let cmdData = this.pidsWaitingOn.find((item) => {
-                return item.pid === process.pid;
-            });
-            if (!cmdData) {
+            this.executeCmdQueue();
+            this.checkWaiting();
+        }
+        checkWaiting() {
+            if (_StdIn.inputEnabled) {
                 return;
             }
-            const prevCmd = {
-                name: "",
-                args: [],
-                connector: cmdData.connector
-            };
-            this.executeCmdQueue(prevCmd);
+            if (this.cmdQueue.isEmpty()) {
+                this.putPrompt();
+            }
         }
         shellCurse(_stdin, stdout, _stderr) {
-            stdout.output(["Oh, so that's how it's going to be, eh? Fine.\nBitch."]);
+            stdout.output(["Oh, so that's how it's going to be, eh? Fine.\nBitch.\n"]);
             _SarcasticMode = true;
             return TSOS.ExitCode.SUCCESS;
         }
         shellApology(_stdin, stdout, _stderr) {
             if (_SarcasticMode) {
-                stdout.output(["I think we can put our differences behind us.\nFor science . . . You monster."]);
+                stdout.output(["I think we can put our differences behind us.\nFor science . . . You monster.\n"]);
                 _SarcasticMode = false;
             }
             else {
-                stdout.output(["For what?"]);
+                stdout.output(["For what?\n"]);
             }
             return TSOS.ExitCode.SUCCESS;
         }

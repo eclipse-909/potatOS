@@ -18,7 +18,7 @@ module TSOS {
 	interface Command {
 		name: string;
 		args: string[];
-		connector?: string; // Symbol like || or &&
+		connector?: string; // Symbol like ||, &&, or ;
 		redirector?: string;
 	}
 
@@ -27,9 +27,13 @@ module TSOS {
 		public promptStr = "$ ";
 		public curses = "[fuvg],[cvff],[shpx],[phag],[pbpxfhpxre],[zbgureshpxre],[gvgf]";
 		public apologies = "[sorry]";
+		//command execution queue
 		cmdQueue: Queue<Command> = new Queue<Command>();
+		//command IO pipeline
 		ioBuffer: string[] | null = null;
+		//queue of processes that have finished
 		processExitQueue: Queue<{exitCode: ExitCode, pid: number}> = new Queue<{exitCode: ExitCode, pid: number}>();
+		//PID of synchronous processes
 		pidsWaitingOn: {pid: number, connector: string | null}[] = [];
 
 		//The shell is used as I/O when piping the output of one command to the input of another command.
@@ -49,6 +53,7 @@ module TSOS {
 		connectors: string[] = [
 			"||",   //execute second command if and only if the first command fails.
 			"&&",   //execute second command if and only if the first command succeeds.
+			";",    //always executes the next command.
 		];
 		//Must be used in between a command and an argument that specifies input or output.
 		redirectors: string[] = [
@@ -74,7 +79,14 @@ module TSOS {
 
 		public handleInput(input: string): void {
 			_StdOut.advanceLine();
-			this.checkProcessFinished();
+			//check if an async process has finished before starting a new command
+			let process: {exitCode: ExitCode, pid: number} | null = this.processExitQueue.dequeue();
+			while (process) {
+				if (process) {
+					_StdOut.output([process.exitCode.processDesc(process.pid) + "\n"]);
+				}
+				process = this.processExitQueue.dequeue();
+			}
 			if (input === "") {
 				return this.putPrompt();
 			}
@@ -193,12 +205,12 @@ module TSOS {
 				this.cmdQueue.enqueue(cmd);
 			}
 			this.executeCmdQueue();
-			this.checkWaiting();
+			this.tryEnableInput();
 		}
 
 		public executeCmdQueue(): void {
-			_StdIn.inputEnabled = false;
 			if (this.cmdQueue.isEmpty()) {return;}
+			_StdIn.inputEnabled = false;
 			let currCmd: Command | null = this.cmdQueue.dequeue();
 			let nextCmd: Command | null = this.cmdQueue.peek();
 			while (currCmd) {
@@ -236,6 +248,11 @@ module TSOS {
 						]);
 						return;
 					}
+				}
+
+				if (currCmd.redirector && command.command === "run" && currCmd.args[1] === "&") {
+					_StdErr.error([`Syntax error - asynchronous redirection: ${currCmd.redirector} with & - file redirection is not supported for asynchronous processes.\n`])
+					return;
 				}
 
 				//redirect io
@@ -276,9 +293,9 @@ module TSOS {
 						if (exitCode === undefined) {//synchronous
 							this.pidsWaitingOn.push({pid: pid, connector: currCmd.connector});
 						} else if (exitCode === null) {//asynchronous
-							this.pidsWaitingOn.push({pid: pid, connector: null});
-							_StdIn.inputEnabled = true;
-							this.continueExecution();//make a recursive call because the pipeline is broken, even in async processes
+							this.putPrompt();
+							this.executeCmdQueue();
+							this.tryEnableInput();
 						}
 						return;
 					}
@@ -308,33 +325,30 @@ module TSOS {
 			this.putPrompt();
 		}
 
-		checkProcessFinished(): boolean {
-			const process: {exitCode: ExitCode, pid: number} | null = this.processExitQueue.dequeue();
-			if (!process) {return false;}
-			_StdOut.output([process.exitCode.processDesc(process.pid) + "\n"]);
+		//Called when a process is killed to determine how the shell should react
+		onProcessFinished(): void {
+			//see if a process has finished
+			const process: {exitCode: ExitCode, pid: number} | null = this.processExitQueue.peek();
+			if (!process) {return;}
 			let pidIndex: number = this.pidsWaitingOn.findIndex((item: {pid: number, connector: string | null}): boolean => {
 				return item.pid === process.pid;
 			});
-			if (pidIndex === -1) {return false;}
-			let cmdData: {pid: number, connector: string | null}[] = this.pidsWaitingOn.splice(pidIndex, 1);
-			return cmdData.length === 1;
-
-		}
-
-		//Continues shell execution, if need be, after a process finishes
-		public continueExecution(): void {
-			if (!this.checkProcessFinished()) {
+			//we don't care about async processes
+			if (pidIndex === -1) {return;}
+			this.processExitQueue.dequeue();
+			this.pidsWaitingOn.splice(pidIndex, 1);
+			_StdOut.output(["\n" + process.exitCode.processDesc(process.pid) + "\n"]);
+			if (this.cmdQueue.isEmpty()) {
+				this.putPrompt();
 				return;
 			}
 			this.executeCmdQueue();
-			this.checkWaiting();
+			this.tryEnableInput();
 		}
 
-		checkWaiting(): void {
-			if (_StdIn.inputEnabled) {return;}
-			if (this.cmdQueue.isEmpty()) {
-				this.putPrompt();
-			}
+		//enables input if and only if we are not waiting for commands or synchronous processes to finish
+		tryEnableInput(): void {
+			_StdIn.inputEnabled = this.cmdQueue.isEmpty() && this.pidsWaitingOn.length === 0;
 		}
 
 		public shellCurse(_stdin: InStream<string[]>, stdout: OutStream<string[]>, _stderr: ErrStream<string[]>): ExitCode {

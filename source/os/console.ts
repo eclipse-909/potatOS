@@ -57,8 +57,9 @@ module TSOS {
 			while (_KernelInputQueue.getSize() > 0) {
 				// Get the next character from the kernel input queue.
 				const chr = _KernelInputQueue.dequeue();
-				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
+				//only handle the input if it's enabled. all characters entered will be discarded
 				if (!this.inputEnabled) {continue;}
+				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
 				switch (chr) {
 					case String.fromCharCode(-1): // up arrow
 						if (this.shellHistoryIndex === 0) {break;}

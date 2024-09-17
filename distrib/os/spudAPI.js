@@ -44,6 +44,7 @@ var TSOS;
             }
         }
         _OsShell.processExitQueue.enqueue({ exitCode: params[1], pid: pid });
+        _OsShell.onProcessFinished();
     }
     TSOS.kill = kill;
     //Writes the byte in the Y-register to the standard output as an integer.

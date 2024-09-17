@@ -1,7 +1,8 @@
-/* TSOS.css */
-
 body {
-  background: #909193 url(distrib/images/linen.png) repeat;
+  background-image: url("./img/potatoBG.jpg");
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
   font-family: Helvetica, Verdana, Arial, sans-serif;
   font-size: 12pt;
   font-weight: normal;
@@ -10,24 +11,78 @@ body {
 
 h1 {
   color: black;
-  font-size: 24pt;
+  font-size: 32pt;
   font-weight: normal;
   font-style: normal;
-  border-bottom: 1px solid black;
 }
 
 h2 {
   color: black;
-  font-size: 20pt;
+  font-size: 18pt;
   font-weight: normal;
   font-style: normal;
 }
 
-h3 {
-  font-family: Helvetica, Verdana, Arial, sans-serif;
-  font-size: 16pt;
-  font-weight: normal;
-  font-style: normal;
+#top, #bottom {
+  display: flex;
+  flex-direction: row;
+  padding: 10px;
+  justify-content: space-around;
+}
+
+#bottom {
+  flex-wrap: wrap;
+}
+
+#consoleButtons {
+  margin:4px;
+  flex-direction: column;
+  display: flex;
+}
+
+input:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+label, footer p {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+table, th, td {
+  border: 1px solid;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+th, td {
+  text-align: left;
+  padding: 5px;
+}
+
+.fryLabel {
+  height: 60px;
+  aspect-ratio: 688/158;
+  background-image: url("./img/frenchFry.png");
+  background-size: cover;
+  background-color: transparent;
+  border: none;
+  font-size: 24px;
+  color: #181818;
+  text-align: center;
+}
+
+#consoleFrame {
+  margin:4px;
+  width:560px;
+  height:510px;
+  overflow-y:scroll;
+}
+
+#console {
+  width:1000px;
+  flex-direction: row;
 }
 
 #display {
@@ -36,8 +91,40 @@ h3 {
   cursor: default;
 }
 
-.normal_button {
-  width: 100px;
+#cpuDisplay {
+  width: 300px;
+}
+
+#pcbDisplay {
+  width: 300px;
+}
+
+#memoryDisplay {
+  width: 300px;
+}
+
+#kernelLog {
+  width: 800px;
+}
+
+#hostLog {
+  width: 560px;
+}
+
+#userProgramInput {
+  width: 400px;
+}
+
+.potato {
+  background-image: url('./img/potato.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  aspect-ratio: 848/616;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .footerText {
@@ -47,21 +134,35 @@ h3 {
   text-align: center;
 }
 
+header {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 60px;
+}
+
+header h1, header h2 {
+  margin: 0;
+}
+
 footer {
-  background-color: aliceblue;
-  color: black;
-  text-align: left;
-  padding: 5px;
-  position: fixed;
   bottom: 0;
   width: 100%;
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
   display: flex;
   align-items: center;
+  justify-content: space-around;
 }
 
 footer p {
   padding: 15px;
   border: 3px black solid;
   border-radius: 10px;
+}
+
+footer .fryLabel {
+  width: 500px;
+  padding: 35px;
+  text-align: center;
 }

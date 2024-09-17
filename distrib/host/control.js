@@ -31,7 +31,7 @@ var TSOS;
             TSOS.CanvasTextFunctions.enable(_DrawingContext); // Text functionality is now built in to the HTML5 canvas. But this is old-school, and fun, so we'll keep it.
             // Clear the log text box.
             // Use the TypeScript cast to HTMLInputElement
-            document.getElementById("taHostLog").value = "";
+            document.getElementById("hostLog").value = "";
             // Set focus on the start button.
             // Use the TypeScript cast to HTMLInputElement
             document.getElementById("btnStartOS").focus();
@@ -52,7 +52,7 @@ var TSOS;
             // Build the log string.
             const str = "({ clock:" + clock + ", source:" + source + ", msg:" + msg + ", now:" + now + " })" + "\n";
             // Update the log console.
-            const taLog = document.getElementById("taHostLog");
+            const taLog = document.getElementById("hostLog");
             taLog.value = str + taLog.value;
             // TODO in the future: Optionally update a log database or some streaming service.
         }

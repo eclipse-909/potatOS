@@ -43,100 +43,130 @@
 
 <body onload="onDocumentLoad()">
 
-<div id="divMain" style="width:100%;">
+<header>
+   <h1>potatOS</h1>
+   <h2>Ethan Morton</h2>
+</header>
 
-   <div id="divButtonBar" style="margin:4px;">
-      <input type="button"
-             id = "btnStartOS"
-             name="brnStartOS"
-             class="normal_button"
-             value="Start"
-             tabindex="0"
-             onclick="TSOS.Control.hostBtnStartOS_click(this);">
+<hr>
 
-      <input type="button"
-             id = "btnHaltOS"
-             name="brnHaltOS"
-             class="normal_button"
-             disabled="disabled"
-             value="Halt"
-             tabindex="1"
-             onclick="TSOS.Control.hostBtnHaltOS_click(this);">
+<div id="divMain">
+   <div id="top">
+      <div id="console" class="potato">
+         <div id="consoleButtons">
+            <input type="button"
+                   id = "btnStartOS"
+                   name="brnStartOS"
+                   class="fryLabel"
+                   value="Start"
+                   tabindex="0"
+                   onclick="TSOS.Control.hostBtnStartOS_click(this);">
 
-      <input type="button"
-             id = "btnReset"
-             name="brnReset"
-             class="normal_button"
-             disabled="disabled"
-             value="Reset"
-             tabindex="2"
-             onclick="TSOS.Control.hostBtnReset_click(this);">
-<!--
-      <input type="button"
-             id = "btnPause"
-             name="brnPauseCPU"
-             class="normal_button"
-             value="Pause"
-             tabindex="3"
-             onclick="TSOS.Control.hostBtnPauseCpu(this);">
+            <input type="button"
+                   id = "btnHaltOS"
+                   name="brnHaltOS"
+                   class="fryLabel"
+                   disabled="disabled"
+                   value="Halt"
+                   tabindex="1"
+                   onclick="TSOS.Control.hostBtnHaltOS_click(this);">
 
-      <input type="button"
-             id = "btnStep"
-             name="brnStepCPU"
-             class="normal_button"
-             disabled="disabled"
-             value="Step"
-             tabindex="4"
-             onclick="TSOS.Control.HostBtnStepCpu(this);">
--->
-   </div>
+            <input type="button"
+                   id = "btnReset"
+                   name="brnReset"
+                   class="fryLabel"
+                   disabled="disabled"
+                   value="Reset"
+                   tabindex="2"
+                   onclick="TSOS.Control.hostBtnReset_click(this);">
 
-   <div id="divConsole" style="margin:4px; width:505px; height:510px; float:left;overflow-y: scroll;">
-      <canvas id="display"
-              width="500px"
-              height="500px"
-              tabindex="3">
-      </canvas>
-   </div>
+            <input type="button"
+                   id = "btnPause"
+                   name="brnPauseCPU"
+                   class="fryLabel"
+                   value="Pause"
+                   tabindex="3"
+                   onclick="TSOS.Control.hostBtnPauseCpu(this);">
 
-   <div id="divLog" style="margin-left:520px;">
-      <label>
-         Host Log
+            <input type="button"
+                   id = "btnStep"
+                   name="brnStepCPU"
+                   class="fryLabel"
+                   disabled="disabled"
+                   value="Step"
+                   tabindex="4"
+                   onclick="TSOS.Control.HostBtnStepCpu(this);">
+         </div>
+         <div id="consoleFrame">
+            <canvas id="display" width="500px" height="500px" tabindex="3"></canvas>
+         </div>
+      </div>
+
+      <div id="kernelLog" class="potato">
+         <label class="fryLabel">Host Log</label>
          <br>
-         <textarea name="taHostLog"
-                   id  ="taHostLog"
-                   rows="26"
-                   cols="48"
-                   style="width: 560px;"
-         ></textarea>
-      </label>
+         <textarea name="taHostLog" id="hostLog" rows="26" cols="48"></textarea>
+      </div>
    </div>
 
-   <div id="divUserProgramInput" style="margin-left:520px;">
-      <label>
-         User Program Input
+   <div id="bottom">
+      <div id="cpuDisplay" class="potato">
+         <label class="fryLabel">CPU</label>
          <br>
-         <textarea name="taProgramInput"
-                   id  ="taProgramInput"
-                   rows="8"
-                   cols="48"
-         ></textarea>
-      </label>
+         <table>
+            <tr>
+               <th>IR</th>
+               <th>PC</th>
+               <th>Acc</th>
+               <th>X</th>
+               <th>Y</th>
+               <th>Zero</th>
+            </tr>
+            <tr>
+               <td id="IR"></td>
+               <td id="PC"></td>
+               <td id="Acc"></td>
+               <td id="xRed"></td>
+               <td id="yReg"></td>
+               <td id="zFlag"></td>
+            </tr>
+         </table>
+      </div>
+
+      <div id="pcbDisplay" class="potato">
+         <label class="fryLabel">Current PCB</label>
+         <br>
+         <table>
+            <tr>
+               <th>IR</th>
+               <th>PC</th>
+               <th>Acc</th>
+               <th>X</th>
+               <th>Y</th>
+               <th>Zero</th>
+               <!-- There will be more data -->
+            </tr>
+         </table>
+      </div>
+
+      <div id="memoryDisplay" class="potato">
+         <label class="fryLabel">Memory</label>
+         <br>
+         <!-- Make Memory display -->
+      </div>
+
+      <div id="userProgramInput" class="potato">
+         <label class="fryLabel">User Program Input</label>
+         <br>
+         <textarea name="taProgramInput" id="programInput" rows="8" cols="48"></textarea>
+      </div>
    </div>
 </div>
 
 <footer>
-   <p id="footerDate"></p>
-   <p id="footerStatus">I love operating systems</p>
+   <p id="footerDate" class="fryLabel"></p>
+   <p id="footerStatus" class="fryLabel">I love operating systems</p>
 </footer>
-
-<p class="footerText" style="clear:both;">
-   <br>
-   Copyright &copy; 2008 - 2112 No Rights Reserved.
-   <br>
-   Reproduction is inhibited without the express written consent of
-   Ted Codd, Stevie Ray Vaughan, Neil Peart, and Ian Fleming.
-</p>
 
 </body>
 </html>

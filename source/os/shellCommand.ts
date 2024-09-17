@@ -203,7 +203,7 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: load\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			const textArea: HTMLTextAreaElement = document.getElementById("taProgramInput") as HTMLTextAreaElement;
+			const textArea: HTMLTextAreaElement = document.getElementById("programInput") as HTMLTextAreaElement;
 			let input: string = textArea.value;
 			input = input.replace(/\s+/g, ' ').trim();
 			const hexArray: string[] = input.split(/[\s,]+/);

@@ -186,7 +186,7 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: load\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            const textArea = document.getElementById("taProgramInput");
+            const textArea = document.getElementById("programInput");
             let input = textArea.value;
             input = input.replace(/\s+/g, ' ').trim();
             const hexArray = input.split(/[\s,]+/);

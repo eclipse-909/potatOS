@@ -37,7 +37,7 @@ module TSOS {
 
 			// Clear the log text box.
 			// Use the TypeScript cast to HTMLInputElement
-			(<HTMLInputElement> document.getElementById("taHostLog")).value="";
+			(<HTMLInputElement> document.getElementById("hostLog")).value="";
 
 			// Set focus on the start button.
 			// Use the TypeScript cast to HTMLInputElement
@@ -64,7 +64,7 @@ module TSOS {
 			const str: string = "({ clock:" + clock + ", source:" + source + ", msg:" + msg + ", now:" + now + " })" + "\n";
 
 			// Update the log console.
-			const taLog = <HTMLInputElement>document.getElementById("taHostLog");
+			const taLog = <HTMLInputElement>document.getElementById("hostLog");
 			taLog.value = str + taLog.value;
 
 			// TODO in the future: Optionally update a log database or some streaming service.

@@ -25,6 +25,7 @@ var TSOS;
         }
         const pid = params[0];
         if (_Scheduler.currPCB.pid === pid) {
+            _Scheduler.currPCB.status = TSOS.Status.terminated;
             _Scheduler.currPCB.free();
             _Scheduler.currPCB = null;
         }
@@ -33,6 +34,7 @@ var TSOS;
             while (!_Scheduler.pcbQueue.isEmpty()) {
                 let pcb = _Scheduler.pcbQueue.dequeue();
                 if (pcb.pid === pid) {
+                    pcb.status = TSOS.Status.terminated;
                     pcb.free();
                 }
                 else {
@@ -43,6 +45,7 @@ var TSOS;
                 _Scheduler.pcbQueue.enqueue(queue.dequeue());
             }
         }
+        TSOS.Control.updatePcbDisplay();
         _OsShell.processExitQueue.enqueue({ exitCode: params[1], pid: pid });
         _OsShell.onProcessFinished();
     }
@@ -53,7 +56,7 @@ var TSOS;
         if (params.length !== 2) {
             return /*TODO what happens when the system call arguments are invalid?*/;
         }
-        params[0].output(params[1].toString(16));
+        params[0].output([params[1].toString(16).toUpperCase()]);
     }
     TSOS.writeIntStdOut = writeIntStdOut;
     //Writes the null-terminated-string at the pointer to the standard output given by the indirect address in the Y-register.
@@ -73,7 +76,7 @@ var TSOS;
             buffer += String.fromCharCode(char);
             strPtr++;
         }
-        params[0].output(buffer);
+        params[0].output([buffer]);
     }
     TSOS.writeStrStdOut = writeStrStdOut;
 })(TSOS || (TSOS = {}));

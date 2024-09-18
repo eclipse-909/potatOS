@@ -88,12 +88,15 @@ module TSOS {
 					_CPU.isExecuting = false;
 					if (!_Scheduler.pcbQueue.isEmpty()) {
 						_Scheduler.currPCB = _Scheduler.pcbQueue.dequeue();
+						_Scheduler.currPCB.status = Status.running;
+						_CPU.IR = _Scheduler.currPCB.IR;
 						_CPU.PC = _Scheduler.currPCB.PC;
 						_CPU.Acc = _Scheduler.currPCB.Acc;
 						_CPU.Xreg = _Scheduler.currPCB.Xreg;
 						_CPU.Yreg = _Scheduler.currPCB.Yreg;
 						_CPU.Zflag = _Scheduler.currPCB.Zflag;
 						_CPU.isExecuting = true;
+						Control.updatePcbDisplay();
 					}
 				}
 				if (!_CPU.paused) {
@@ -194,6 +197,8 @@ module TSOS {
 			};
 
 			this.krnShutdown();
+
+			clearInterval(_hardwareClockID);
 		}
 	}
 }

@@ -21,7 +21,7 @@ module TSOS {
 			new ShellCommand(ShellCommand.shellCls, "cls", "- Clears the screen and resets the cursor position.\n"),
 			new ShellCommand(ShellCommand.shellMan, "man", "<topic> - Displays the MANual page for <topic>.\n"),
 			new ShellCommand(ShellCommand.shellTrace, "trace", "<on | off> - Turns the OS trace on or off.\n"),
-			new ShellCommand(ShellCommand.shellRot13, "rot13", "<string...> - Does rot13 obfuscation on <string>.\n"),
+			new ShellCommand(ShellCommand.shellRot13, "rot13", "<string...> - Does rot13 obfuscation on <string...>.\n"),
 			new ShellCommand(ShellCommand.shellPrompt, "prompt", "<string...> - Sets the prompt.\n"),
 			new ShellCommand(ShellCommand.shellDate, "date", "- Displays the current date and time.\n"),
 			new ShellCommand(ShellCommand.shellWhereAmI, "whereami", "- Displays the user's current location.\n"),
@@ -29,7 +29,9 @@ module TSOS {
 			new ShellCommand(ShellCommand.shellStatus, "status", "- Displays a message to the task bar.\n"),
 			new ShellCommand(ShellCommand.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message.\n"),
 			new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.\n"),
-			new ShellCommand(ShellCommand.shellRun, "run", "<process ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.\n")
+			new ShellCommand(ShellCommand.shellRun, "run", "<process ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.\n"),
+			//new ShellCommand(ShellCommand.shellRunAll, "runall", "[&] - Run all programs in memory. Use ampersand to run in background asynchronously.\n"),
+			new ShellCommand(ShellCommand.shellClh, "clh", "- Clears the host log.\n"),
 
 			// ps  - list the running processes and their IDs
 			// kill <id> - kills the specified process id.
@@ -259,7 +261,7 @@ module TSOS {
 			}
 			const pcb: ProcessControlBlock | undefined = _Scheduler.idlePcbs.get(pid);
 			if (!pcb) {
-				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + ` - Could not locate process ${pid}.\n`]);
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + ` - Could not find process ${pid}.\n`]);
 				return ExitCode.GENERIC_ERROR;
 			}
 			if (!async) {//console by default if it is async
@@ -271,7 +273,18 @@ module TSOS {
 			//I assume that I unload the program from memory once it finishes running.
 			//The program should be loaded from the disk every time you want to run it.
 			_Scheduler.idlePcbs.delete(pid);
+			Control.updatePcbDisplay();
 			return async? null : undefined;
+		}
+
+		static shellRunAll(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+			//TODO
+			return undefined;
+		}
+
+		static shellClh(_stdin: InStream<string[]>, _stdout: OutStream<string[]>, _stderr: ErrStream<string[]>): ExitCode {
+			(document.getElementById("hostLog") as HTMLInputElement).value = "";
+			return ExitCode.SUCCESS;
 		}
 	}
 }

@@ -2,11 +2,9 @@
 <html lang="en">
 <head>
    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
-   <meta name="author"             content="Alan G. Labouseur" />
+   <meta name="author" content="Ethan Morton" />
    <link rel="stylesheet" href="tsos.css" type="text/css" media="screen" />
-   <title>
-      TSOS - a browser-based virtual Operating System in TypeScript
-   </title>
+   <title>potatOS</title>
 
    <!-- Globals CONSTANTS and _Variables. Must be included first. -->
    <script type="text/javascript" src="distrib/globals.js"></script>
@@ -95,7 +93,7 @@
                    disabled="disabled"
                    value="Step"
                    tabindex="4"
-                   onclick="TSOS.Control.HostBtnStepCpu(this);">
+                   onclick="TSOS.Control.hostBtnStepCpu(this);">
          </div>
          <div id="consoleFrame">
             <canvas id="display" width="500px" height="500px" tabindex="3"></canvas>
@@ -109,24 +107,24 @@
       </div>
    </div>
 
-   <div id="bottom">
+   <div id="middle">
       <div id="cpuDisplay" class="potato">
          <label class="fryLabel">CPU</label>
          <br>
-         <table>
+         <table class="regTable">
             <tr>
                <th>IR</th>
                <th>PC</th>
                <th>Acc</th>
-               <th>X</th>
-               <th>Y</th>
-               <th>Zero</th>
+               <th>Xreg</th>
+               <th>Yreg</th>
+               <th>Zflag</th>
             </tr>
             <tr>
                <td id="IR"></td>
                <td id="PC"></td>
                <td id="Acc"></td>
-               <td id="xRed"></td>
+               <td id="xReg"></td>
                <td id="yReg"></td>
                <td id="zFlag"></td>
             </tr>
@@ -136,29 +134,27 @@
       <div id="pcbDisplay" class="potato">
          <label class="fryLabel">Current PCB</label>
          <br>
-         <table>
-            <tr>
-               <th>IR</th>
-               <th>PC</th>
-               <th>Acc</th>
-               <th>X</th>
-               <th>Y</th>
-               <th>Zero</th>
-               <!-- There will be more data -->
-            </tr>
-         </table>
-      </div>
-
-      <div id="memoryDisplay" class="potato">
-         <label class="fryLabel">Memory</label>
-         <br>
-         <!-- Make Memory display -->
+         <table id="pcbTable" class="regTable"></table>
       </div>
 
       <div id="userProgramInput" class="potato">
          <label class="fryLabel">User Program Input</label>
          <br>
          <textarea name="taProgramInput" id="programInput" rows="8" cols="48"></textarea>
+      </div>
+   </div>
+
+   <div id="bottom">
+      <div id="memoryDisplay" class="potato">
+         <label class="fryLabel">Memory</label>
+         <br>
+         <label for="numberInput">Page:</label>
+         <div class="spin-box">
+            <button onclick="TSOS.Control.decreaseValue();">-</button>
+            <input type="text" id="numberInput" value="0x00" onchange="TSOS.Control.checkValue();">
+            <button onclick="TSOS.Control.increaseValue();">+</button>
+         </div>
+         <table id="memTable"></table>
       </div>
    </div>
 </div>

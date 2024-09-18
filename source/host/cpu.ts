@@ -112,6 +112,8 @@ module TSOS {
 					}
 					if (this.Acc > 0xFF) {
 						this.Acc -= 0xFF;
+					} else if (this.Acc < 0x00) {
+						this.Acc += 0x100;
 					}
 					this.Zflag = this.Acc === 0;
 					break;
@@ -168,11 +170,16 @@ module TSOS {
 				case OpCode.BNEr:
 					arg0 = this.fetch();
 					if (arg0 === undefined) {return this.segFault();}
-					if (this.Zflag) {
+					if (!this.Zflag) {
 						if (arg0 < 0x80) {
 							this.PC += arg0;
 						} else {
 							this.PC -= 0x100 - arg0;
+						}
+						if (this.PC > 0xFFFF) {
+							this.PC -= 0xFFFF;
+						} else if (this.PC < 0x0000) {
+							this.PC += 0x10000
 						}
 					}
 					break;
@@ -184,37 +191,59 @@ module TSOS {
 					const vPtr: number = leToU16(arg0, arg1);
 					buffer = _MMU.read(vPtr) + 1;
 					if (buffer === undefined) {return this.segFault();}
-					if (this.Acc > 0xFF) {
-						this.Acc = 0;
+					if (buffer > 0xFF) {
+						buffer = 0;
 					}
-					this.Zflag = this.Acc === 0;
+					this.Zflag = buffer === 0;
 					if (!_MMU.write(vPtr, buffer)) {return this.segFault();}
 					break;
 				case OpCode.SYS:
 					let iqr: IRQ;
 					let params: any[] = [_Scheduler.currPCB.stdOut];
-					if (this.Xreg === 0x01) {
-						iqr = IRQ.writeIntConsole;
-						params[1] = this.Yreg;
-					} else if (this.Xreg === 0x02) {
-						iqr = IRQ.writeStrConsole;
-						if (this.Yreg < 0x80) {
-							params[1] = this.PC + this.Yreg;
-						} else {
-							params[1] = this.PC - 0x100 + this.Yreg;
-						}
+					switch (this.Xreg) {
+						case 0x01://print number in Y reg
+							iqr = IRQ.writeIntConsole;
+							params[1] = this.Yreg;
+							_KernelInterruptQueue.enqueue(new Interrupt(iqr, params));
+							break;
+						case 0x02://print C string at indirect address given by Y reg
+							iqr = IRQ.writeStrConsole;
+							if (this.Yreg < 0x80) {
+								params[1] = this.PC + this.Yreg;
+							} else {
+								params[1] = this.PC - 0x100 + this.Yreg;
+							}
+							_KernelInterruptQueue.enqueue(new Interrupt(iqr, params));
+							break;
+						case 0x03://print C string at absolute address given in operand
+							//I know the specifications for this class don't include this system call,
+							//but I wanted to make it backwards-compatible with the emulator I made in org and arch.
+							//Prof. Gormanly said he added some instructions and this system call to the instruction set in this class.
+							iqr = IRQ.writeStrConsole;
+							arg0 = this.fetch();
+							if (arg0 === undefined) {return this.segFault();}
+							arg1 = this.fetch();
+							if (arg1 === undefined) {return this.segFault();}
+							params[1] = leToU16(arg0, arg1);
+							_KernelInterruptQueue.enqueue(new Interrupt(iqr, params));
+							break;
+						default:
+							//TODO what happens when the system call has an invalid argument?
+							//Right now nothing will happen and it's undefined behavior that kinda works like a NOP
+							break;
 					}
-					_KernelInterruptQueue.enqueue(new Interrupt(iqr, params));
 					break;
 				default:
 					this.illegalInstruction();
 			}
+			Control.updateCpuDisplay();
+			Control.updateMemDisplay();
 		}
 	}
 
 	//3-letter mnemonic + the addressing mode.
 	//I copied this from my Computer Organization and Architecture emulator which is why I will be including more instructions than is necessary for this course.
-	enum OpCode {
+	export enum OpCode {
 		LDAi = 0xA9,    //load immediate u8 into a
 		LDAa = 0xAD,    //load value from memory into a
 		STAa = 0x8D,    //store a into memory

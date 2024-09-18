@@ -17,6 +17,7 @@ module TSOS {
 		//stdIn: InStream;//programs don't actually have input
 		stdOut: OutStream<string[]>;
 		stdErr: ErrStream<string[]>;
+		IR: OpCode;
 		PC: number;
 		Acc: number;
 		Xreg: number;
@@ -40,6 +41,7 @@ module TSOS {
 			pcb.pageTable = new Map<number, number>();
 			pcb.stdOut = _StdOut;//default to the console stdout and stderr
 			pcb.stdErr = _StdErr;
+			pcb.IR = OpCode.BRK;
 			pcb.Acc = 0x00;
 			pcb.Xreg = 0x00;
 			pcb.Yreg = 0x00;

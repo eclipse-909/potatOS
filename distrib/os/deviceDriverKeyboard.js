@@ -5,7 +5,6 @@
    ---------------------------------- */
 var TSOS;
 (function (TSOS) {
-    // Extends DeviceDriver
     class DeviceDriverKeyboard extends TSOS.DeviceDriver {
         capsLock;
         constructor() {

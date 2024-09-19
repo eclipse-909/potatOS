@@ -5,8 +5,6 @@
    ---------------------------------- */
 
 module TSOS {
-
-	// Extends DeviceDriver
 	export class DeviceDriverKeyboard extends DeviceDriver {
 		capsLock: boolean;
 

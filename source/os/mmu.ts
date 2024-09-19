@@ -8,19 +8,6 @@ module TSOS {
 			this.freePages = [];
 		}
 
-		//returns the physical page number allocated, or undefined if out of memory
-		private allocatePhysicalPage(): number | undefined {
-			if (this.freePages.length === 0) return undefined;
-			const pPage = this.freePages.values().next().value;
-			this.freePages.splice(this.freePages.indexOf(pPage), 1);
-			return pPage;
-		}
-
-		//Forgetting to free the physical page would be the biggest memory leak ever made
-		private freePhysicalPage(pPage: number): void {
-			this.freePages.push(pPage);
-		}
-
 		//Translates virtual to physical address using the given page table.
 		private translate(vPtr: number): number | undefined {
 			const pageNumber: number = Math.floor(vPtr / PAGE_SIZE);
@@ -38,8 +25,10 @@ module TSOS {
 				vPage++;
 			}
 			if (vPage >= NUM_PAGES) {return undefined;}
-			const pPage: number | undefined = this.allocatePhysicalPage();
+			if (this.freePages.length === 0) return undefined;
+			const pPage: number | undefined = this.freePages.values().next().value;
 			if (pPage === undefined) {return undefined;}
+			this.freePages.splice(this.freePages.indexOf(pPage), 1);
 			pageTable.set(vPage, pPage);
 			return vPage * PAGE_SIZE;
 		}
@@ -47,7 +36,7 @@ module TSOS {
 		//Frees all the pages with the given page table
 		public free(pageTable: Map<number, number>): void {
 			pageTable.forEach((_vPage: number, pPage: number) => {
-				this.freePhysicalPage(pPage);
+				this.freePages.push(pPage);
 			});
 		}
 

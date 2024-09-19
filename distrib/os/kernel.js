@@ -9,38 +9,27 @@
 var TSOS;
 (function (TSOS) {
     class Kernel {
-        //
         // OS Startup and Shutdown Routines
-        //
         krnBootstrap() {
             TSOS.Control.hostLog("bootstrap", "host"); // Use hostLog because we ALWAYS want this, even if _Trace is off.
-            // Initialize our global queues.
             _KernelInterruptQueue = new TSOS.Queue(); // A (currently) non-priority queue for interrupt requests (IRQs).
             _KernelBuffers = []; // Buffers... for the kernel.
             _KernelInputQueue = new TSOS.Queue(); // Where device input lands before being processed out somewhere.
-            // Initialize the console.
             _Console = new TSOS.Console(); // The command line interface / console I/O device.
             _Console.init();
-            // Initialize standard input and output to the _Console.
             _StdIn = _Console;
             _StdOut = _Console;
             _StdErr = _Console;
-            // Load the Keyboard Device Driver
             this.krnTrace("Loading the keyboard device driver.");
             _krnKeyboardDriver = new TSOS.DeviceDriverKeyboard(); // Construct it.
             _krnKeyboardDriver.driverEntry(); // Call the driverEntry() initialization routine.
             this.krnTrace(_krnKeyboardDriver.status);
-            //
             // ... more?
-            //
-            // Enable the OS Interrupts.  (Not the CPU clock interrupt, as that is done in the hardware sim.)
             this.krnTrace("Enabling the interrupts.");
             this.krnEnableInterrupts();
-            // Launch the shell.
             this.krnTrace("Creating and Launching the shell.");
             _OsShell = new TSOS.Shell();
             _OsShell.init();
-            // Finally, initiate student testing protocol.
             if (_GLaDOS) {
                 _GLaDOS.afterStartup();
             }
@@ -58,11 +47,6 @@ var TSOS;
             this.krnTrace("end shutdown OS");
         }
         krnOnCPUClockPulse() {
-            /* This gets called from the host hardware simulation every time there is a hardware clock pulse.
-               This is NOT the same as a TIMER, which causes an interrupt and is handled like other interrupts.
-               This, on the other hand, is the clock pulse from the hardware / VM / host that tells the kernel
-               that it has to look for interrupts and process them if it finds any.
-            */
             // Check for an interrupt, if there are any. Page 560
             if (_KernelInterruptQueue.getSize() > 0) {
                 // Process the first interrupt on the interrupt queue.
@@ -97,22 +81,16 @@ var TSOS;
                 }
             }
         }
-        //
         // Interrupt Handling
-        //
         krnEnableInterrupts() {
-            // Keyboard
             TSOS.Devices.hostEnableKeyboardInterrupt();
             // Put more here.
         }
         krnDisableInterrupts() {
-            // Keyboard
             TSOS.Devices.hostDisableKeyboardInterrupt();
             // Put more here.
         }
         krnInterruptHandler(irq, params) {
-            // This is the Interrupt Handler Routine.  See pages 8 and 560.
-            // Trace our entrance here so we can compute Interrupt Latency by analyzing the log file later on. Page 766.
             this.krnTrace("Handling IRQ~" + irq);
             // Invoke the requested Interrupt Service Routine via Switch/Case rather than an Interrupt Vector.
             // TODO: Consider using an Interrupt Vector in the future.
@@ -144,14 +122,11 @@ var TSOS;
             // Check multiprogramming parameters and enforce quanta here. Call the scheduler / context switch here if necessary.
             // Or do it elsewhere in the Kernel. We don't really need this.
         }
-        //
         // OS Utility Routines
-        //
         krnTrace(msg) {
-            // Check globals to see if trace is set ON.  If so, then (maybe) log the message.
             if (_Trace) {
                 if (msg === "Idle") {
-                    // We can't log every idle clock pulse because it would quickly lag the browser quickly.
+                    // We can't log every idle clock pulse because it would quickly lag the browser.
                     if (_OSclock % 10 == 0) {
                         // Check the CPU_CLOCK_INTERVAL in globals.ts for an
                         // idea of the tick rate and adjust this line accordingly.

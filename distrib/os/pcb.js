@@ -72,9 +72,7 @@ var TSOS;
         }
         //This must be called when a process is killed
         free() {
-            this.pageTable.forEach((_vPage, pPage) => {
-                _MemoryController.freePage(pPage);
-            });
+            _MMU.free(this.pageTable);
         }
     }
     TSOS.ProcessControlBlock = ProcessControlBlock;

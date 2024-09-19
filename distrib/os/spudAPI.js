@@ -6,11 +6,11 @@ var TSOS;
     // System Calls... that generate software interrupts via tha Application Programming Interface library routines.
     //
     // Some ideas:
-    // - ReadConsole
-    // - WriteConsole
-    // - CreateProcess
-    // - ExitProcess
-    // - WaitForProcessToExit
+    // - ReadConsole - but there's no system call for input at runtime
+    // - WriteConsole - done
+    // - CreateProcess - implemented directly by shell, TODO maybe I should move it here?
+    // - ExitProcess - done
+    // - WaitForProcessToExit - implemented directly by shell, TODO maybe I should move it here?
     // - CreateFile
     // - OpenFile
     // - ReadFile

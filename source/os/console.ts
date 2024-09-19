@@ -6,7 +6,6 @@
      ------------ */
 
 module TSOS {
-
 	export class Console implements OutStream<string[]>, InStream<string[]>, ErrStream<string[]> {
 		constructor(public currentFont = _DefaultFontFamily,
 		            public currentFontSize = _DefaultFontSize,

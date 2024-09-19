@@ -170,6 +170,7 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: status <string>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
+            //Is it okay to do GUI stuff here?
             document.getElementById("footerStatus").innerHTML = args.join(" ");
             return TSOS.ExitCode.SUCCESS;
         }
@@ -188,6 +189,7 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: load\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
+            //Is it okay to do GUI stuff here?
             const textArea = document.getElementById("programInput");
             let input = textArea.value;
             input = input.replace(/\s+/g, ' ').trim();
@@ -262,6 +264,7 @@ var TSOS;
             return undefined;
         }
         static shellClh(_stdin, _stdout, _stderr) {
+            //Is it okay to do GUI stuff here?
             document.getElementById("hostLog").value = "";
             return TSOS.ExitCode.SUCCESS;
         }

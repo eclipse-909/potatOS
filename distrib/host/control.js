@@ -78,6 +78,7 @@ var TSOS;
             // .. and call the OS Kernel Bootstrap routine.
             _Kernel = new TSOS.Kernel();
             _Kernel.krnBootstrap(); // _GLaDOS.afterStartup() will get called in there, if configured.
+            document.getElementById("btnPause").disabled = false;
         }
         static hostBtnHaltOS_click(btn) {
             Control.hostLog("Emergency halt", "host");
@@ -87,6 +88,8 @@ var TSOS;
             // Stop the interval that's simulating our clock pulse.
             clearInterval(_hardwareClockID);
             // TODO: Is there anything else we need to do here?
+            document.getElementById("btnPause").disabled = true;
+            document.getElementById("btnStep").disabled = true;
         }
         static hostBtnReset_click(btn) {
             // The easiest and most thorough way to do this is to reload (not refresh) the document.
@@ -97,7 +100,7 @@ var TSOS;
             _CPU.paused = !_CPU.paused;
             Control.hostLog(`CPU paused: ${_CPU.paused}`);
             document.getElementById("btnPause").value = _CPU.paused ? "Unpause" : "Pause";
-            document.getElementById("btnPause").disabled = !_CPU.paused;
+            document.getElementById("btnStep").disabled = !_CPU.paused;
         }
         static hostBtnStepCpu(btn) {
             if (_KernelInterruptQueue.getSize() === 0) {

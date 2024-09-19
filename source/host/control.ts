@@ -97,6 +97,8 @@ module TSOS {
 			// .. and call the OS Kernel Bootstrap routine.
 			_Kernel = new Kernel();
 			_Kernel.krnBootstrap();  // _GLaDOS.afterStartup() will get called in there, if configured.
+
+			(document.getElementById("btnPause") as HTMLInputElement).disabled = false;
 		}
 
 		public static hostBtnHaltOS_click(btn): void {
@@ -107,6 +109,9 @@ module TSOS {
 			// Stop the interval that's simulating our clock pulse.
 			clearInterval(_hardwareClockID);
 			// TODO: Is there anything else we need to do here?
+
+			(document.getElementById("btnPause") as HTMLInputElement).disabled = true;
+			(document.getElementById("btnStep") as HTMLInputElement).disabled = true;
 		}
 
 		public static hostBtnReset_click(btn): void {
@@ -117,9 +122,9 @@ module TSOS {
 
 		public static hostBtnPauseCpu(btn): void {
 			_CPU.paused = !_CPU.paused;
-			Control.hostLog(`CPU paused: ${_CPU.paused}`);
+			Control.hostLog(`CPU paused: ${_CPU.paused}`, "host");
 			(document.getElementById("btnPause") as HTMLInputElement).value = _CPU.paused? "Unpause" : "Pause";
-			(document.getElementById("btnPause") as HTMLInputElement).disabled = !_CPU.paused;
+			(document.getElementById("btnStep") as HTMLInputElement).disabled = !_CPU.paused;
 		}
 
 		public static hostBtnStepCpu(btn): void {

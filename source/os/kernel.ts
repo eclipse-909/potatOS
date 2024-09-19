@@ -99,12 +99,12 @@ module TSOS {
 						Control.updatePcbDisplay();
 					}
 				}
-				if (!_CPU.paused) {
-					if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
+				if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
+					if (!_CPU.paused) {
 						_CPU.cycle();
-					} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
-						this.krnTrace("Idle");
 					}
+				} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
+					this.krnTrace("Idle");
 				}
 			}
 		}

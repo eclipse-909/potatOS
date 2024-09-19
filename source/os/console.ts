@@ -149,6 +149,7 @@ module TSOS {
 				let screenData = _DrawingContext.getImageData(0, 0, _Canvas.width, this.currentYPosition + _FontHeightMargin);
 				_Canvas.height = this.currentYPosition + _FontHeightMargin;
 				_DrawingContext.putImageData(screenData, 0, 0);
+				//Is it okay to do GUI stuff here?
 				document.getElementById("display").scrollIntoView({ behavior: 'instant', block: 'end' });
 			}
 		}

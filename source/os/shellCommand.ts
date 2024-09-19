@@ -185,6 +185,7 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: status <string>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
+			//Is it okay to do GUI stuff here?
 			document.getElementById("footerStatus").innerHTML = args.join(" ");
 			return ExitCode.SUCCESS;
 		}
@@ -205,6 +206,7 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: load\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
+			//Is it okay to do GUI stuff here?
 			const textArea: HTMLTextAreaElement = document.getElementById("programInput") as HTMLTextAreaElement;
 			let input: string = textArea.value;
 			input = input.replace(/\s+/g, ' ').trim();
@@ -283,6 +285,7 @@ module TSOS {
 		}
 
 		static shellClh(_stdin: InStream<string[]>, _stdout: OutStream<string[]>, _stderr: ErrStream<string[]>): ExitCode {
+			//Is it okay to do GUI stuff here?
 			(document.getElementById("hostLog") as HTMLInputElement).value = "";
 			return ExitCode.SUCCESS;
 		}

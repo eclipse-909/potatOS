@@ -81,9 +81,7 @@ module TSOS {
 
 		//This must be called when a process is killed
 		public free(): void {
-			this.pageTable.forEach((_vPage: number, pPage: number) => {
-				_MemoryController.freePage(pPage);
-			});
+			_MMU.free(this.pageTable);
 		}
 	}
 }

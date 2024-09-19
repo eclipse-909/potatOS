@@ -32,18 +32,6 @@ module TSOS {
 			this.currentYPosition = this.currentFontSize;
 		}
 
-		//Clears the line, including the prompt
-		// clearLine(): void {
-		// 	_DrawingContext.clearRect(
-		// 		0,
-		// 		this.currentYPosition - _DefaultFontSize,
-		// 		_DrawingContext.measureText(this.currentFont, this.currentFontSize, _OsShell.promptStr + this.buffer),
-		// 		_DefaultFontSize + 5
-		// 	);
-		// 	this.currentXPosition = 0;
-		// 	this.buffer = "";
-		// }
-
 		//Clears the text of the current prompt, but doesn't remove the prompt
 		clearPrompt(): void {
 			const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer);
@@ -58,7 +46,7 @@ module TSOS {
 				// Get the next character from the kernel input queue.
 				const chr = _KernelInputQueue.dequeue();
 				//only handle the input if it's enabled. all characters entered will be discarded
-				if (!this.inputEnabled) {continue;}
+				if (!this.inputEnabled && chr !== String.fromCharCode(3)) {continue;}
 				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
 				switch (chr) {
 					case String.fromCharCode(-1): // up arrow
@@ -77,7 +65,11 @@ module TSOS {
 						this.putText(this.buffer);
 						break;
 					case String.fromCharCode(3): // ctrl + c
-						//_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.TERMINATED_BY_CTRL_C]));
+						if (_Scheduler.currPCB && _OsShell.pidsWaitingOn.some((item: {pid: number, connector: string | null}): boolean => {
+							return _Scheduler.currPCB.pid === item.pid;
+						})) {
+							_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.TERMINATED_BY_CTRL_C]));
+						}
 						break;
 					case String.fromCharCode(8): // backspace
 						if (this.currentXPosition <= 0.00001 /*floating point shenanigans*/) {

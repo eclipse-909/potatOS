@@ -98,7 +98,7 @@ var TSOS;
         }
         static hostBtnPauseCpu(btn) {
             _CPU.paused = !_CPU.paused;
-            Control.hostLog(`CPU paused: ${_CPU.paused}`);
+            Control.hostLog(`CPU paused: ${_CPU.paused}`, "host");
             document.getElementById("btnPause").value = _CPU.paused ? "Unpause" : "Pause";
             document.getElementById("btnStep").disabled = !_CPU.paused;
         }

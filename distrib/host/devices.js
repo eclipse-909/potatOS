@@ -47,7 +47,7 @@ var TSOS;
             if (event.target.id === "display") {
                 event.preventDefault();
                 // Note the pressed key code in the params (Mozilla-specific).
-                const params = [event.which, event.shiftKey];
+                const params = [event.which, event.shiftKey, event.ctrlKey];
                 // Enqueue this interrupt on the kernel interrupt queue so that it gets to the Interrupt handler.
                 _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.keyboard, params));
             }

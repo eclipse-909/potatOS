@@ -190,7 +190,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             //Is it okay to do GUI stuff here?
-            const textArea = document.getElementById("programInput");
+            const textArea = document.getElementById("taProgramInput");
             let input = textArea.value;
             input = input.replace(/\s+/g, ' ').trim();
             const hexArray = input.split(/[\s,]+/);

@@ -50,7 +50,6 @@ module TSOS {
 			this.krnTrace("end shutdown OS");
 		}
 
-
 		public krnOnCPUClockPulse() {
 			// Check for an interrupt, if there are any. Page 560
 			if (_KernelInterruptQueue.getSize() > 0) {

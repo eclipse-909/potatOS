@@ -207,7 +207,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			//Is it okay to do GUI stuff here?
-			const textArea: HTMLTextAreaElement = document.getElementById("programInput") as HTMLTextAreaElement;
+			const textArea: HTMLTextAreaElement = document.getElementById("taProgramInput") as HTMLTextAreaElement;
 			let input: string = textArea.value;
 			input = input.replace(/\s+/g, ' ').trim();
 			const hexArray: string[] = input.split(/[\s,]+/);

@@ -53,7 +53,7 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: help\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			let text: string = "Key:\n  <> = required parameter\n  ... = repeatable parameter\n  [] = optional parameter\n  / = either parameter is acceptable\nCommands:\n";
+			let text: string = "Key:\n  <> = required parameter\n  ... = repeatable parameter\n  [] = optional parameter\n  | = either parameter is acceptable\nCommands:\n";
 			for (const i in ShellCommand.COMMAND_LIST) {
 				text += "  " + ShellCommand.COMMAND_LIST[i].command + " " + ShellCommand.COMMAND_LIST[i].description;
 			}
@@ -165,7 +165,7 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: whereami\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			stdout.output(["You're at your desk trying to steal my source code... STOP IT!!!\n"]);
+			stdout.output(["You're in your office trying to steal my source code... STOP IT!!!\n"]);
 			return ExitCode.SUCCESS;
 		}
 

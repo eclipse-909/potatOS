@@ -23,6 +23,7 @@ var IRQ;
     IRQ[IRQ["writeStrConsole"] = 4] = "writeStrConsole";
     IRQ[IRQ["scheduleYield"] = 5] = "scheduleYield";
 })(IRQ || (IRQ = {}));
+const KEYBOARD_IRQ = IRQ.keyboard; //Stupid glados always making me do stuff
 const NUM_PAGES = 0x100;
 const PAGE_SIZE = 0x100;
 const MEM_SIZE = NUM_PAGES * PAGE_SIZE;

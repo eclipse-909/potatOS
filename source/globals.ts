@@ -26,6 +26,7 @@ enum IRQ {
 	writeStrConsole,
 	scheduleYield
 }
+const KEYBOARD_IRQ: IRQ = IRQ.keyboard;//Stupid glados always making me do stuff
 
 const NUM_PAGES: number = 0x100;
 const PAGE_SIZE: number = 0x100;

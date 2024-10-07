@@ -213,7 +213,7 @@ var TSOS;
                 return TSOS.ExitCode.GENERIC_ERROR;
             }
             const pcb = TSOS.ProcessControlBlock.new(numberArray);
-            _Scheduler.idlePcbs.set(pcb.pid, pcb);
+            _Scheduler.residentPcbs.set(pcb.pid, pcb);
             stdout.output([`Program loaded into memory with process ID ${pcb.pid}.\n`]);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -242,25 +242,23 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <pid>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            const pcb = _Scheduler.idlePcbs.get(pid);
+            const pcb = _Scheduler.residentPcbs.get(pid);
             if (!pcb) {
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + ` - Could not find process ${pid}.\n`]);
                 return TSOS.ExitCode.GENERIC_ERROR;
             }
-            if (!async) { //console by default if it is async
+            if (!async) { //must print to console if async because piping doesn't work in background. I would have to implement IO waiting and concurrency
                 pcb.stdOut = stdout;
                 pcb.stdErr = stderr;
             }
             _Scheduler.pcbQueue.enqueue(pcb);
             pcb.status = TSOS.Status.ready;
-            //I assume that I unload the program from memory once it finishes running.
-            //The program should be loaded from the disk every time you want to run it.
-            _Scheduler.idlePcbs.delete(pid);
+            _Scheduler.residentPcbs.delete(pid);
             TSOS.Control.updatePcbDisplay();
             return async ? null : undefined;
         }
         static shellRunAll(stdin, stdout, stderr) {
-            //TODO
+            //TODO go through all pcbs in residentPCBs map and run them
             return undefined;
         }
         static shellClh(_stdin, _stdout, _stderr) {

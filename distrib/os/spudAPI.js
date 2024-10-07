@@ -29,7 +29,7 @@ var TSOS;
             _Scheduler.currPCB.free();
             _Scheduler.currPCB = null;
         }
-        else if (!_Scheduler.idlePcbs.delete(pid)) {
+        else if (!_Scheduler.residentPcbs.delete(pid)) {
             let queue = new TSOS.Queue();
             while (!_Scheduler.pcbQueue.isEmpty()) {
                 let pcb = _Scheduler.pcbQueue.dequeue();

@@ -12,9 +12,9 @@ run() {
 
 # ex) push main "commit message"
 push() {
-	branches=(main project2)
+	branches=(main)
 	if [ -z "$1" ]; then
-		echo "Error: Branch name is required. Branches include:"
+		echo "Error: Github branch name is required. Branches include:"
 		echo "${branches[@]}"
 		return
 	fi

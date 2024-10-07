@@ -32,8 +32,17 @@ var TSOS;
         peek() {
             return this.q.length === 0 ? null : this.q[0];
         }
-        clear() {
-            this.q = []; //this feels so wrong, I like manual memory management
+        //If a callback is not provided, the elements are garbage collected.
+        //Otherwise, each element is dequeued one at a time, and the callback is called on each one.
+        clear(callback = null) {
+            if (callback === null) {
+                this.q = []; //this feels so wrong, I like manual memory management
+            }
+            else {
+                while (!this.isEmpty()) {
+                    callback(this.dequeue());
+                }
+            }
         }
     }
     TSOS.Queue = Queue;

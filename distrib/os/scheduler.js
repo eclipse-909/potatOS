@@ -3,11 +3,11 @@ var TSOS;
     class Scheduler {
         currPCB;
         pcbQueue;
-        idlePcbs;
+        residentPcbs;
         constructor() {
             this.currPCB = null;
             this.pcbQueue = new TSOS.Queue();
-            this.idlePcbs = new Map();
+            this.residentPcbs = new Map();
         }
     }
     TSOS.Scheduler = Scheduler;

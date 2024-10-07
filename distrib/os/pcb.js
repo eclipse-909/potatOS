@@ -3,7 +3,7 @@ var TSOS;
     let Status;
     (function (Status) {
         //process is loaded into memory but not ready for execution
-        Status[Status["sleeping"] = 0] = "sleeping";
+        Status[Status["resident"] = 0] = "resident";
         //ready to be executed by scheduler
         Status[Status["ready"] = 1] = "ready";
         //currently being executed
@@ -14,7 +14,7 @@ var TSOS;
     class ProcessControlBlock {
         pid;
         status;
-        pageTable;
+        pageTable; //TODO this will be changed in favor of the base-limit method
         //stdIn: InStream;//programs don't actually have input
         stdOut;
         stdErr;
@@ -34,7 +34,7 @@ var TSOS;
             let pcb = new ProcessControlBlock();
             pcb.pid = ProcessControlBlock.highestPID;
             ProcessControlBlock.highestPID++;
-            pcb.status = Status.sleeping;
+            pcb.status = Status.resident;
             pcb.pageTable = new Map();
             pcb.stdOut = _StdOut; //default to the console stdout and stderr
             pcb.stdErr = _StdErr;
@@ -43,7 +43,7 @@ var TSOS;
             pcb.Xreg = 0x00;
             pcb.Yreg = 0x00;
             pcb.Zflag = false;
-            /*TODO uncomment this after the demo
+            /*TODO refactor to use base and limit
             //Allocate as many pages as necessary for this program
             let orgPtr: number | undefined = undefined;
             for (let i: number = 0; i < Math.ceil(bin.length / PAGE_SIZE); i++) {
@@ -64,10 +64,20 @@ var TSOS;
             */
             //TODO delete this after the demo
             //bypass the MMU to write to memory
-            for (let i = 0x0000; i < bin.length; i++) {
+            for (let i = 0x0000; i < Math.min(bin.length, 0x0100); i++) {
                 _MemoryController.write(i, bin[i]);
             }
             pcb.PC = 0x0000;
+            if (_Scheduler.currPCB !== null || !_Scheduler.pcbQueue.isEmpty() || _Scheduler.residentPcbs.size !== 0) {
+                _StdOut.putText("Overwriting existing processes to load new process. ");
+            }
+            if (_Scheduler.currPCB !== null) {
+                TSOS.kill([_Scheduler.currPCB.pid, TSOS.ExitCode.TERMINATED_BY_CTRL_C]);
+            }
+            //I think this is redundant, but I'm going to delete this line anyway
+            _Scheduler.pcbQueue.clear((element) => { TSOS.kill([element.pid, TSOS.ExitCode.TERMINATED_BY_CTRL_C]); });
+            _Scheduler.residentPcbs.forEach((pcb, _pid) => { pcb.free(); });
+            _Scheduler.residentPcbs.clear();
             return pcb;
         }
         //This must be called when a process is killed

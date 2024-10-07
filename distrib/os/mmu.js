@@ -3,7 +3,7 @@ var TSOS;
     //When in user mode, the MMU sits between the OS and the memory to perform address translation and to verify process segments.
     class MMU {
         //pool of unused physical pages
-        freePages;
+        freePages; //TODO this will be changed in favor of the base-limit method
         constructor() {
             this.freePages = [];
         }
@@ -17,10 +17,12 @@ var TSOS;
             }
             return pPage * PAGE_SIZE + offset;
         }
+        //TODO refactor to use base and limit
         //Allocates a page in virtual memory for a new process.
         //Returns a pointer to the beginning of the virtual page, or undefined if out of memory.
         malloc(pageTable) {
-            let vPage = 1; //start at 1 so we don't use the zero page or null pointers
+            //process always starts at 0x0000
+            let vPage = 0;
             while (pageTable.get(vPage)) {
                 vPage++;
             }
@@ -37,6 +39,7 @@ var TSOS;
             pageTable.set(vPage, pPage);
             return vPage * PAGE_SIZE;
         }
+        //TODO refactor to use base and limit
         //Frees all the pages with the given page table
         free(pageTable) {
             pageTable.forEach((_vPage, pPage) => {

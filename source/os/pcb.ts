@@ -1,7 +1,7 @@
 module TSOS {
 	export enum Status {
 		//process is loaded into memory but not ready for execution
-		sleeping,
+		resident,
 		//ready to be executed by scheduler
 		ready,
 		//currently being executed
@@ -13,7 +13,7 @@ module TSOS {
 	export class ProcessControlBlock {
 		pid: number;
 		status: Status;
-		pageTable: Map<number, number>;
+		pageTable: Map<number, number>;//TODO this will be changed in favor of the base-limit method
 		//stdIn: InStream;//programs don't actually have input
 		stdOut: OutStream<string[]>;
 		stdErr: ErrStream<string[]>;
@@ -37,7 +37,7 @@ module TSOS {
 			let pcb: ProcessControlBlock = new ProcessControlBlock();
 			pcb.pid = ProcessControlBlock.highestPID;
 			ProcessControlBlock.highestPID++;
-			pcb.status = Status.sleeping;
+			pcb.status = Status.resident;
 			pcb.pageTable = new Map<number, number>();
 			pcb.stdOut = _StdOut;//default to the console stdout and stderr
 			pcb.stdErr = _StdErr;
@@ -47,7 +47,7 @@ module TSOS {
 			pcb.Yreg = 0x00;
 			pcb.Zflag = false;
 
-			/*TODO uncomment this after the demo
+			/*TODO refactor to use base and limit
 			//Allocate as many pages as necessary for this program
 			let orgPtr: number | undefined = undefined;
 			for (let i: number = 0; i < Math.ceil(bin.length / PAGE_SIZE); i++) {
@@ -70,10 +70,20 @@ module TSOS {
 
 			//TODO delete this after the demo
 			//bypass the MMU to write to memory
-			for (let i: number = 0x0000; i < bin.length; i++) {
+			for (let i: number = 0x0000; i < Math.min(bin.length, 0x0100); i++) {
 				_MemoryController.write(i, bin[i]);
 			}
 			pcb.PC = 0x0000;
+			if (_Scheduler.currPCB !== null || !_Scheduler.pcbQueue.isEmpty() || _Scheduler.residentPcbs.size !== 0) {
+				_StdOut.putText("Overwriting existing processes to load new process. ");
+			}
+			if (_Scheduler.currPCB !== null) {
+				kill([_Scheduler.currPCB.pid, ExitCode.TERMINATED_BY_CTRL_C]);
+			}
+			//I think this is redundant, but I'm going to delete this line anyway
+			_Scheduler.pcbQueue.clear((element: ProcessControlBlock): void => {kill([element.pid, ExitCode.TERMINATED_BY_CTRL_C]);});
+			_Scheduler.residentPcbs.forEach((pcb: ProcessControlBlock, _pid: number): void => {pcb.free();});
+			_Scheduler.residentPcbs.clear();
 
 
 			return pcb;

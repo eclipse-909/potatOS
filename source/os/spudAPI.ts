@@ -28,7 +28,7 @@ module TSOS {
 			_Scheduler.currPCB.status = Status.terminated;
 			_Scheduler.currPCB.free();
 			_Scheduler.currPCB = null;
-		} else if (!_Scheduler.idlePcbs.delete(pid)) {
+		} else if (!_Scheduler.residentPcbs.delete(pid)) {
 			let queue: Queue<ProcessControlBlock> = new Queue<ProcessControlBlock>();
 			while (!_Scheduler.pcbQueue.isEmpty()) {
 				let pcb: ProcessControlBlock = _Scheduler.pcbQueue.dequeue();

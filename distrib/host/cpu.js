@@ -56,6 +56,9 @@ var TSOS;
         }
         cycle() {
             _Kernel.krnTrace('CPU cycle');
+            if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR) {
+                _Scheduler.cycle++;
+            }
             // TODO: Accumulate CPU usage and profiling statistics here.
             // Do the real work here. Be sure to set this.isExecuting appropriately.
             //fetch

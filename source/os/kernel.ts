@@ -10,7 +10,7 @@
 module TSOS {
 	export class Kernel {
 		// OS Startup and Shutdown Routines
-		public krnBootstrap() {      // Page 8. {
+		public krnBootstrap(): void {      // Page 8. {
 			Control.hostLog("bootstrap", "host");  // Use hostLog because we ALWAYS want this, even if _Trace is off.
 			_KernelInterruptQueue = new Queue<Interrupt>();  // A (currently) non-priority queue for interrupt requests (IRQs).
 			_KernelBuffers = [];         // Buffers... for the kernel.
@@ -37,7 +37,7 @@ module TSOS {
 			}
 		}
 
-		public krnShutdown() {
+		public krnShutdown(): void {
 			this.krnTrace("begin shutdown OS");
 			// TODO: Check for running processes.  If there are some, alert and stop. Else...
 			// ... Disable the Interrupts.
@@ -50,29 +50,20 @@ module TSOS {
 			this.krnTrace("end shutdown OS");
 		}
 
-		public krnOnCPUClockPulse() {
+		public krnOnCPUClockPulse(): void {
 			// Check for an interrupt, if there are any. Page 560
 			if (_KernelInterruptQueue.getSize() > 0) {
 				// Process the first interrupt on the interrupt queue.
 				// TODO (maybe): Implement a priority queue based on the IRQ number/id to enforce interrupt priority.
-				const interrupt = _KernelInterruptQueue.dequeue();
+				const interrupt: Interrupt = _KernelInterruptQueue.dequeue();
 				this.krnInterruptHandler(interrupt.irq, interrupt.params);
 			} else {
-				//TODO this will need to be changed when the scheduler is fully implemented
-				if (!_Scheduler.currPCB) {
+				if (_Scheduler.currPCB === null) {
 					_CPU.isExecuting = false;
-					if (!_Scheduler.pcbQueue.isEmpty()) {
-						_Scheduler.currPCB = _Scheduler.pcbQueue.dequeue();
-						_Scheduler.currPCB.status = Status.running;
-						_CPU.IR = _Scheduler.currPCB.IR;
-						_CPU.PC = _Scheduler.currPCB.PC;
-						_CPU.Acc = _Scheduler.currPCB.Acc;
-						_CPU.Xreg = _Scheduler.currPCB.Xreg;
-						_CPU.Yreg = _Scheduler.currPCB.Yreg;
-						_CPU.Zflag = _Scheduler.currPCB.Zflag;
-						_CPU.isExecuting = true;
-						Control.updatePcbDisplay();
-					}
+					Dispatcher.contextSwitch();
+				} else if (_Scheduler.scheduleMode === ScheduleMode.RR && _Scheduler.cycle === _Scheduler.quantum) {
+					_Scheduler.cycle = 0;
+					Dispatcher.contextSwitch();
 				}
 				if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
 					if (!_CPU.paused) {
@@ -85,17 +76,17 @@ module TSOS {
 		}
 
 		// Interrupt Handling
-		public krnEnableInterrupts() {
+		public krnEnableInterrupts(): void {
 			Devices.hostEnableKeyboardInterrupt();
 			// Put more here.
 		}
 
-		public krnDisableInterrupts() {
+		public krnDisableInterrupts(): void {
 			Devices.hostDisableKeyboardInterrupt();
 			// Put more here.
 		}
 
-		public krnInterruptHandler(irq: number, params: any[]) {
+		public krnInterruptHandler(irq: number, params: any[]): void {
 			this.krnTrace("Handling IRQ~" + irq);
 
 			// Invoke the requested Interrupt Service Routine via Switch/Case rather than an Interrupt Vector.
@@ -124,14 +115,14 @@ module TSOS {
 			}
 		}
 
-		public krnTimerISR() {
+		public krnTimerISR(): void {
 			// The built-in TIMER (not clock) Interrupt Service Routine (as opposed to an ISR coming from a device driver). {
 			// Check multiprogramming parameters and enforce quanta here. Call the scheduler / context switch here if necessary.
 			// Or do it elsewhere in the Kernel. We don't really need this.
 		}
 
 		// OS Utility Routines
-		public krnTrace(msg: string) {
+		public krnTrace(msg: string): void {
 			if (_Trace) {
 				if (msg === "Idle") {
 					// We can't log every idle clock pulse because it would quickly lag the browser.
@@ -146,15 +137,15 @@ module TSOS {
 			}
 		}
 
-		public krnTrapError(msg: string) {
+		public krnTrapError(msg: string): void {
 			Control.hostLog("OS ERROR - TRAP: " + msg);
 			_Console.clearScreen();
 			const image = new Image();
 			image.src = './img/Bsodwindows10.png';
-			image.onload = () => {
+			image.onload = (): void => {
 				_DrawingContext.drawImage(image, 0, 0);
 			};
-			image.onerror = (error) => {
+			image.onerror = (error: string | Event): void => {
 				console.error('Failed to load image:', error);
 			};
 			this.krnShutdown();

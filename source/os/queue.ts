@@ -21,7 +21,7 @@ module TSOS {
 		public enqueue(element: T): void {this.q.push(element);}
 
 		public dequeue(): T | null {
-			let retVal = null;
+			let retVal: T | null = null;
 			if (this.q.length > 0) {
 				retVal = this.q.shift();
 			}
@@ -29,7 +29,7 @@ module TSOS {
 		}
 
 		public toString(): string {
-			let retVal = "";
+			let retVal: string = "";
 			for (const i in this.q) {
 				retVal += "[" + this.q[i] + "] ";
 			}
@@ -51,5 +51,14 @@ module TSOS {
 				}
 			}
 		}
+
+		public asArr(): T[] {return this.q;}
+
+		public remove(index: number): T | null {
+			if (index < 0 || index >= this.q.length) {return null;}
+			return this.q.splice(index, 1)[0];
+		}
+
+		public reverse(): void {this.q.reverse();}
 	}
 }

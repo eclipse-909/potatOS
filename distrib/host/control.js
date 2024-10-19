@@ -96,6 +96,8 @@ var TSOS;
             let str = "<tr>" +
                 "<th>PID</th>" +
                 "<th>Status</th>" +
+                "<th>Base</th>" +
+                "<th>Limit</th>" +
                 "<th>IR</th>" +
                 "<th>PC</th>" +
                 "<th>Acc</th>" +
@@ -103,27 +105,25 @@ var TSOS;
                 "<th>Yreg</th>" +
                 "<th>Zflag</th>" +
                 "</tr>";
-            if (_Scheduler.currPCB) {
-                _Scheduler.currPCB.IR = _CPU.IR;
-                _Scheduler.currPCB.PC = _CPU.PC;
-                _Scheduler.currPCB.Acc = _CPU.Acc;
-                _Scheduler.currPCB.Xreg = _CPU.Xreg;
-                _Scheduler.currPCB.Yreg = _CPU.Yreg;
-                _Scheduler.currPCB.Zflag = _CPU.Zflag;
-                str +=
-                    "<tr>" +
-                        `<td>${_Scheduler.currPCB.pid.toString()}</td>` +
-                        `<td>${TSOS.Status[_Scheduler.currPCB.status]}</td>` +
-                        `<td>${TSOS.OpCode[_Scheduler.currPCB.IR]}</td>` +
-                        `<td>0x${_Scheduler.currPCB.PC.toString(16).toUpperCase().padStart(4, '0')}</td>` +
-                        `<td>0x${_Scheduler.currPCB.Acc.toString(16).toUpperCase().padStart(2, '0')}</td>` +
-                        `<td>0x${_Scheduler.currPCB.Xreg.toString(16).toUpperCase().padStart(2, '0')}</td>` +
-                        `<td>0x${_Scheduler.currPCB.Yreg.toString(16).toUpperCase().padStart(2, '0')}</td>` +
-                        `<td>${_Scheduler.currPCB.Zflag}</td>` +
-                        "</tr>";
-            }
-            //TODO loop through all PCBs in queue and append those to str
+            _Scheduler.updateCurrPCB();
+            _Scheduler.allProcs().forEach((pcb) => {
+                str += Control.appendPcbTable(pcb);
+            });
             document.getElementById("pcbTable").innerHTML = str;
+        }
+        static appendPcbTable(pcb) {
+            return "<tr>" +
+                `<td>${pcb.pid.toString()}</td>` +
+                `<td>${TSOS.Status[pcb.status]}</td>` +
+                `<td>${TSOS.Status[pcb.base]}</td>` +
+                `<td>${TSOS.Status[pcb.limit]}</td>` +
+                `<td>${TSOS.OpCode[pcb.IR]}</td>` +
+                `<td>0x${pcb.PC.toString(16).toUpperCase().padStart(4, '0')}</td>` +
+                `<td>0x${pcb.Acc.toString(16).toUpperCase().padStart(2, '0')}</td>` +
+                `<td>0x${pcb.Xreg.toString(16).toUpperCase().padStart(2, '0')}</td>` +
+                `<td>0x${pcb.Yreg.toString(16).toUpperCase().padStart(2, '0')}</td>` +
+                `<td>${pcb.Zflag}</td>` +
+                "</tr>";
         }
         static updateMemDisplay(page = NaN) {
             if (!_MemoryController) {

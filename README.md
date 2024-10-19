@@ -1,4 +1,4 @@
-# Project 2
+# Project 3
 ___
 2024 Browser-based Operating System in TypeScript
 =================================================

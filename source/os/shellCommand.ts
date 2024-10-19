@@ -215,24 +215,28 @@ module TSOS {
 			// If you're curious why I'm also allowing hex numbers and separators to be formatted as '0xAD, 0x04, 0x00',
 			// it's because I made an assembler for this instruction set that outputs the binary this way.
 
-			const numberArray: number[] = hexArray.map(hex => {
-				const cleanedHex = hex.startsWith('0x') ? hex.slice(2) : hex;
-				let num = parseInt(cleanedHex, 16);
+			const bin: number[] = hexArray.map(hex => {
+				const cleanedHex: string = hex.startsWith('0x') ? hex.slice(2) : hex;
+				let num: number = parseInt(cleanedHex, 16);
 				if (num < 0 || num > 0xff) {
 					num = NaN;
 				}
 				return num;
 			});
 			//textArea.value = "";//don't clear input area on load
-			if (numberArray.some(Number.isNaN)) {
+			if (bin.some(Number.isNaN)) {
 				stderr.error([
 					ExitCode.SHELL_MISUSE.shellDesc()
 					+ " - Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '\"\n"
 				]);
 				return ExitCode.GENERIC_ERROR;
 			}
-			const pcb: ProcessControlBlock = ProcessControlBlock.new(numberArray);
-			_Scheduler.residentPcbs.set(pcb.pid, pcb);
+			const pcb: ProcessControlBlock | undefined = ProcessControlBlock.new(bin);
+			if (pcb === undefined) {
+				//Error message is handled in ProcessControlBlock.new()
+				return ExitCode.GENERIC_ERROR;
+			}
+			_Scheduler.load(pcb);
 			stdout.output([`Program loaded into memory with process ID ${pcb.pid}.\n`]);
 			return ExitCode.SUCCESS;
 		}
@@ -258,10 +262,10 @@ module TSOS {
 			}
 			const pid: number = Number.parseInt(args[0]);
 			if (Number.isNaN(pid)) {
-				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <pid>\n"]);
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <pid> [&]\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			const pcb: ProcessControlBlock | undefined = _Scheduler.residentPcbs.get(pid);
+			const pcb: ProcessControlBlock | undefined = _Scheduler.run(pid);
 			if (!pcb) {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + ` - Could not find process ${pid}.\n`]);
 				return ExitCode.GENERIC_ERROR;
@@ -270,11 +274,19 @@ module TSOS {
 				pcb.stdOut = stdout;
 				pcb.stdErr = stderr;
 			}
-			_Scheduler.pcbQueue.enqueue(pcb);
-			pcb.status = Status.ready;
-			_Scheduler.residentPcbs.delete(pid);
 			Control.updatePcbDisplay();
 			return async? null : undefined;
+		}
+
+		static shellClh(_stdin: InStream<string[]>, _stdout: OutStream<string[]>, _stderr: ErrStream<string[]>): ExitCode {
+			//Is it okay to do GUI stuff here?
+			(document.getElementById("hostLog") as HTMLInputElement).value = "";
+			return ExitCode.SUCCESS;
+		}
+
+		static shellClearMem(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+			//TODO clear all memory segments
+			return undefined;
 		}
 
 		static shellRunAll(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
@@ -282,10 +294,34 @@ module TSOS {
 			return undefined;
 		}
 
-		static shellClh(_stdin: InStream<string[]>, _stdout: OutStream<string[]>, _stderr: ErrStream<string[]>): ExitCode {
-			//Is it okay to do GUI stuff here?
-			(document.getElementById("hostLog") as HTMLInputElement).value = "";
-			return ExitCode.SUCCESS;
+		static shellPs(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+			//TODO display the PID and state of all processes
+			return undefined;
+		}
+
+		static shellKill(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+			//TODO kill one process
+			return undefined;
+		}
+
+		static shellKillAll(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+			//TODO kill all processes
+			return undefined;
+		}
+
+		static shellQuantum(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+			//TODO let the user set the round robin quantum (measured in CPU cycles)
+			return undefined;
+		}
+
+		static shellChAlloc(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+			//TODO
+			return undefined;
+		}
+
+		static shellChSched(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+			//TODO
+			return undefined;
 		}
 	}
 }

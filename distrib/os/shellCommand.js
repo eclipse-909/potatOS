@@ -196,7 +196,7 @@ var TSOS;
             const hexArray = input.split(/[\s,]+/);
             // If you're curious why I'm also allowing hex numbers and separators to be formatted as '0xAD, 0x04, 0x00',
             // it's because I made an assembler for this instruction set that outputs the binary this way.
-            const numberArray = hexArray.map(hex => {
+            const bin = hexArray.map(hex => {
                 const cleanedHex = hex.startsWith('0x') ? hex.slice(2) : hex;
                 let num = parseInt(cleanedHex, 16);
                 if (num < 0 || num > 0xff) {
@@ -205,15 +205,19 @@ var TSOS;
                 return num;
             });
             //textArea.value = "";//don't clear input area on load
-            if (numberArray.some(Number.isNaN)) {
+            if (bin.some(Number.isNaN)) {
                 stderr.error([
                     TSOS.ExitCode.SHELL_MISUSE.shellDesc()
                         + " - Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '\"\n"
                 ]);
                 return TSOS.ExitCode.GENERIC_ERROR;
             }
-            const pcb = TSOS.ProcessControlBlock.new(numberArray);
-            _Scheduler.residentPcbs.set(pcb.pid, pcb);
+            const pcb = TSOS.ProcessControlBlock.new(bin);
+            if (pcb === undefined) {
+                //Error message is handled in ProcessControlBlock.new()
+                return TSOS.ExitCode.GENERIC_ERROR;
+            }
+            _Scheduler.load(pcb);
             stdout.output([`Program loaded into memory with process ID ${pcb.pid}.\n`]);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -239,10 +243,10 @@ var TSOS;
             }
             const pid = Number.parseInt(args[0]);
             if (Number.isNaN(pid)) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <pid>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <pid> [&]\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            const pcb = _Scheduler.residentPcbs.get(pid);
+            const pcb = _Scheduler.run(pid);
             if (!pcb) {
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + ` - Could not find process ${pid}.\n`]);
                 return TSOS.ExitCode.GENERIC_ERROR;
@@ -251,20 +255,45 @@ var TSOS;
                 pcb.stdOut = stdout;
                 pcb.stdErr = stderr;
             }
-            _Scheduler.pcbQueue.enqueue(pcb);
-            pcb.status = TSOS.Status.ready;
-            _Scheduler.residentPcbs.delete(pid);
             TSOS.Control.updatePcbDisplay();
             return async ? null : undefined;
-        }
-        static shellRunAll(stdin, stdout, stderr) {
-            //TODO go through all pcbs in residentPCBs map and run them
-            return undefined;
         }
         static shellClh(_stdin, _stdout, _stderr) {
             //Is it okay to do GUI stuff here?
             document.getElementById("hostLog").value = "";
             return TSOS.ExitCode.SUCCESS;
+        }
+        static shellClearMem(stdin, stdout, stderr) {
+            //TODO clear all memory segments
+            return undefined;
+        }
+        static shellRunAll(stdin, stdout, stderr) {
+            //TODO go through all pcbs in residentPCBs map and run them
+            return undefined;
+        }
+        static shellPs(stdin, stdout, stderr) {
+            //TODO display the PID and state of all processes
+            return undefined;
+        }
+        static shellKill(stdin, stdout, stderr) {
+            //TODO kill one process
+            return undefined;
+        }
+        static shellKillAll(stdin, stdout, stderr) {
+            //TODO kill all processes
+            return undefined;
+        }
+        static shellQuantum(stdin, stdout, stderr) {
+            //TODO let the user set the round robin quantum (measured in CPU cycles)
+            return undefined;
+        }
+        static shellChAlloc(stdin, stdout, stderr) {
+            //TODO
+            return undefined;
+        }
+        static shellChSched(stdin, stdout, stderr) {
+            //TODO
+            return undefined;
         }
     }
     TSOS.ShellCommand = ShellCommand;

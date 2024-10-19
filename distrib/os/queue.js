@@ -44,6 +44,14 @@ var TSOS;
                 }
             }
         }
+        asArr() { return this.q; }
+        remove(index) {
+            if (index < 0 || index >= this.q.length) {
+                return null;
+            }
+            return this.q.splice(index, 1)[0];
+        }
+        reverse() { this.q.reverse(); }
     }
     TSOS.Queue = Queue;
 })(TSOS || (TSOS = {}));

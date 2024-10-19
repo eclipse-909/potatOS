@@ -55,21 +55,13 @@ var TSOS;
                 this.krnInterruptHandler(interrupt.irq, interrupt.params);
             }
             else {
-                //TODO this will need to be changed when the scheduler is fully implemented
-                if (!_Scheduler.currPCB) {
+                if (_Scheduler.currPCB === null) {
                     _CPU.isExecuting = false;
-                    if (!_Scheduler.pcbQueue.isEmpty()) {
-                        _Scheduler.currPCB = _Scheduler.pcbQueue.dequeue();
-                        _Scheduler.currPCB.status = TSOS.Status.running;
-                        _CPU.IR = _Scheduler.currPCB.IR;
-                        _CPU.PC = _Scheduler.currPCB.PC;
-                        _CPU.Acc = _Scheduler.currPCB.Acc;
-                        _CPU.Xreg = _Scheduler.currPCB.Xreg;
-                        _CPU.Yreg = _Scheduler.currPCB.Yreg;
-                        _CPU.Zflag = _Scheduler.currPCB.Zflag;
-                        _CPU.isExecuting = true;
-                        TSOS.Control.updatePcbDisplay();
-                    }
+                    TSOS.Dispatcher.contextSwitch();
+                }
+                else if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR && _Scheduler.cycle === _Scheduler.quantum) {
+                    _Scheduler.cycle = 0;
+                    TSOS.Dispatcher.contextSwitch();
                 }
                 if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
                     if (!_CPU.paused) {

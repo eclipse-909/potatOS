@@ -24,6 +24,7 @@ module TSOS {
 
 		//Translates virtual to physical address using the currently-running PCBs base address.
 		private translate(vPtr: number): number | undefined {
+			//if (_Scheduler.currPCB === undefined) {return undefined;}//If this crashes, this is a logical error by the developer
 			const pPtr: number = vPtr + _Scheduler.currPCB.base;
 			if (pPtr < _Scheduler.currPCB.base || pPtr > _Scheduler.currPCB.limit) {
 				return undefined;
@@ -37,7 +38,7 @@ module TSOS {
 		//Base and limit are physical addresses and should be stored in the new PCB.
 		public malloc(size?: number): {base: number, limit: number} | undefined {
 			switch (this.allocMode) {
-				case AllocMode.Fixed:
+				case AllocMode.Fixed://BUG cannot allocate second process for some reason
 					//Like first fit, but with equal block sizes. This is why we fallthrough here
 					size = MEM_BLOCK_SIZE;
 				case AllocMode.FirstFit:
@@ -54,7 +55,7 @@ module TSOS {
 			let newLimit: number = 0x0000;
 			if (size <= 0) {return undefined;}
 			if (this.processAllocs.length === 0) {
-				newLimit = newBase + size;
+				newLimit = newBase + size - 1;
 				if (newLimit >= MEM_SIZE) {return undefined;}
 				this.processAllocs.push({base: newBase, limit: newLimit});
 				return {base: newBase, limit: newLimit};
@@ -63,7 +64,7 @@ module TSOS {
 				//If there is room between this process limit and the next process base
 				if (this.processAllocs[i+1].base - this.processAllocs[i].limit > size) {
 					newBase = this.processAllocs[i].limit + 1;
-					newLimit = newBase + size;
+					newLimit = newBase + size - 1;
 					if (newLimit >= MEM_SIZE) {return undefined;}
 					this.processAllocs.splice(i+1, 0, {base: newBase, limit: newLimit});
 					return {base: newBase, limit: newLimit};
@@ -78,7 +79,7 @@ module TSOS {
 			let insertionIndex: number = -1;
 			if (size <= 0) {return undefined;}
 			if (this.processAllocs.length === 0) {
-				newLimit = newBase + size;
+				newLimit = newBase + size - 1;
 				if (newLimit >= MEM_SIZE) {return undefined;}
 				this.processAllocs.push({base: newBase, limit: newLimit});
 				return {base: newBase, limit: newLimit};
@@ -89,7 +90,7 @@ module TSOS {
 				let thisSize: number = this.processAllocs[i+1].base - this.processAllocs[i].limit;
 				if (thisSize > size && thisSize < minSize && this.processAllocs[i].limit + 1 + size < MEM_SIZE) {
 					newBase = this.processAllocs[i].limit + 1;
-					newLimit = newBase + size;
+					newLimit = newBase + size - 1;
 					minSize = thisSize;
 					insertionIndex = i + 1;
 				}
@@ -105,7 +106,7 @@ module TSOS {
 			let insertionIndex: number = -1;
 			if (size <= 0) {return undefined;}
 			if (this.processAllocs.length === 0) {
-				newLimit = newBase + size;
+				newLimit = newBase + size - 1;
 				if (newLimit >= MEM_SIZE) {return undefined;}
 				this.processAllocs.push({base: newBase, limit: newLimit});
 				return {base: newBase, limit: newLimit};
@@ -116,7 +117,7 @@ module TSOS {
 				let thisSize: number = this.processAllocs[i+1].base - this.processAllocs[i].limit;
 				if (thisSize > size && thisSize > maxSize && this.processAllocs[i].limit + 1 + size < MEM_SIZE) {
 					newBase = this.processAllocs[i].limit + 1;
-					newLimit = newBase + size;
+					newLimit = newBase + size - 1;
 					maxSize = thisSize;
 					insertionIndex = i + 1;
 				}
@@ -136,6 +137,9 @@ module TSOS {
 			while (left <= right) {
 				mid = Math.floor((left + right) / 2);
 				if (base === this.processAllocs[mid].base) {
+					for (let i: number = base; i <= this.processAllocs[mid].limit; i++) {
+						_MemoryController.write(i, 0);
+					}
 					this.processAllocs.splice(mid, 1);
 					return;
 				}

@@ -28,6 +28,7 @@ module TSOS {
 			//TODO what happens if it can't find the pcb with the pid?
 		}
 		Control.updatePcbDisplay();
+		Control.updateMemDisplay();
 		_OsShell.processExitQueue.enqueue({exitCode: params[1] as ExitCode, pid: pid});
 		_OsShell.onProcessFinished();
 	}

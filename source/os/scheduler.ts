@@ -61,8 +61,10 @@ module TSOS {
 			if (this.readyQueue.isEmpty()) {
 				return false;
 			}
-			this.currPCB.status = Status.ready
-			this.ready(this.currPCB);
+			if (this.currPCB !== null) {
+				this.currPCB.status = Status.ready
+				this.ready(this.currPCB);
+			}
 			let nextPcb: ProcessControlBlock = this.readyQueue.dequeue();
 			nextPcb.status = Status.running;
 			this.currPCB = nextPcb;

@@ -125,8 +125,8 @@ module TSOS {
 			return "<tr>" +
 				`<td>${pcb.pid.toString()}</td>` +
 				`<td>${Status[pcb.status]}</td>` +
-				`<td>${Status[pcb.base]}</td>` +
-				`<td>${Status[pcb.limit]}</td>` +
+				`<td>${pcb.base}</td>` +
+				`<td>${pcb.limit}</td>` +
 				`<td>${OpCode[pcb.IR]}</td>` +
 				`<td>0x${pcb.PC.toString(16).toUpperCase().padStart(4, '0')}</td>` +
 				`<td>0x${pcb.Acc.toString(16).toUpperCase().padStart(2, '0')}</td>` +

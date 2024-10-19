@@ -28,6 +28,7 @@ var TSOS;
             //TODO what happens if it can't find the pcb with the pid?
         }
         TSOS.Control.updatePcbDisplay();
+        TSOS.Control.updateMemDisplay();
         _OsShell.processExitQueue.enqueue({ exitCode: params[1], pid: pid });
         _OsShell.onProcessFinished();
     }

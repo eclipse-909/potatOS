@@ -22,6 +22,7 @@ var TSOS;
         }
         //Translates virtual to physical address using the currently-running PCBs base address.
         translate(vPtr) {
+            //if (_Scheduler.currPCB === undefined) {return undefined;}//If this crashes, this is a logical error by the developer
             const pPtr = vPtr + _Scheduler.currPCB.base;
             if (pPtr < _Scheduler.currPCB.base || pPtr > _Scheduler.currPCB.limit) {
                 return undefined;
@@ -34,7 +35,7 @@ var TSOS;
         //Base and limit are physical addresses and should be stored in the new PCB.
         malloc(size) {
             switch (this.allocMode) {
-                case AllocMode.Fixed:
+                case AllocMode.Fixed: //BUG cannot allocate second process for some reason
                     //Like first fit, but with equal block sizes. This is why we fallthrough here
                     size = TSOS.MEM_BLOCK_SIZE;
                 case AllocMode.FirstFit:
@@ -52,7 +53,7 @@ var TSOS;
                 return undefined;
             }
             if (this.processAllocs.length === 0) {
-                newLimit = newBase + size;
+                newLimit = newBase + size - 1;
                 if (newLimit >= MEM_SIZE) {
                     return undefined;
                 }
@@ -63,7 +64,7 @@ var TSOS;
                 //If there is room between this process limit and the next process base
                 if (this.processAllocs[i + 1].base - this.processAllocs[i].limit > size) {
                     newBase = this.processAllocs[i].limit + 1;
-                    newLimit = newBase + size;
+                    newLimit = newBase + size - 1;
                     if (newLimit >= MEM_SIZE) {
                         return undefined;
                     }
@@ -81,7 +82,7 @@ var TSOS;
                 return undefined;
             }
             if (this.processAllocs.length === 0) {
-                newLimit = newBase + size;
+                newLimit = newBase + size - 1;
                 if (newLimit >= MEM_SIZE) {
                     return undefined;
                 }
@@ -94,7 +95,7 @@ var TSOS;
                 let thisSize = this.processAllocs[i + 1].base - this.processAllocs[i].limit;
                 if (thisSize > size && thisSize < minSize && this.processAllocs[i].limit + 1 + size < MEM_SIZE) {
                     newBase = this.processAllocs[i].limit + 1;
-                    newLimit = newBase + size;
+                    newLimit = newBase + size - 1;
                     minSize = thisSize;
                     insertionIndex = i + 1;
                 }
@@ -113,7 +114,7 @@ var TSOS;
                 return undefined;
             }
             if (this.processAllocs.length === 0) {
-                newLimit = newBase + size;
+                newLimit = newBase + size - 1;
                 if (newLimit >= MEM_SIZE) {
                     return undefined;
                 }
@@ -126,7 +127,7 @@ var TSOS;
                 let thisSize = this.processAllocs[i + 1].base - this.processAllocs[i].limit;
                 if (thisSize > size && thisSize > maxSize && this.processAllocs[i].limit + 1 + size < MEM_SIZE) {
                     newBase = this.processAllocs[i].limit + 1;
-                    newLimit = newBase + size;
+                    newLimit = newBase + size - 1;
                     maxSize = thisSize;
                     insertionIndex = i + 1;
                 }
@@ -147,6 +148,9 @@ var TSOS;
             while (left <= right) {
                 mid = Math.floor((left + right) / 2);
                 if (base === this.processAllocs[mid].base) {
+                    for (let i = base; i <= this.processAllocs[mid].limit; i++) {
+                        _MemoryController.write(i, 0);
+                    }
                     this.processAllocs.splice(mid, 1);
                     return;
                 }

@@ -116,8 +116,8 @@ var TSOS;
             return "<tr>" +
                 `<td>${pcb.pid.toString()}</td>` +
                 `<td>${TSOS.Status[pcb.status]}</td>` +
-                `<td>${TSOS.Status[pcb.base]}</td>` +
-                `<td>${TSOS.Status[pcb.limit]}</td>` +
+                `<td>${pcb.base}</td>` +
+                `<td>${pcb.limit}</td>` +
                 `<td>${TSOS.OpCode[pcb.IR]}</td>` +
                 `<td>0x${pcb.PC.toString(16).toUpperCase().padStart(4, '0')}</td>` +
                 `<td>0x${pcb.Acc.toString(16).toUpperCase().padStart(2, '0')}</td>` +

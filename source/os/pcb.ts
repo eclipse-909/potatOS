@@ -67,8 +67,9 @@ module TSOS {
 			pcb.limit = alloc.limit;
 
 			//write bin to memory
-			bin.forEach((value: number, address: number): void => {
-				console.assert(_MMU.write(address, value));
+			bin.forEach((value: number, vPtr: number): void => {
+				//Bypass MMU because the MMU can only read and write to memory for processes that are running
+				_MemoryController.write(pcb.base + vPtr, value);
 			});
 			return pcb;
 		}

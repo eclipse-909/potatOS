@@ -59,8 +59,10 @@ var TSOS;
             if (this.readyQueue.isEmpty()) {
                 return false;
             }
-            this.currPCB.status = TSOS.Status.ready;
-            this.ready(this.currPCB);
+            if (this.currPCB !== null) {
+                this.currPCB.status = TSOS.Status.ready;
+                this.ready(this.currPCB);
+            }
             let nextPcb = this.readyQueue.dequeue();
             nextPcb.status = TSOS.Status.running;
             this.currPCB = nextPcb;

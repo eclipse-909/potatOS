@@ -219,6 +219,8 @@ var TSOS;
             }
             _Scheduler.load(pcb);
             stdout.output([`Program loaded into memory with process ID ${pcb.pid}.\n`]);
+            TSOS.Control.updatePcbDisplay();
+            TSOS.Control.updateMemDisplay();
             return TSOS.ExitCode.SUCCESS;
         }
         //@Returns

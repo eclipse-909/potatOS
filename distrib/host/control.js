@@ -49,6 +49,7 @@ var TSOS;
             document.getElementById("btnReset").disabled = false;
             document.getElementById("display").focus();
             _Scheduler = new TSOS.Scheduler();
+            _Dispatcher = new TSOS.Dispatcher();
             _MemoryController = new TSOS.MemoryController();
             _MMU = new TSOS.MMU();
             _CPU = new TSOS.Cpu(); // Note: We could simulate multi-core systems by instantiating more than one instance of the CPU here.

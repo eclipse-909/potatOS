@@ -1,8 +1,10 @@
 module TSOS {
 	export class Dispatcher {
+		constructor() {}
+
 		//Calls Scheduler.next() and updates the CPU with the new currPCB.
 		//Returns whether a switch was made.
-		public static contextSwitch(): boolean {
+		public contextSwitch(): boolean {
 			if (!_Scheduler.next()) {return false;}
 			_CPU.IR = _Scheduler.currPCB.IR;
 			_CPU.PC = _Scheduler.currPCB.PC;

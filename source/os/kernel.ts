@@ -60,10 +60,10 @@ module TSOS {
 			} else {
 				if (_Scheduler.currPCB === null) {
 					_CPU.isExecuting = false;
-					Dispatcher.contextSwitch();
+					_Dispatcher.contextSwitch();
 				} else if (_Scheduler.scheduleMode === ScheduleMode.RR && _Scheduler.cycle === _Scheduler.quantum) {
 					_Scheduler.cycle = 0;
-					Dispatcher.contextSwitch();
+					_Dispatcher.contextSwitch();
 				}
 				if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
 					if (!_CPU.paused) {

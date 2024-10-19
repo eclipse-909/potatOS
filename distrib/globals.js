@@ -49,6 +49,7 @@ let _KernelInterruptQueue = null;
 let _KernelInputQueue = null;
 let _KernelBuffers = null;
 let _Scheduler = null;
+let _Dispatcher = null;
 // Standard input and output
 let _StdIn = null;
 let _StdOut = null;

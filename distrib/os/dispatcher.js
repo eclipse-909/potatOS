@@ -1,9 +1,10 @@
 var TSOS;
 (function (TSOS) {
     class Dispatcher {
+        constructor() { }
         //Calls Scheduler.next() and updates the CPU with the new currPCB.
         //Returns whether a switch was made.
-        static contextSwitch() {
+        contextSwitch() {
             if (!_Scheduler.next()) {
                 return false;
             }

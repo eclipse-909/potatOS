@@ -61,6 +61,7 @@ let _KernelInputQueue: TSOS.Queue<string> = null;
 let _KernelBuffers = null;
 
 let _Scheduler: TSOS.Scheduler = null;
+let _Dispatcher: TSOS.Dispatcher = null;
 
 // Standard input and output
 let _StdIn: TSOS.Console = null;

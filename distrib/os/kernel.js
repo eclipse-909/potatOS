@@ -57,11 +57,11 @@ var TSOS;
             else {
                 if (_Scheduler.currPCB === null) {
                     _CPU.isExecuting = false;
-                    TSOS.Dispatcher.contextSwitch();
+                    _Dispatcher.contextSwitch();
                 }
                 else if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR && _Scheduler.cycle === _Scheduler.quantum) {
                     _Scheduler.cycle = 0;
-                    TSOS.Dispatcher.contextSwitch();
+                    _Dispatcher.contextSwitch();
                 }
                 if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
                     if (!_CPU.paused) {

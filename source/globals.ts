@@ -13,7 +13,7 @@
 //
 
 const APP_NAME: string    = "potatOS";   // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION: string = "0.2.7";   // What did you expect?
+const APP_VERSION: string = "0.3.0";   // What did you expect?
 
 const CPU_CLOCK_INTERVAL: number = 0;   // This is in ms (milliseconds) so 1000 = 1 second.
 
@@ -28,9 +28,7 @@ enum IRQ {
 }
 const KEYBOARD_IRQ: IRQ = IRQ.keyboard;//Stupid glados always making me do stuff
 
-const NUM_PAGES: number = 0x100;
-const PAGE_SIZE: number = 0x100;
-const MEM_SIZE: number = NUM_PAGES * PAGE_SIZE;
+const MEM_SIZE: number = 0x10000;
 
 //bytes are unchecked
 function leToU16(lowByte: number, highByte: number) {return (highByte << 8) | lowByte;}

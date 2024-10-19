@@ -138,9 +138,9 @@ var TSOS;
             }
             let str = "";
             for (let i = 0x00; i < 0x100; i += 0x10) {
-                str += `<tr><th>0x${(page * PAGE_SIZE + i).toString(16).toUpperCase().padStart(4, '0')}</th>`;
+                str += `<tr><th>0x${(page * TSOS.MEM_BLOCK_SIZE + i).toString(16).toUpperCase().padStart(4, '0')}</th>`;
                 for (let ii = 0x00; ii < 0x10; ii++) {
-                    str += `<td>0x${_MemoryController.ram[page * PAGE_SIZE + i + ii].toString(16).toUpperCase().padStart(2, '0')}</td>`;
+                    str += `<td>0x${_MemoryController.ram[page * TSOS.MEM_BLOCK_SIZE + i + ii].toString(16).toUpperCase().padStart(2, '0')}</td>`;
                 }
                 str += "</tr>";
             }

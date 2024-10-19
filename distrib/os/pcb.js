@@ -14,7 +14,8 @@ var TSOS;
     class ProcessControlBlock {
         pid;
         status;
-        pageTable; //TODO this will be changed in favor of the base-limit method
+        base;
+        limit;
         //stdIn: InStream;//programs don't actually have input
         stdOut;
         stdErr;
@@ -31,58 +32,40 @@ var TSOS;
         //Returns the process control block if successful, or undefined if it could not allocate enough memory.
         //Allocated memory is freed if aborted, but you must call ProcessControlBlock.free() when deleting the pcb that was returned.
         static new(bin) {
+            //init pcb
             let pcb = new ProcessControlBlock();
             pcb.pid = ProcessControlBlock.highestPID;
             ProcessControlBlock.highestPID++;
             pcb.status = Status.resident;
-            pcb.pageTable = new Map();
             pcb.stdOut = _StdOut; //default to the console stdout and stderr
             pcb.stdErr = _StdErr;
-            pcb.IR = TSOS.OpCode.BRK;
+            pcb.IR = TSOS.OpCode.BRK; //0-initialized
+            pcb.PC = 0x0000;
             pcb.Acc = 0x00;
             pcb.Xreg = 0x00;
             pcb.Yreg = 0x00;
             pcb.Zflag = false;
-            /*TODO refactor to use base and limit
-            //Allocate as many pages as necessary for this program
-            let orgPtr: number | undefined = undefined;
-            for (let i: number = 0; i < Math.ceil(bin.length / PAGE_SIZE); i++) {
-                const pagePtr: number | undefined = _MMU.malloc(pcb.pageTable);
-                if (orgPtr === undefined) {
-                    orgPtr = pagePtr;
-                }
-                if (pagePtr === undefined) {
-                    //abort
-                    pcb.free();
-                    return undefined;
-                }
-                for (let ii: number = 0x0000; ii < Math.min(bin.length, PAGE_SIZE); ii++) {
-                    _MMU.write(pagePtr + ii, bin[ii]);
-                }
+            //allocate memory
+            if (_MMU.allocMode === TSOS.AllocMode.Fixed && bin.length > TSOS.MEM_BLOCK_SIZE) {
+                //TODO instead of returning undefined, I should use stdErr to print "Binary too large"
+                return undefined; //TODO find out if I can make processes span multiple blocks of length 256, like a 512 block for example.
             }
-            pcb.PC = orgPtr;
-            */
-            //TODO delete this after the demo
-            //bypass the MMU to write to memory
-            for (let i = 0x0000; i < Math.min(bin.length, 0x0100); i++) {
-                _MemoryController.write(i, bin[i]);
+            let alloc = _MMU.malloc(bin.length);
+            if (alloc === undefined) {
+                //TODO instead of returning undefined, I should use stdErr to print "Out of memory, could not allocate for new process"
+                return undefined;
             }
-            pcb.PC = 0x0000;
-            if (_Scheduler.currPCB !== null || !_Scheduler.pcbQueue.isEmpty() || _Scheduler.residentPcbs.size !== 0) {
-                _StdOut.putText("Overwriting existing processes to load new process. ");
-            }
-            if (_Scheduler.currPCB !== null) {
-                TSOS.kill([_Scheduler.currPCB.pid, TSOS.ExitCode.TERMINATED_BY_CTRL_C]);
-            }
-            //I think this is redundant, but I'm going to delete this line anyway
-            _Scheduler.pcbQueue.clear((element) => { TSOS.kill([element.pid, TSOS.ExitCode.TERMINATED_BY_CTRL_C]); });
-            _Scheduler.residentPcbs.forEach((pcb, _pid) => { pcb.free(); });
-            _Scheduler.residentPcbs.clear();
+            pcb.base = alloc.base;
+            pcb.limit = alloc.limit;
+            //write bin to memory
+            bin.forEach((value, address) => {
+                console.assert(_MMU.write(address, value));
+            });
             return pcb;
         }
         //This must be called when a process is killed
         free() {
-            _MMU.free(this.pageTable);
+            _MMU.free(this.base);
         }
     }
     TSOS.ProcessControlBlock = ProcessControlBlock;

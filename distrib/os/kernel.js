@@ -97,13 +97,13 @@ var TSOS;
                     _StdIn.handleInput();
                     break;
                 case IRQ.kill:
-                    TSOS.kill(params);
+                    TSOS.kill(params[0], params[1]);
                     break;
                 case IRQ.writeIntConsole:
-                    TSOS.writeIntStdOut(params);
+                    TSOS.writeIntStdOut(params[0], params[1]);
                     break;
                 case IRQ.writeStrConsole:
-                    TSOS.writeStrStdOut(params);
+                    TSOS.writeStrStdOut(params[0], params[1]);
                     break;
                 default:
                     this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");

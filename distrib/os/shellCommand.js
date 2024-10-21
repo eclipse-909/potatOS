@@ -260,7 +260,12 @@ var TSOS;
             TSOS.Control.updatePcbDisplay();
             return async ? null : undefined;
         }
-        static shellClh(_stdin, _stdout, _stderr) {
+        static shellClh(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: clh\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
             //Is it okay to do GUI stuff here?
             document.getElementById("hostLog").value = "";
             return TSOS.ExitCode.SUCCESS;
@@ -278,11 +283,17 @@ var TSOS;
             return undefined;
         }
         static shellKill(stdin, stdout, stderr) {
-            //TODO kill one process
-            return undefined;
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: kill <pid>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
         }
         static shellKillAll(stdin, stdout, stderr) {
             //TODO kill all processes
+            for (const pcb of _Scheduler.allProcs()) {
+                //
+            }
             return undefined;
         }
         static shellQuantum(stdin, stdout, stderr) {
@@ -290,11 +301,15 @@ var TSOS;
             return undefined;
         }
         static shellChAlloc(stdin, stdout, stderr) {
-            //TODO
+            //TODO change allocation mode of MMU
+            return undefined;
+        }
+        static shellSegFix(stdin, stdout, stderr) {
+            //TODO change fixed/variable segment size of MMU
             return undefined;
         }
         static shellChSched(stdin, stdout, stderr) {
-            //TODO
+            //TODO change scheduler
             return undefined;
         }
     }

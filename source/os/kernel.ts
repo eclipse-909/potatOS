@@ -102,13 +102,13 @@ module TSOS {
 					_StdIn.handleInput();
 					break;
 				case IRQ.kill:
-					kill(params);
+					kill(params[0], params[1]);
 					break;
 				case IRQ.writeIntConsole:
-					writeIntStdOut(params);
+					writeIntStdOut(params[0], params[1]);
 					break;
 				case IRQ.writeStrConsole:
-					writeStrStdOut(params);
+					writeStrStdOut(params[0], params[1]);
 					break;
 				default:
 					this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");

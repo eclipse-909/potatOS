@@ -280,49 +280,65 @@ module TSOS {
 			return async? null : undefined;
 		}
 
-		static shellClh(_stdin: InStream<string[]>, _stdout: OutStream<string[]>, _stderr: ErrStream<string[]>): ExitCode {
+		static shellClh(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
+			if (args.length !== 0) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: clh\n"]);
+				return ExitCode.SHELL_MISUSE;
+			}
 			//Is it okay to do GUI stuff here?
 			(document.getElementById("hostLog") as HTMLInputElement).value = "";
 			return ExitCode.SUCCESS;
 		}
 
-		static shellClearMem(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+		static shellClearMem(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			//TODO clear all memory segments
 			return undefined;
 		}
 
-		static shellRunAll(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+		static shellRunAll(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			//TODO go through all pcbs in residentPCBs map and run them
 			return undefined;
 		}
 
-		static shellPs(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+		static shellPs(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			//TODO display the PID and state of all processes
 			return undefined;
 		}
 
-		static shellKill(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
-			//TODO kill one process
-			return undefined;
+		static shellKill(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
+			if (args.length !== 0) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: kill <pid>\n"]);
+				return ExitCode.SHELL_MISUSE;
+			}
 		}
 
-		static shellKillAll(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+		static shellKillAll(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			//TODO kill all processes
+			for (const pcb of _Scheduler.allProcs()) {
+				//
+			}
 			return undefined;
 		}
 
-		static shellQuantum(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
+		static shellQuantum(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			//TODO let the user set the round robin quantum (measured in CPU cycles)
 			return undefined;
 		}
 
-		static shellChAlloc(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
-			//TODO
+		static shellChAlloc(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO change allocation mode of MMU
 			return undefined;
 		}
 
-		static shellChSched(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode | undefined | null {
-			//TODO
+		static shellSegFix(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO change fixed/variable segment size of MMU
+			return undefined;
+		}
+
+		static shellChSched(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO change scheduler
 			return undefined;
 		}
 	}

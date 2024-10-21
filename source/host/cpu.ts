@@ -92,6 +92,7 @@ module TSOS {
 					arg1 = this.fetch();
 					if (arg1 === undefined) {return this.segFault();}
 					if (!_MMU.write(leToU16(arg0, arg1), this.Acc)) {return this.segFault();}
+					Control.updateMemDisplay();
 					break;
 				case OpCode.TXA:
 					this.Acc = this.Xreg;
@@ -199,6 +200,7 @@ module TSOS {
 					}
 					this.Zflag = buffer === 0;
 					if (!_MMU.write(vPtr, buffer)) {return this.segFault();}
+					Control.updateMemDisplay();
 					break;
 				case OpCode.SYS:
 					let irq: IRQ;
@@ -240,7 +242,13 @@ module TSOS {
 					this.illegalInstruction();
 			}
 			Control.updateCpuDisplay();
-			Control.updateMemDisplay();
+			//check for round-robin quantum
+			//this is done here to prevent context switches during step-through debugging
+			if (_Scheduler.scheduleMode === ScheduleMode.RR && (_Scheduler.cycle === _Scheduler.quantum * -1 || _Scheduler.cycle === _Scheduler.quantum)) {
+				_Scheduler.cycle = 0;
+				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));
+			}
+			_Scheduler.updatePcbTime();
 		}
 	}
 

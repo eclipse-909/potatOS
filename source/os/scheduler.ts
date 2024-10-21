@@ -35,18 +35,23 @@ module TSOS {
 		//Enqueues the pcb into the readyQueue. Inserts it if using ScheduleMode.P_SJF.
 		public ready(pcb: ProcessControlBlock): void {
 			pcb.status = Status.ready;
-			if (this.quantum > 0 || this.scheduleMode !== ScheduleMode.RR) {
+			if (this.scheduleMode !== ScheduleMode.RR || this.quantum > 0) {
 				this.readyQueue.enqueue(pcb);
 			} else {
 				this.readyQueue.push_front(pcb);//The queue is reversed if q < 0
 			}
 			if (this.scheduleMode === ScheduleMode.P_SJF) {
-				this.readyQueue.asArr().sort((a: ProcessControlBlock, b: ProcessControlBlock): number => {
+				this.readyQueue.sort((a: ProcessControlBlock, b: ProcessControlBlock): number => {
 					return a.timeEstimate - b.timeEstimate;
 				});
-				if (this.readyQueue.peek().timeEstimate < this.currPCB.timeEstimate) {
+				const readyArr: ProcessControlBlock[] = this.readyQueue.asArr();
+				if (readyArr[this.quantum > 0? 0 : readyArr.length - 1].timeEstimate < this.currPCB.timeEstimate) {
 					_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));//preemptive
+					return;
 				}
+			}
+			if (this.currPCB === null) {
+				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));
 			}
 		}
 
@@ -94,6 +99,21 @@ module TSOS {
 				arr.push(pcb);
 			});
 			return arr;
+		}
+
+		//Removes all resident processes
+		public clearMem(): void {
+			this.residentPcbs.forEach((_value: ProcessControlBlock, key: number): void => {
+				this.remove(key);
+			});
+		}
+
+		//Increments cpuTime and waitTime of all running/ready processes
+		public updatePcbTime(): void {
+			this.currPCB.cpuTime++;
+			for (const pcb of this.readyQueue.asArr()) {
+				pcb.waitTime++;
+			}
 		}
 
 		//Removes a pcb from the currPCB, readyQueue, or residentPcb map if it exists.

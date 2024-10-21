@@ -7,10 +7,10 @@
 
 module TSOS {
 	export class Console implements OutStream<string[]>, InStream<string[]>, ErrStream<string[]> {
-		constructor(public currentFont = _DefaultFontFamily,
-		            public currentFontSize = _DefaultFontSize,
+		constructor(public currentFont: string = _DefaultFontFamily,
+		            public currentFontSize: number = _DefaultFontSize,
 		            public currentXPosition = 0,
-		            public currentYPosition = _DefaultFontSize,
+		            public currentYPosition: number = _DefaultFontSize,
 		            public buffer = "",
 		            public shellHistory: string[] = [],
 					public shellHistoryIndex: number = 0,
@@ -34,7 +34,7 @@ module TSOS {
 		//Clears the text of the current prompt, but doesn't remove the prompt
 		clearPrompt(): void {
 			const xSize = _DrawingContext.measureText(this.currentFont, this.currentFontSize, this.buffer);
-			const xStartPos = this.currentXPosition - xSize;
+			const xStartPos: number = this.currentXPosition - xSize;
 			_DrawingContext.clearRect(xStartPos, this.currentYPosition - _DefaultFontSize, xSize, _DefaultFontSize + 5);
 			this.currentXPosition = xStartPos;
 			this.buffer = "";
@@ -43,7 +43,7 @@ module TSOS {
 		public handleInput(): string {
 			while (_KernelInputQueue.getSize() > 0) {
 				// Get the next character from the kernel input queue.
-				const chr = _KernelInputQueue.dequeue();
+				const chr: string = _KernelInputQueue.dequeue();
 				//only handle the input if it's enabled. all characters entered will be discarded
 				if (!this.inputEnabled && chr !== String.fromCharCode(3)) {continue;}
 				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).

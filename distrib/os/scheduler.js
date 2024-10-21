@@ -33,19 +33,24 @@ var TSOS;
         //Enqueues the pcb into the readyQueue. Inserts it if using ScheduleMode.P_SJF.
         ready(pcb) {
             pcb.status = TSOS.Status.ready;
-            if (this.quantum > 0 || this.scheduleMode !== ScheduleMode.RR) {
+            if (this.scheduleMode !== ScheduleMode.RR || this.quantum > 0) {
                 this.readyQueue.enqueue(pcb);
             }
             else {
                 this.readyQueue.push_front(pcb); //The queue is reversed if q < 0
             }
             if (this.scheduleMode === ScheduleMode.P_SJF) {
-                this.readyQueue.asArr().sort((a, b) => {
+                this.readyQueue.sort((a, b) => {
                     return a.timeEstimate - b.timeEstimate;
                 });
-                if (this.readyQueue.peek().timeEstimate < this.currPCB.timeEstimate) {
+                const readyArr = this.readyQueue.asArr();
+                if (readyArr[this.quantum > 0 ? 0 : readyArr.length - 1].timeEstimate < this.currPCB.timeEstimate) {
                     _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, [])); //preemptive
+                    return;
                 }
+            }
+            if (this.currPCB === null) {
+                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, []));
             }
         }
         //Moves the pcb with the given pid from the residentPcb map and readies it into the readyQueue with this.ready().
@@ -93,6 +98,19 @@ var TSOS;
                 arr.push(pcb);
             });
             return arr;
+        }
+        //Removes all resident processes
+        clearMem() {
+            this.residentPcbs.forEach((_value, key) => {
+                this.remove(key);
+            });
+        }
+        //Increments cpuTime and waitTime of all running/ready processes
+        updatePcbTime() {
+            this.currPCB.cpuTime++;
+            for (const pcb of this.readyQueue.asArr()) {
+                pcb.waitTime++;
+            }
         }
         //Removes a pcb from the currPCB, readyQueue, or residentPcb map if it exists.
         //Returns if successful.

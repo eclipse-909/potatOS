@@ -51,11 +51,6 @@ module TSOS {
 		}
 
 		public krnOnCPUClockPulse(): void {
-			//check for round-robin quantum
-			if (_Scheduler.scheduleMode === ScheduleMode.RR && (_Scheduler.cycle === _Scheduler.quantum * -1 || _Scheduler.cycle === _Scheduler.quantum)) {
-				_Scheduler.cycle = 0;
-				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));
-			}
 			// Check for an interrupt, if there are any. Page 560
 			if (_KernelInterruptQueue.getSize() > 0) {
 				// Process the first interrupt on the interrupt queue.

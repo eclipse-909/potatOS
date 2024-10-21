@@ -288,11 +288,7 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: clearmem\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            for (const pcb of _Scheduler.allProcs()) {
-                if (pcb.status === TSOS.Status.resident || pcb.status === TSOS.Status.terminated) {
-                    _Scheduler.remove(pcb.pid);
-                }
-            }
+            _Scheduler.clearMem();
             return TSOS.ExitCode.SUCCESS;
         }
         //@Returns

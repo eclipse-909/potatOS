@@ -105,6 +105,9 @@ module TSOS {
 				"<tr>" +
 					"<th>PID</th>" +
 					"<th>Status</th>" +
+					"<th>Turnaround Time</th>" +
+					"<th>Wait Time</th>" +
+					"<th>Priority</th>" +
 					"<th>Base</th>" +
 					"<th>Limit</th>" +
 					"<th>IR</th>" +
@@ -125,8 +128,11 @@ module TSOS {
 			return "<tr>" +
 				`<td>${pcb.pid.toString()}</td>` +
 				`<td>${Status[pcb.status]}</td>` +
-				`<td>${pcb.base}</td>` +
-				`<td>${pcb.limit}</td>` +
+				`<td>${pcb.cpuTime + pcb.waitTime}</td>` +
+				`<td>${pcb.waitTime}</td>` +
+				`<td>${pcb.priority}</td>` +
+				`<td>0x${pcb.base.toString(16).toUpperCase().padStart(4, '0')}</td>` +
+				`<td>0x${pcb.limit.toString(16).toUpperCase().padStart(4, '0')}</td>` +
 				`<td>${OpCode[pcb.IR]}</td>` +
 				`<td>0x${pcb.PC.toString(16).toUpperCase().padStart(4, '0')}</td>` +
 				`<td>0x${pcb.Acc.toString(16).toUpperCase().padStart(2, '0')}</td>` +

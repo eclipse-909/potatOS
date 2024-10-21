@@ -25,6 +25,9 @@ module TSOS {
 		stdOut: OutStream<string[]>;
 		stdErr: ErrStream<string[]>;
 		timeEstimate: number;
+		cpuTime: number;
+		waitTime: number;
+		priority: number;
 
 		static highestPID: number = 0;
 
@@ -38,20 +41,6 @@ module TSOS {
 		public static new(bin: number[]): ProcessControlBlock | undefined {
 			//init pcb
 			let pcb: ProcessControlBlock = new ProcessControlBlock();
-			pcb.pid = ProcessControlBlock.highestPID;
-			ProcessControlBlock.highestPID++;
-			pcb.status = Status.resident;
-			pcb.IR = OpCode.BRK;//0-initialized
-			pcb.PC = 0x0000;
-			pcb.Acc = 0x00;
-			pcb.Xreg = 0x00;
-			pcb.Yreg = 0x00;
-			pcb.Zflag = false;
-			pcb.stdOut = _StdOut;//default to the console stdout and stderr
-			pcb.stdErr = _StdErr;
-
-			//Estimate how long this binary should take
-			pcb.estimateTime(bin);
 
 			//allocate memory
 			if (_MMU.fixedSegments && bin.length > _MMU.segmentSize) {
@@ -71,6 +60,24 @@ module TSOS {
 				//Bypass MMU because the MMU can only read and write to memory for processes that are running
 				_MemoryController.write(pcb.base + vPtr, value);
 			});
+
+			pcb.pid = ProcessControlBlock.highestPID;
+			ProcessControlBlock.highestPID++;
+			pcb.status = Status.resident;
+			pcb.IR = OpCode.BRK;//0-initialized
+			pcb.PC = 0x0000;
+			pcb.Acc = 0x00;
+			pcb.Xreg = 0x00;
+			pcb.Yreg = 0x00;
+			pcb.Zflag = false;
+			pcb.stdOut = _StdOut;//default to the console stdout and stderr
+			pcb.stdErr = _StdErr;
+			pcb.cpuTime = 0;
+			pcb.waitTime = 0;
+			pcb.priority = 0;
+
+			//Estimate how long this binary should take
+			pcb.estimateTime(bin);
 			return pcb;
 		}
 

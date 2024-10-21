@@ -110,6 +110,7 @@ var TSOS;
                     if (!_MMU.write(leToU16(arg0, arg1), this.Acc)) {
                         return this.segFault();
                     }
+                    TSOS.Control.updateMemDisplay();
                     break;
                 case OpCode.TXA:
                     this.Acc = this.Xreg;
@@ -259,6 +260,7 @@ var TSOS;
                     if (!_MMU.write(vPtr, buffer)) {
                         return this.segFault();
                     }
+                    TSOS.Control.updateMemDisplay();
                     break;
                 case OpCode.SYS:
                     let irq;
@@ -305,7 +307,13 @@ var TSOS;
                     this.illegalInstruction();
             }
             TSOS.Control.updateCpuDisplay();
-            TSOS.Control.updateMemDisplay();
+            //check for round-robin quantum
+            //this is done here to prevent context switches during step-through debugging
+            if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR && (_Scheduler.cycle === _Scheduler.quantum * -1 || _Scheduler.cycle === _Scheduler.quantum)) {
+                _Scheduler.cycle = 0;
+                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, []));
+            }
+            _Scheduler.updatePcbTime();
         }
     }
     TSOS.Cpu = Cpu;

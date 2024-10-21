@@ -60,6 +60,9 @@ var TSOS;
         pop() {
             return this.q.pop();
         }
+        sort(compareFn) {
+            this.q.sort(compareFn);
+        }
     }
     TSOS.Queue = Queue;
 })(TSOS || (TSOS = {}));

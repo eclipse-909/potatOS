@@ -69,5 +69,9 @@ module TSOS {
 		public pop(): T | undefined {
 			return this.q.pop();
 		}
+
+		public sort(compareFn?: (a: T, b: T) => number): void {
+			this.q.sort(compareFn);
+		}
 	}
 }

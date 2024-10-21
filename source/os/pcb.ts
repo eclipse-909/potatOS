@@ -54,11 +54,11 @@ module TSOS {
 			pcb.estimateTime(bin);
 
 			//allocate memory
-			if (_MMU.allocMode === AllocMode.Fixed && bin.length > MEM_BLOCK_SIZE) {
+			if (_MMU.fixedBlockSize && bin.length > MEM_BLOCK_SIZE) {
 				pcb.stdErr.error(["Binary too large\n"]);
 				return undefined;//TODO find out if I can make processes span multiple blocks of length 256, like a 512 block for example.
 			}
-			let alloc: {base: number, limit: number} | undefined = _MMU.malloc(bin.length);
+			const alloc: {base: number, limit: number} | undefined = _MMU.malloc(bin.length);
 			if (alloc === undefined) {
 				pcb.stdErr.error(["Out of memory, could not allocate for new process\n"]);
 				return undefined;

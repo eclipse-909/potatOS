@@ -147,9 +147,9 @@ module TSOS {
 			}
 			let str: string = "";
 			for (let i: number = 0x00; i < 0x100; i += 0x10) {
-				str += `<tr><th>0x${(page * MEM_BLOCK_SIZE + i).toString(16).toUpperCase().padStart(4, '0')}</th>`;
+				str += `<tr><th>0x${(page * _MMU.segmentSize + i).toString(16).toUpperCase().padStart(4, '0')}</th>`;
 				for (let ii: number = 0x00; ii < 0x10; ii++) {
-					str += `<td>0x${_MemoryController.ram[page * MEM_BLOCK_SIZE + i + ii].toString(16).toUpperCase().padStart(2, '0')}</td>`;
+					str += `<td>0x${_MemoryController.ram[page * _MMU.segmentSize + i + ii].toString(16).toUpperCase().padStart(2, '0')}</td>`;
 				}
 				str += "</tr>";
 			}

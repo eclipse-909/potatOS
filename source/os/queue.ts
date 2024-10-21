@@ -59,6 +59,14 @@ module TSOS {
 			return this.q.splice(index, 1)[0];
 		}
 
-		public reverse(): void {this.q.reverse();}
+		//Inserts the element into the front of the queue
+		public push_front(element: T): void {
+			this.q.splice(0, 0, element);
+		}
+
+		//Removes the element from the back of the queue
+		public pop(): T | undefined {
+			return this.q.pop();
+		}
 	}
 }

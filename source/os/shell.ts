@@ -287,6 +287,12 @@ module TSOS {
 				//if we are executing a process,
 				//add the pid and connector to the queue so we can wait for it to finish.
 				//then keep executing remaining chained commands.
+				if (command.command === "runall") {
+					this.putPrompt();
+					this.executeCmdQueue();
+					this.tryEnableInput();
+					return;
+				}
 				if (command.command === "run" && !(exitCode instanceof ExitCode)) {
 					const pid: number = Number.parseInt(currCmd.args[0]);
 					if (!Number.isNaN(pid)) {

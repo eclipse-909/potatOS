@@ -2,12 +2,15 @@ var TSOS;
 (function (TSOS) {
     class ShellCommand {
         func;
-        command = "";
-        description = "";
-        constructor(func, command = "", description = "") {
+        command;
+        description;
+        //Used for autocompletion of the FIRST argument only, not for verifying input
+        validArgs;
+        constructor(func, command, description, validArgs = []) {
             this.func = func;
             this.command = command;
             this.description = description;
+            this.validArgs = validArgs;
         }
         static COMMAND_LIST = [
             new ShellCommand(ShellCommand.shellVer, "ver", "- Displays the current version data.\n"),
@@ -15,7 +18,7 @@ var TSOS;
             new ShellCommand(ShellCommand.shellShutdown, "shutdown", "- Shuts down the virtual OS but leaves the underlying host / hardware simulation running.\n"),
             new ShellCommand(ShellCommand.shellCls, "cls", "- Clears the screen and resets the cursor position.\n"),
             new ShellCommand(ShellCommand.shellMan, "man", "<topic> - Displays the MANual page for <topic>.\n"),
-            new ShellCommand(ShellCommand.shellTrace, "trace", "<on | off> - Turns the OS trace on or off.\n"),
+            new ShellCommand(ShellCommand.shellTrace, "trace", "<on | off> - Turns the OS trace on or off.\n", ["on", "off"]),
             new ShellCommand(ShellCommand.shellRot13, "rot13", "<string...> - Does rot13 obfuscation on <string...>.\n"),
             new ShellCommand(ShellCommand.shellPrompt, "prompt", "<string...> - Sets the prompt.\n"),
             new ShellCommand(ShellCommand.shellDate, "date", "- Displays the current date and time.\n"),
@@ -25,10 +28,16 @@ var TSOS;
             new ShellCommand(ShellCommand.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message.\n"),
             new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.\n"),
             new ShellCommand(ShellCommand.shellRun, "run", "<process ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.\n"),
-            //new ShellCommand(ShellCommand.shellRunAll, "runall", "[&] - Run all programs in memory. Use ampersand to run in background asynchronously.\n"),
             new ShellCommand(ShellCommand.shellClh, "clh", "- Clears the host log.\n"),
-            // ps  - list the running processes and their IDs
-            // kill <id> - kills the specified process id.
+            new ShellCommand(ShellCommand.shellClearMem, "clearmem", "- Clears all memory segments.\n"),
+            new ShellCommand(ShellCommand.shellRunAll, "runall", "- Runs all programs in memory concurrently.\n"),
+            new ShellCommand(ShellCommand.shellPs, "ps", "- Displays the PID and status of all processes.\n"),
+            new ShellCommand(ShellCommand.shellKill, "kill", "<process ID> - Terminates the process with the given process ID.\n"),
+            new ShellCommand(ShellCommand.shellKillAll, "killall", "- Terminates all processes.\n"),
+            new ShellCommand(ShellCommand.shellQuantum, "quantum", "<int> - Set the quantum (measured in CPU cycles) for Round-Robin scheduling. Must be non-zero. Negative quantum will reverse the order of execution\n"),
+            new ShellCommand(ShellCommand.shellChAlloc, "challoc", "<FirstFit / BestFit / WorstFit> - Set the mode for allocating new processes.\n", ["FirstFit", "BestFit", "WorstFit"]),
+            new ShellCommand(ShellCommand.shellChSegment, "chsegment", "<fixed / variable> [<int>] - Change segment allocation to fixed or variable size. If fixed, pass the size as a positive integer.\n", ["fixed", "variable"]),
+            new ShellCommand(ShellCommand.shellChSched, "chsched", "<RR / NP_FCFS / P_SJF> - Change the CPU scheduling mode.\n", ["RR", "NP_FCFS", "P_SJF"])
         ];
         static shellVer(stdin, stdout, stderr) {
             const args = stdin.input();
@@ -45,7 +54,7 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: help\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            let text = "Key:\n  <> = required parameter\n  ... = repeatable parameter\n  [] = optional parameter\n  | = either parameter is acceptable\nCommands:\n";
+            let text = "Key:\n  <> = parameter type/option\n  ... = repeatable parameter\n  [] = optional parameter\n  | = either parameter is acceptable\nCommands:\n";
             for (const i in ShellCommand.COMMAND_LIST) {
                 text += "  " + ShellCommand.COMMAND_LIST[i].command + " " + ShellCommand.COMMAND_LIST[i].description;
             }
@@ -224,9 +233,9 @@ var TSOS;
             return TSOS.ExitCode.SUCCESS;
         }
         //@Returns
-        // - an exit code if an error occurred before running the process.
-        // - undefined if running synchronously
-        // - null if running asynchronously
+        // - An exit code if an error occurred before running the process.
+        // - Undefined if running synchronously.
+        // - Null if running asynchronously.
         static shellRun(stdin, stdout, stderr) {
             const args = stdin.input();
             if (!(args.length === 1 || args.length === 2)) {
@@ -248,6 +257,9 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <pid> [&]\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
+            return ShellCommand.runHelper(pid, async, stdout, stderr);
+        }
+        static runHelper(pid, async, stdout, stderr) {
             const pcb = _Scheduler.run(pid);
             if (!pcb) {
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + ` - Could not find process ${pid}.\n`]);
@@ -270,47 +282,158 @@ var TSOS;
             document.getElementById("hostLog").value = "";
             return TSOS.ExitCode.SUCCESS;
         }
-        static shellClearMem(stdin, stdout, stderr) {
-            //TODO clear all memory segments
-            return undefined;
-        }
-        static shellRunAll(stdin, stdout, stderr) {
-            //TODO go through all pcbs in residentPCBs map and run them
-            return undefined;
-        }
-        static shellPs(stdin, stdout, stderr) {
-            //TODO display the PID and state of all processes
-            return undefined;
-        }
-        static shellKill(stdin, stdout, stderr) {
+        static shellClearMem(stdin, _stdout, stderr) {
+            //TODO find out if this is the intended behavior, or if clearmem is supposed to keep the processes running after memory has been cleared.
             const args = stdin.input();
             if (args.length !== 0) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: kill <pid>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: clearmem\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-        }
-        static shellKillAll(stdin, stdout, stderr) {
-            //TODO kill all processes
             for (const pcb of _Scheduler.allProcs()) {
-                //
+                TSOS.kill(pcb.pid, TSOS.ExitCode.PROC_KILLED);
             }
-            return undefined;
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellQuantum(stdin, stdout, stderr) {
-            //TODO let the user set the round robin quantum (measured in CPU cycles)
-            return undefined;
+        //@Returns
+        // - An exit code if an error occurred before running the process.
+        // - Null if successful.
+        static shellRunAll(stdin, stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: runall\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            for (const pcb of _Scheduler.allProcs()) {
+                ShellCommand.runHelper(pcb.pid, true, stdout, stderr);
+            }
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellChAlloc(stdin, stdout, stderr) {
-            //TODO change allocation mode of MMU
-            return undefined;
+        static shellPs(stdin, stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: ps\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            for (const pcb of _Scheduler.allProcs()) {
+                stdout.output([`Process: ${pcb.pid} - Status: ${pcb.status}\n`]);
+            }
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellSegFix(stdin, stdout, stderr) {
-            //TODO change fixed/variable segment size of MMU
-            return undefined;
+        static shellKill(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: kill <pid>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            const pid = Number.parseInt(args[0]);
+            if (Number.isNaN(pid)) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid pid (must be a non-negative integer). Usage: kill <pid>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            TSOS.kill(pid, TSOS.ExitCode.PROC_KILLED);
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellChSched(stdin, stdout, stderr) {
-            //TODO change scheduler
-            return undefined;
+        static shellKillAll(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: killall\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            for (const pcb of _Scheduler.allProcs()) {
+                TSOS.kill(pcb.pid, TSOS.ExitCode.PROC_KILLED);
+            }
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellQuantum(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: quantum <int>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            let pid = Number.parseInt(args[0]);
+            if (Number.isNaN(pid) || pid === 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid pid (must be a non-zero integer). Usage: quantum <int>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _Scheduler.quantum = pid;
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellChAlloc(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: challoc <FirstFit / BestFit / WorstFit>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            switch (args[0].toLowerCase()) {
+                case "firstfit":
+                    _MMU.allocMode = TSOS.AllocMode.FirstFit;
+                    break;
+                case "bestfit":
+                    _MMU.allocMode = TSOS.AllocMode.BestFit;
+                    break;
+                case "worstfit":
+                    _MMU.allocMode = TSOS.AllocMode.WorstFit;
+                    break;
+                default:
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: challoc <FirstFit / BestFit / WorstFit>\n"]);
+                    return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellChSegment(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1 && args.length !== 2) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed / variable> [<int>]\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            switch (args[0].toLowerCase()) {
+                case "fixed":
+                    if (args.length !== 2) {
+                        stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed / variable> [<int>]\n"]);
+                        return TSOS.ExitCode.SHELL_MISUSE;
+                    }
+                    _MMU.fixedSegments = true;
+                    const size = Number.parseInt(args[1]);
+                    if (Number.isNaN(size) || size <= 0) {
+                        stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Size must be a positive integer. Usage: chsegment <fixed / variable> [<int>]\n"]);
+                        return TSOS.ExitCode.SHELL_MISUSE;
+                    }
+                    _MMU.segmentSize = size;
+                    break;
+                case "variable":
+                    if (args.length !== 1) {
+                        stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Cannot use a specific size for variable-sized segments. Usage: chsegment <fixed / variable> [<int>]\n"]);
+                        return TSOS.ExitCode.SHELL_MISUSE;
+                    }
+                    _MMU.fixedSegments = false;
+                    break;
+                default:
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed / variable> [<int>]\n"]);
+                    return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellChSched(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR / NP_FCFS / P_SJF>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            switch (args[0].toUpperCase()) {
+                case "RR":
+                    _Scheduler.scheduleMode = TSOS.ScheduleMode.RR;
+                    break;
+                case "NP_FCFS":
+                    _Scheduler.scheduleMode = TSOS.ScheduleMode.NP_FCFS;
+                    break;
+                case "P_SJF":
+                    _Scheduler.scheduleMode = TSOS.ScheduleMode.P_SJF;
+                    break;
+                default:
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR / NP_FCFS / P_SJF>\n"]);
+                    return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            return TSOS.ExitCode.SUCCESS;
         }
     }
     TSOS.ShellCommand = ShellCommand;

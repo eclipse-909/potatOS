@@ -1,6 +1,5 @@
 var TSOS;
 (function (TSOS) {
-    TSOS.MEM_BLOCK_SIZE = 256;
     let AllocMode;
     (function (AllocMode) {
         AllocMode[AllocMode["FirstFit"] = 0] = "FirstFit";
@@ -11,14 +10,17 @@ var TSOS;
     //Allocation mode can be changed after boot, but this does not change the existing process allocations in memory, only new allocations.
     class MMU {
         allocMode;
-        //All processes must be size MEM_BLOCK_SIZE if this is true.
-        fixedBlockSize;
+        //All processes must be segmentSize if this is true.
+        fixedSegments;
+        //Size of fixed segments
+        segmentSize;
         //pid -> {base, limit}. Base and limit are physical addresses.
         //This array will always be sorted
         processAllocs;
         constructor() {
             this.allocMode = AllocMode.FirstFit;
-            this.fixedBlockSize = true;
+            this.fixedSegments = true;
+            this.segmentSize = 256;
             this.processAllocs = [];
         }
         //Translates virtual to physical address using the currently-running PCBs base address.
@@ -35,8 +37,8 @@ var TSOS;
         //Returns the base address of the process, or undefined if it could not allocate.
         //Base is a physical addresses and should be stored in the new PCB.
         malloc(size) {
-            if (this.fixedBlockSize) {
-                size = TSOS.MEM_BLOCK_SIZE; //TODO find out if I can make processes span multiple blocks of length 256, like a 512 block for example.
+            if (this.fixedSegments) {
+                size = this.segmentSize; //TODO find out if I can make processes span multiple blocks of length 256, like a 512 block for example.
             }
             //If memory is completely free, just put it at 0x0000
             if (size <= 0) {

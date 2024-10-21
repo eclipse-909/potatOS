@@ -35,7 +35,11 @@ module TSOS {
 		//Enqueues the pcb into the readyQueue. Inserts it if using ScheduleMode.P_SJF.
 		public ready(pcb: ProcessControlBlock): void {
 			pcb.status = Status.ready;
-			this.readyQueue.enqueue(pcb);
+			if (this.quantum > 0) {
+				this.readyQueue.enqueue(pcb);
+			} else {
+				this.readyQueue.push_front(pcb);//The queue is reversed if q < 0
+			}
 			if (this.scheduleMode === ScheduleMode.P_SJF) {
 				this.readyQueue.asArr().sort((a: ProcessControlBlock, b: ProcessControlBlock): number => {
 					return a.timeEstimate - b.timeEstimate;
@@ -65,7 +69,12 @@ module TSOS {
 				this.currPCB.status = Status.ready
 				this.ready(this.currPCB);
 			}
-			let nextPcb: ProcessControlBlock = this.readyQueue.dequeue();
+			let nextPcb: ProcessControlBlock;
+			if (this.quantum > 0) {
+				nextPcb = this.readyQueue.dequeue();
+			} else {
+				nextPcb = this.readyQueue.pop();//The queue is reversed if q < 0
+			}
 			nextPcb.status = Status.running;
 			this.currPCB = nextPcb;
 			return true;

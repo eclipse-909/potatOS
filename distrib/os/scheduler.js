@@ -33,7 +33,12 @@ var TSOS;
         //Enqueues the pcb into the readyQueue. Inserts it if using ScheduleMode.P_SJF.
         ready(pcb) {
             pcb.status = TSOS.Status.ready;
-            this.readyQueue.enqueue(pcb);
+            if (this.quantum > 0) {
+                this.readyQueue.enqueue(pcb);
+            }
+            else {
+                this.readyQueue.push_front(pcb); //The queue is reversed if q < 0
+            }
             if (this.scheduleMode === ScheduleMode.P_SJF) {
                 this.readyQueue.asArr().sort((a, b) => {
                     return a.timeEstimate - b.timeEstimate;
@@ -63,7 +68,13 @@ var TSOS;
                 this.currPCB.status = TSOS.Status.ready;
                 this.ready(this.currPCB);
             }
-            let nextPcb = this.readyQueue.dequeue();
+            let nextPcb;
+            if (this.quantum > 0) {
+                nextPcb = this.readyQueue.dequeue();
+            }
+            else {
+                nextPcb = this.readyQueue.pop(); //The queue is reversed if q < 0
+            }
             nextPcb.status = TSOS.Status.running;
             this.currPCB = nextPcb;
             return true;

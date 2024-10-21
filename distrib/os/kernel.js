@@ -59,9 +59,15 @@ var TSOS;
                     _CPU.isExecuting = false;
                     _Dispatcher.contextSwitch();
                 }
-                else if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR && _Scheduler.cycle === _Scheduler.quantum) {
-                    _Scheduler.cycle = 0;
-                    _Dispatcher.contextSwitch();
+                else if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR) {
+                    if (_Scheduler.cycle === _Scheduler.quantum * -1) {
+                        _Scheduler.cycle = 0;
+                        //TODO
+                    }
+                    else if (_Scheduler.cycle === _Scheduler.quantum) {
+                        _Scheduler.cycle = 0;
+                        _Dispatcher.contextSwitch();
+                    }
                 }
                 if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
                     if (!_CPU.paused) {

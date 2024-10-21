@@ -54,7 +54,7 @@ module TSOS {
 			pcb.estimateTime(bin);
 
 			//allocate memory
-			if (_MMU.fixedBlockSize && bin.length > MEM_BLOCK_SIZE) {
+			if (_MMU.fixedSegments && bin.length > _MMU.segmentSize) {
 				pcb.stdErr.error(["Binary too large\n"]);
 				return undefined;//TODO find out if I can make processes span multiple blocks of length 256, like a 512 block for example.
 			}

@@ -51,7 +51,14 @@ var TSOS;
             }
             return this.q.splice(index, 1)[0];
         }
-        reverse() { this.q.reverse(); }
+        //Inserts the element into the front of the queue
+        push_front(element) {
+            this.q.splice(0, 0, element);
+        }
+        //Removes the element from the back of the queue
+        pop() {
+            return this.q.pop();
+        }
     }
     TSOS.Queue = Queue;
 })(TSOS || (TSOS = {}));

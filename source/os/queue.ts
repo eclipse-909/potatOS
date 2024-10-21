@@ -9,6 +9,7 @@
    ------------ */
 
 module TSOS {
+	//This is barely even a queue anymore. It has kind of turned into a multi-purposed array-based data structure.
 	export class Queue<T> {
 		private q: T[];
 
@@ -61,7 +62,7 @@ module TSOS {
 
 		//Inserts the element into the front of the queue
 		public push_front(element: T): void {
-			this.q.splice(0, 0, element);
+			this.q.unshift(element);
 		}
 
 		//Removes the element from the back of the queue

@@ -24,7 +24,7 @@ enum IRQ {
 	kill,
 	writeIntConsole,
 	writeStrConsole,
-	scheduleYield
+	contextSwitch
 }
 const KEYBOARD_IRQ: IRQ = IRQ.keyboard;//Stupid glados always making me do stuff
 

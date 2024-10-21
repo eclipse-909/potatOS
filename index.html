@@ -123,20 +123,33 @@
                <th>Zflag</th>
             </tr>
             <tr>
-               <td id="IR"></td>
-               <td id="PC"></td>
-               <td id="Acc"></td>
-               <td id="xReg"></td>
-               <td id="yReg"></td>
-               <td id="zFlag"></td>
+               <td id="IR">BRK</td>
+               <td id="PC">0x0000</td>
+               <td id="Acc">0x00</td>
+               <td id="xReg">0x00</td>
+               <td id="yReg">0x00</td>
+               <td id="zFlag">false</td>
             </tr>
          </table>
       </div>
 
       <div id="pcbDisplay" class="potato">
-         <label class="fryLabel">Current PCB</label>
+         <label class="fryLabel">Processes</label>
          <br>
-         <table id="pcbTable" class="regTable"></table>
+         <table id="pcbTable" class="regTable">
+            <tr>
+               <th>PID</th>
+               <th>Status</th>
+               <th>Base</th>
+               <th>Limit</th>
+               <th>IR</th>
+               <th>PC</th>
+               <th>Acc</th>
+               <th>Xreg</th>
+               <th>Yreg</th>
+               <th>Zflag</th>
+            </tr>
+         </table>
       </div>
 
       <div id="userProgramInput" class="potato">

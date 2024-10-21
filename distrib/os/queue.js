@@ -9,6 +9,7 @@
    ------------ */
 var TSOS;
 (function (TSOS) {
+    //This is barely even a queue anymore. It has kind of turned into a multi-purposed array-based data structure.
     class Queue {
         q;
         constructor() { this.q = []; }
@@ -53,7 +54,7 @@ var TSOS;
         }
         //Inserts the element into the front of the queue
         push_front(element) {
-            this.q.splice(0, 0, element);
+            this.q.unshift(element);
         }
         //Removes the element from the back of the queue
         pop() {

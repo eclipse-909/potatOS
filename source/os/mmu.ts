@@ -66,7 +66,7 @@ module TSOS {
 			//If there is room before the first process
 			if (this.processAllocs[0].base > size) {
 				newLimit = size - 1;
-				this.processAllocs.splice(0, 0, {base: newBase, limit: newLimit});
+				this.processAllocs.unshift({base: newBase, limit: newLimit});
 				return {base: newBase, limit: newLimit};
 			}
 			for (let i: number = 0; i < this.processAllocs.length - 1; i++) {

@@ -33,7 +33,7 @@ var TSOS;
         //Enqueues the pcb into the readyQueue. Inserts it if using ScheduleMode.P_SJF.
         ready(pcb) {
             pcb.status = TSOS.Status.ready;
-            if (this.quantum > 0) {
+            if (this.quantum > 0 || this.scheduleMode !== ScheduleMode.RR) {
                 this.readyQueue.enqueue(pcb);
             }
             else {
@@ -43,6 +43,9 @@ var TSOS;
                 this.readyQueue.asArr().sort((a, b) => {
                     return a.timeEstimate - b.timeEstimate;
                 });
+                if (this.readyQueue.peek().timeEstimate < this.currPCB.timeEstimate) {
+                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, [])); //preemptive
+                }
             }
         }
         //Moves the pcb with the given pid from the residentPcb map and readies it into the readyQueue with this.ready().

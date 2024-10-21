@@ -21,7 +21,7 @@ var IRQ;
     IRQ[IRQ["kill"] = 2] = "kill";
     IRQ[IRQ["writeIntConsole"] = 3] = "writeIntConsole";
     IRQ[IRQ["writeStrConsole"] = 4] = "writeStrConsole";
-    IRQ[IRQ["scheduleYield"] = 5] = "scheduleYield";
+    IRQ[IRQ["contextSwitch"] = 5] = "contextSwitch";
 })(IRQ || (IRQ = {}));
 const KEYBOARD_IRQ = IRQ.keyboard; //Stupid glados always making me do stuff
 const MEM_SIZE = 0x10000;

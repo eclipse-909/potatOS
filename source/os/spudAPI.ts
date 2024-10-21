@@ -28,6 +28,9 @@ module TSOS {
 		Control.updatePcbDisplay();
 		Control.updateMemDisplay();
 		_OsShell.processExitQueue.enqueue({exitCode: exitCode, pid: pid});
+		if (_Scheduler.currPCB === null) {
+			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));
+		}
 		_OsShell.onProcessFinished();
 	}
 

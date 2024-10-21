@@ -35,7 +35,7 @@ module TSOS {
 			new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.\n"),
 			new ShellCommand(ShellCommand.shellRun, "run", "<process ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.\n"),
 			new ShellCommand(ShellCommand.shellClh, "clh", "- Clears the host log.\n"),
-			new ShellCommand(ShellCommand.shellClearMem, "clearmem", "- Clears all memory segments.\n"),
+			new ShellCommand(ShellCommand.shellClearMem, "clearmem", "- Clears memory of all resident/terminated processes.\n"),
 			new ShellCommand(ShellCommand.shellRunAll, "runall", "- Runs all programs in memory concurrently.\n"),
 			new ShellCommand(ShellCommand.shellPs, "ps", "- Displays the PID and status of all processes.\n"),
 			new ShellCommand(ShellCommand.shellKill, "kill", "<process ID> - Terminates the process with the given process ID.\n"),
@@ -305,14 +305,15 @@ module TSOS {
 		}
 
 		static shellClearMem(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
-			//TODO find out if this is the intended behavior, or if clearmem is supposed to keep the processes running after memory has been cleared.
 			const args: string[] = stdin.input();
 			if (args.length !== 0) {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: clearmem\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
 			for (const pcb of _Scheduler.allProcs()) {
-				kill(pcb.pid, ExitCode.PROC_KILLED);
+				if (pcb.status === Status.resident || pcb.status === Status.terminated) {
+					_Scheduler.remove(pcb.pid);
+				}
 			}
 			return ExitCode.SUCCESS;
 		}
@@ -339,7 +340,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			for (const pcb of _Scheduler.allProcs()) {
-				stdout.output([`Process: ${pcb.pid} - Status: ${pcb.status}\n`]);
+				stdout.output([`Process: ${pcb.pid} - Status: ${Status[pcb.status]}\n`]);
 			}
 			return ExitCode.SUCCESS;
 		}

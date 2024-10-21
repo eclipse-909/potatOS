@@ -47,6 +47,11 @@ var TSOS;
             this.krnTrace("end shutdown OS");
         }
         krnOnCPUClockPulse() {
+            //check for round-robin quantum
+            if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR && (_Scheduler.cycle === _Scheduler.quantum * -1 || _Scheduler.cycle === _Scheduler.quantum)) {
+                _Scheduler.cycle = 0;
+                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, []));
+            }
             // Check for an interrupt, if there are any. Page 560
             if (_KernelInterruptQueue.getSize() > 0) {
                 // Process the first interrupt on the interrupt queue.
@@ -54,29 +59,13 @@ var TSOS;
                 const interrupt = _KernelInterruptQueue.dequeue();
                 this.krnInterruptHandler(interrupt.irq, interrupt.params);
             }
-            else {
-                if (_Scheduler.currPCB === null) {
-                    _CPU.isExecuting = false;
-                    _Dispatcher.contextSwitch();
+            else if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
+                if (!_CPU.paused) {
+                    _CPU.cycle();
                 }
-                else if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR) {
-                    if (_Scheduler.cycle === _Scheduler.quantum * -1) {
-                        _Scheduler.cycle = 0;
-                        //TODO
-                    }
-                    else if (_Scheduler.cycle === _Scheduler.quantum) {
-                        _Scheduler.cycle = 0;
-                        _Dispatcher.contextSwitch();
-                    }
-                }
-                if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
-                    if (!_CPU.paused) {
-                        _CPU.cycle();
-                    }
-                }
-                else { // If there are no interrupts and there is nothing being executed then just be idle.
-                    this.krnTrace("Idle");
-                }
+            }
+            else { // If there are no interrupts and there is nothing being executed then just be idle.
+                this.krnTrace("Idle");
             }
         }
         // Interrupt Handling
@@ -110,6 +99,17 @@ var TSOS;
                     break;
                 case IRQ.writeStrConsole:
                     TSOS.writeStrStdOut(params[0], params[1]);
+                    break;
+                case IRQ.contextSwitch:
+                    if (_Scheduler.currPCB === null) {
+                        _CPU.isExecuting = false;
+                        _Scheduler.cycle = 0;
+                        _Dispatcher.contextSwitch();
+                    }
+                    else if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR && (_Scheduler.cycle === _Scheduler.quantum * -1 || _Scheduler.cycle === _Scheduler.quantum)) {
+                        _Scheduler.cycle = 0;
+                        _Dispatcher.contextSwitch();
+                    }
                     break;
                 default:
                     this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");

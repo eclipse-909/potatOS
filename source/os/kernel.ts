@@ -51,32 +51,23 @@ module TSOS {
 		}
 
 		public krnOnCPUClockPulse(): void {
+			//check for round-robin quantum
+			if (_Scheduler.scheduleMode === ScheduleMode.RR && (_Scheduler.cycle === _Scheduler.quantum * -1 || _Scheduler.cycle === _Scheduler.quantum)) {
+				_Scheduler.cycle = 0;
+				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));
+			}
 			// Check for an interrupt, if there are any. Page 560
 			if (_KernelInterruptQueue.getSize() > 0) {
 				// Process the first interrupt on the interrupt queue.
 				// TODO (maybe): Implement a priority queue based on the IRQ number/id to enforce interrupt priority.
 				const interrupt: Interrupt = _KernelInterruptQueue.dequeue();
 				this.krnInterruptHandler(interrupt.irq, interrupt.params);
-			} else {
-				if (_Scheduler.currPCB === null) {
-					_CPU.isExecuting = false;
-					_Dispatcher.contextSwitch();
-				} else if (_Scheduler.scheduleMode === ScheduleMode.RR) {
-					if (_Scheduler.cycle === _Scheduler.quantum * -1) {
-						_Scheduler.cycle = 0;
-						//TODO
-					} else if (_Scheduler.cycle === _Scheduler.quantum) {
-						_Scheduler.cycle = 0;
-						_Dispatcher.contextSwitch();
-					}
+			} else if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
+				if (!_CPU.paused) {
+					_CPU.cycle();
 				}
-				if (_CPU.isExecuting) { // If there are no interrupts then run one CPU cycle if there is anything being processed.
-					if (!_CPU.paused) {
-						_CPU.cycle();
-					}
-				} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
-					this.krnTrace("Idle");
-				}
+			} else {                       // If there are no interrupts and there is nothing being executed then just be idle.
+				this.krnTrace("Idle");
 			}
 		}
 
@@ -114,6 +105,16 @@ module TSOS {
 					break;
 				case IRQ.writeStrConsole:
 					writeStrStdOut(params[0], params[1]);
+					break;
+				case IRQ.contextSwitch:
+					if (_Scheduler.currPCB === null) {
+						_CPU.isExecuting = false;
+						_Scheduler.cycle = 0;
+						_Dispatcher.contextSwitch();
+					} else if (_Scheduler.scheduleMode === ScheduleMode.RR && (_Scheduler.cycle === _Scheduler.quantum * -1 || _Scheduler.cycle === _Scheduler.quantum)) {
+						_Scheduler.cycle = 0;
+						_Dispatcher.contextSwitch();
+					}
 					break;
 				default:
 					this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");

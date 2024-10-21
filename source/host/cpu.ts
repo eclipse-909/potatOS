@@ -201,34 +201,34 @@ module TSOS {
 					if (!_MMU.write(vPtr, buffer)) {return this.segFault();}
 					break;
 				case OpCode.SYS:
-					let iqr: IRQ;
+					let irq: IRQ;
 					let params: any[] = [_Scheduler.currPCB.stdOut];
 					switch (this.Xreg) {
 						case 0x01://print number in Y reg
-							iqr = IRQ.writeIntConsole;
+							irq = IRQ.writeIntConsole;
 							params[1] = this.Yreg;
-							_KernelInterruptQueue.enqueue(new Interrupt(iqr, params));
+							_KernelInterruptQueue.enqueue(new Interrupt(irq, params));
 							break;
 						case 0x02://print C string at indirect address given by Y reg
-							iqr = IRQ.writeStrConsole;
+							irq = IRQ.writeStrConsole;
 							if (this.Yreg < 0x80) {
 								params[1] = this.PC + this.Yreg;
 							} else {
 								params[1] = this.PC - 0x100 + this.Yreg;
 							}
-							_KernelInterruptQueue.enqueue(new Interrupt(iqr, params));
+							_KernelInterruptQueue.enqueue(new Interrupt(irq, params));
 							break;
 						case 0x03://print C string at absolute address given in operand
 							//I know the specifications for this class don't include this system call,
 							//but I wanted to make it backwards-compatible with the emulator I made in org and arch.
 							//Prof. Gormanly said he added some instructions and this system call to the instruction set in this class.
-							iqr = IRQ.writeStrConsole;
+							irq = IRQ.writeStrConsole;
 							arg0 = this.fetch();
 							if (arg0 === undefined) {return this.segFault();}
 							arg1 = this.fetch();
 							if (arg1 === undefined) {return this.segFault();}
 							params[1] = leToU16(arg0, arg1);
-							_KernelInterruptQueue.enqueue(new Interrupt(iqr, params));
+							_KernelInterruptQueue.enqueue(new Interrupt(irq, params));
 							break;
 						default:
 							//TODO what happens when the system call has an invalid argument?

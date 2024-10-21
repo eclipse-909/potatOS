@@ -29,7 +29,7 @@ var TSOS;
             new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.\n"),
             new ShellCommand(ShellCommand.shellRun, "run", "<process ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.\n"),
             new ShellCommand(ShellCommand.shellClh, "clh", "- Clears the host log.\n"),
-            new ShellCommand(ShellCommand.shellClearMem, "clearmem", "- Clears all memory segments.\n"),
+            new ShellCommand(ShellCommand.shellClearMem, "clearmem", "- Clears memory of all resident/terminated processes.\n"),
             new ShellCommand(ShellCommand.shellRunAll, "runall", "- Runs all programs in memory concurrently.\n"),
             new ShellCommand(ShellCommand.shellPs, "ps", "- Displays the PID and status of all processes.\n"),
             new ShellCommand(ShellCommand.shellKill, "kill", "<process ID> - Terminates the process with the given process ID.\n"),
@@ -283,14 +283,15 @@ var TSOS;
             return TSOS.ExitCode.SUCCESS;
         }
         static shellClearMem(stdin, _stdout, stderr) {
-            //TODO find out if this is the intended behavior, or if clearmem is supposed to keep the processes running after memory has been cleared.
             const args = stdin.input();
             if (args.length !== 0) {
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: clearmem\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             for (const pcb of _Scheduler.allProcs()) {
-                TSOS.kill(pcb.pid, TSOS.ExitCode.PROC_KILLED);
+                if (pcb.status === TSOS.Status.resident || pcb.status === TSOS.Status.terminated) {
+                    _Scheduler.remove(pcb.pid);
+                }
             }
             return TSOS.ExitCode.SUCCESS;
         }
@@ -315,7 +316,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             for (const pcb of _Scheduler.allProcs()) {
-                stdout.output([`Process: ${pcb.pid} - Status: ${pcb.status}\n`]);
+                stdout.output([`Process: ${pcb.pid} - Status: ${TSOS.Status[pcb.status]}\n`]);
             }
             return TSOS.ExitCode.SUCCESS;
         }

@@ -96,30 +96,31 @@ var TSOS;
                         this.buffer = this.buffer.slice(0, -1);
                         break;
                     case String.fromCharCode(9): // tab
-                        const tokens = this.buffer.split(/\s+/); //split by 1 or more spaces
-                        if (tokens.length !== 1) {
-                            break;
-                        }
-                        const token = tokens[0];
-                        const possCmds = [];
-                        for (const cmd of TSOS.ShellCommand.COMMAND_LIST) {
-                            if (cmd.command.substring(0, token.length) === token) {
-                                possCmds.push(cmd.command);
+                        //Use the last command/argument
+                        let lastIndex = -1;
+                        let matchedDelimiter = "";
+                        for (const connector of _OsShell.connectors) {
+                            const index = this.buffer.lastIndexOf(connector);
+                            if (index > lastIndex) {
+                                lastIndex = index;
+                                matchedDelimiter = connector;
                             }
                         }
-                        if (possCmds.length === 1) { // fill the command
-                            const remainder = possCmds[0].substring(token.length) + " ";
-                            this.putText(remainder);
-                            this.buffer += remainder;
-                        }
-                        else if (possCmds.length > 1) { // print all possible commands
-                            this.advanceLine();
-                            for (const cmd of possCmds) {
-                                this.putText(cmd);
-                                this.advanceLine();
+                        for (const redirector of _OsShell.redirectors) {
+                            const index = this.buffer.lastIndexOf(redirector);
+                            if (index > lastIndex) {
+                                lastIndex = index;
+                                matchedDelimiter = redirector;
                             }
-                            _OsShell.putPrompt();
-                            this.putText(this.buffer); // preserve the input for the next prompt
+                        }
+                        const tokens = (lastIndex === -1
+                            ? this.buffer
+                            : this.buffer.substring(lastIndex + matchedDelimiter.length)).trim().split(/\s+/); //split by 1 or more spaces
+                        if (tokens.length == 1) {
+                            this.autocompleteCmd(tokens[0]);
+                        }
+                        else if (tokens.length === 2) {
+                            this.autocompleteArg1(tokens[0], tokens[1]);
                         }
                         break;
                     case String.fromCharCode(13): // the Enter key (carriage return)
@@ -138,6 +139,60 @@ var TSOS;
                 }
             }
             return this.buffer;
+        }
+        autocompleteCmd(cmdToken) {
+            cmdToken = cmdToken.toLowerCase();
+            const possCmds = [];
+            for (const cmd of TSOS.ShellCommand.COMMAND_LIST) {
+                if (cmd.command.substring(0, cmdToken.length).toLowerCase() === cmdToken) {
+                    possCmds.push(cmd.command);
+                }
+            }
+            if (possCmds.length === 1) { // fill the command
+                const remainder = possCmds[0].substring(cmdToken.length) + " ";
+                //if you start writing the command in the wrong case, that's okay, but this won't correct the case you were using.
+                //it will just fill in the rest of the command in the correct case
+                this.putText(remainder);
+                this.buffer += remainder;
+            }
+            else if (possCmds.length > 1) { // print all possible commands
+                this.advanceLine();
+                for (const cmd of possCmds) {
+                    this.putText(cmd);
+                    this.advanceLine();
+                }
+                _OsShell.putPrompt();
+                this.putText(this.buffer); // preserve the input for the next prompt
+            }
+        }
+        autocompleteArg1(cmdToken, argToken) {
+            const cmd = TSOS.ShellCommand.COMMAND_LIST.find(c => { return c.command === cmdToken; });
+            if (cmd === undefined || cmd.validArgs.length === 0) {
+                return;
+            }
+            argToken = argToken.toLowerCase();
+            const possArgs = [];
+            for (const arg of cmd.validArgs) {
+                if (arg.substring(0, argToken.length).toLowerCase() === argToken) {
+                    possArgs.push(arg);
+                }
+            }
+            if (possArgs.length === 1) { // fill the argument
+                const remainder = possArgs[0].substring(argToken.length) + " ";
+                //if you start writing the argument in the wrong case, that's okay, but this won't correct the case you were using.
+                //it will just fill in the rest of the argument in the correct case
+                this.putText(remainder);
+                this.buffer += remainder;
+            }
+            else if (possArgs.length > 1) { // print all possible arguments
+                this.advanceLine();
+                for (const arg of possArgs) {
+                    this.putText(arg);
+                    this.advanceLine();
+                }
+                _OsShell.putPrompt();
+                this.putText(this.buffer); // preserve the input for the next prompt
+            }
         }
         //REMEMBER THIS DOES NOT ADD THE TEXT TO THE BUFFER!!!!!!!!!!!!!!!
         putText(text) {

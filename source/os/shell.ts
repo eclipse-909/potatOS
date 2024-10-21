@@ -19,7 +19,7 @@ module TSOS {
 		name: string;
 		args: string[];
 		connector?: string; // Symbol like ||, &&, or ;
-		redirector?: string;
+		redirector?: string; // Symbol like >>, >, <, |, etc
 	}
 
 	export class Shell implements OutStream<string[]>, InStream<string[]>, ErrStream<string[]> {

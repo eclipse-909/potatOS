@@ -2,18 +2,15 @@
 
 #Just a couple of functions I find convenient
 
-# Compile TypeScript and open the OS in FireFox or your default browser.
+# Compile TypeScript and open the OS in Vivaldi or your default browser.
 run() {
 	tsc
-	# Brave is my default browser but it doesn't allow precise location, so I run FireFox instead.
-	# If FireFox isn't in your $PATH, start/xdg-open/open will open your default browser on Windows/Linux/Mac respectively.
-	# TODO fix the firefox command because it takes the "./" as absolute and not relative
-	firefox ./index.html || start ./index.html || xdg-open ./index.html || open ./index.html
+	start ./index.html || xdg-open ./index.html || open ./index.html
 }
 
 # ex) push main "commit message"
 push() {
-	branches=(main project3)
+	branches=(main)
 	if [ -z "$1" ]; then
 		echo "Error: Github branch name is required. Branches include:"
 		echo "${branches[@]}"

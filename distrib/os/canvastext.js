@@ -140,7 +140,7 @@ var TSOS;
             }
             return total;
         }
-        static draw(ctx, _font, size, _x, _y, str) {
+        static draw(ctx, font, size, _x, _y, str) {
             const total = 0;
             const len = str.length;
             const mag = size / 25.0;
@@ -151,7 +151,7 @@ var TSOS;
             for (let i = 0; i < len; i++) {
                 //advance line if character will spill off the edge of the canvas
                 const char = str.charAt(i);
-                const charWidth = this.measure(_Console.currentFont, _Console.currentFontSize, char);
+                const charWidth = this.measure(font, size, char);
                 if (_Console.currentXPosition + charWidth >= _Canvas.width - 5) {
                     _Console.advanceLine();
                 }

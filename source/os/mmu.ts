@@ -40,7 +40,7 @@ module TSOS {
 		//Base is a physical addresses and should be stored in the new PCB.
 		public malloc(size: number): {base: number, limit: number} | undefined {
 			if (this.fixedSegments) {
-				size = this.segmentSize;//TODO find out if I can make processes span multiple blocks of length 256, like a 512 block for example.
+				size = this.segmentSize;
 			}
 			//If memory is completely free, just put it at 0x0000
 			if (size <= 0) {return undefined;}
@@ -50,7 +50,7 @@ module TSOS {
 				this.processAllocs.push({base: 0x0000, limit: newLimit});
 				return {base: 0x0000, limit: newLimit};
 			}
-			switch (this.allocMode) {//BUG cannot allocate second process
+			switch (this.allocMode) {
 				case AllocMode.FirstFit:
 					return this.firstFit(size);
 				case AllocMode.BestFit:
@@ -178,7 +178,7 @@ module TSOS {
 					left = mid + 1;
 				}
 			}
-			//TODO maybe crash the program here?
+			console.error("Unreachable statement");
 		}
 
 		//Writes to virtual memory.

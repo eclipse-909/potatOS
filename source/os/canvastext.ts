@@ -149,20 +149,20 @@ module TSOS {
 			return total;
 		}
 
-		public static draw(ctx, _font: string, size: number, _x: number, _y: number, str: string) {
+		public static draw(ctx, font: string, size: number, _x: number, _y: number, str: string): number {
 			const total = 0;
-			const len = str.length;
-			const mag = size / 25.0;
+			const len: number = str.length;
+			const mag: number = size / 25.0;
 
 			ctx.save();
 			ctx.lineCap = "round";
 			ctx.lineWidth = 2.0 * mag;
 			ctx.strokeStyle = "black";
 
-			for (let i = 0; i < len; i++) {
+			for (let i: number = 0; i < len; i++) {
 				//advance line if character will spill off the edge of the canvas
 				const char: string = str.charAt(i);
-				const charWidth: number = this.measure(_Console.currentFont, _Console.currentFontSize, char);
+				const charWidth: number = this.measure(font, size, char);
 				if (_Console.currentXPosition + charWidth >= _Canvas.width - 5) {
 					_Console.advanceLine();
 				}
@@ -171,18 +171,18 @@ module TSOS {
 					continue;
 				}
 				ctx.beginPath();
-				let penUp = true;
-				for (let j = 0; j < c.points.length; j++) {
+				let penUp: boolean = true;
+				for (let j: number = 0; j < c.points.length; j++) {
 					const a = c.points[j];
 					if (a[0] === -1 && a[1] === -1) {
 						penUp = true;
 						continue;
 					}
 					if (penUp) {
-						ctx.moveTo( _Console.currentXPosition + a[0]*mag, _Console.currentYPosition - a[1]*mag);
+						ctx.moveTo(_Console.currentXPosition + a[0]*mag, _Console.currentYPosition - a[1]*mag);
 						penUp = false;
 					} else {
-						ctx.lineTo( _Console.currentXPosition + a[0]*mag, _Console.currentYPosition - a[1]*mag);
+						ctx.lineTo(_Console.currentXPosition + a[0]*mag, _Console.currentYPosition - a[1]*mag);
 					}
 				}
 				ctx.stroke();

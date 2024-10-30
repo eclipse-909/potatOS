@@ -49,6 +49,7 @@ var TSOS;
             return buffer;
         }
         segFault() {
+            TSOS.Control.hostLog("Memory access violation", "CPU");
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SEGMENTATION_FAULT]));
         }
         illegalInstruction() {
@@ -60,6 +61,7 @@ var TSOS;
                 _Scheduler.cycle++;
             }
             // TODO: Accumulate CPU usage and profiling statistics here.
+            _Scheduler.currPCB.timeEstimate--;
             // Do the real work here. Be sure to set this.isExecuting appropriately.
             //fetch
             const byte = this.fetch();
@@ -203,8 +205,7 @@ var TSOS;
                     break;
                 case OpCode.NOP: break;
                 case OpCode.BRK:
-                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SUCCESS]));
-                    break;
+                    return _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SUCCESS]));
                 case OpCode.CPXa:
                     arg0 = this.fetch();
                     if (arg0 === undefined) {
@@ -254,38 +255,32 @@ var TSOS;
                         return this.segFault();
                     }
                     if (buffer > 0xFF) {
-                        buffer = 0;
+                        buffer = 0x00;
                     }
-                    this.Zflag = buffer === 0;
+                    this.Zflag = buffer === 0x00;
                     if (!_MMU.write(vPtr, buffer)) {
                         return this.segFault();
                     }
                     TSOS.Control.updateMemDisplay();
                     break;
                 case OpCode.SYS:
-                    let irq;
                     let params = [_Scheduler.currPCB.stdOut];
                     switch (this.Xreg) {
                         case 0x01: //print number in Y reg
-                            irq = IRQ.writeIntConsole;
                             params[1] = this.Yreg;
-                            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(irq, params));
-                            break;
+                            return _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeIntConsole, params));
                         case 0x02: //print C string at indirect address given by Y reg
-                            irq = IRQ.writeStrConsole;
                             if (this.Yreg < 0x80) {
-                                params[1] = this.PC + this.Yreg;
+                                params[1] = this.PC + this.Yreg; //FIXME is this supposed to be relative to the PC or the base?
                             }
                             else {
                                 params[1] = this.PC - 0x100 + this.Yreg;
                             }
-                            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(irq, params));
-                            break;
+                            return _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeStrConsole, params));
                         case 0x03: //print C string at absolute address given in operand
                             //I know the specifications for this class don't include this system call,
                             //but I wanted to make it backwards-compatible with the emulator I made in org and arch.
                             //Prof. Gormanly said he added some instructions and this system call to the instruction set in this class.
-                            irq = IRQ.writeStrConsole;
                             arg0 = this.fetch();
                             if (arg0 === undefined) {
                                 return this.segFault();
@@ -295,16 +290,13 @@ var TSOS;
                                 return this.segFault();
                             }
                             params[1] = leToU16(arg0, arg1);
-                            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(irq, params));
-                            break;
+                            return _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeStrConsole, params));
                         default:
-                            //TODO what happens when the system call has an invalid argument?
-                            //Right now nothing will happen and it's undefined behavior that kinda works like a NOP
-                            break;
+                            TSOS.Control.hostLog("Invalid system call argument", "CPU");
+                            return this.illegalInstruction();
                     }
-                    break;
                 default:
-                    this.illegalInstruction();
+                    return this.illegalInstruction();
             }
             TSOS.Control.updateCpuDisplay();
             //check for round-robin quantum

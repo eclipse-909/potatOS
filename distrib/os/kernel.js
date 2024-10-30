@@ -99,12 +99,8 @@ var TSOS;
                     if (_Scheduler.currPCB === null) {
                         _CPU.isExecuting = false;
                         _Scheduler.cycle = 0;
-                        _Dispatcher.contextSwitch();
                     }
-                    else if (_Scheduler.scheduleMode === TSOS.ScheduleMode.RR && (_Scheduler.cycle === _Scheduler.quantum * -1 || _Scheduler.cycle === _Scheduler.quantum)) {
-                        _Scheduler.cycle = 0;
-                        _Dispatcher.contextSwitch();
-                    }
+                    _Dispatcher.contextSwitch();
                     break;
                 default:
                     this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");

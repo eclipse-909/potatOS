@@ -29,6 +29,8 @@ var TSOS;
         cpuTime;
         waitTime;
         priority;
+        onDisk;
+        segment;
         static highestPID = 0;
         constructor() { }
         //BTW this syntax for making new objects is objectively better than having a special function for a constructor.
@@ -40,8 +42,8 @@ var TSOS;
             let pcb = new ProcessControlBlock();
             //allocate memory
             if (_MMU.fixedSegments && bin.length > _MMU.segmentSize) {
-                pcb.stdErr.error(["Binary too large\n"]);
-                return undefined; //TODO find out if I can make processes span multiple blocks of length 256, like a 512 block for example.
+                pcb.stdErr.error(["Binary too large, could not load\n"]);
+                return undefined;
             }
             const alloc = _MMU.malloc(bin.length);
             if (alloc === undefined) {
@@ -69,6 +71,8 @@ var TSOS;
             pcb.cpuTime = 0;
             pcb.waitTime = 0;
             pcb.priority = 0;
+            pcb.onDisk = false;
+            pcb.segment = Math.floor(pcb.base / 0x100);
             //Estimate how long this binary should take
             pcb.estimateTime(bin);
             return pcb;
@@ -77,9 +81,28 @@ var TSOS;
         free() {
             _MMU.free(this.base);
         }
+        //Uses the length of the binary and the number of branch instructions, and sets this.timeEstimate
         estimateTime(bin) {
-            //TODO use things like number of instructions, number of branches, etc
-            this.timeEstimate = 0;
+            let branches = 0;
+            for (let i = 0; i < bin.length; i++) {
+                if (!Object.values(TSOS.OpCode).includes(bin[i])) {
+                    return;
+                } //We must be in the data section
+                switch (bin[i]) {
+                    case TSOS.OpCode.LDAi | TSOS.OpCode.LDXi | TSOS.OpCode.LDYi | TSOS.OpCode.BNEr:
+                        i++;
+                        break;
+                    case TSOS.OpCode.LDAa | TSOS.OpCode.STAa | TSOS.OpCode.LDXa | TSOS.OpCode.LDYa | TSOS.OpCode.ADCa | TSOS.OpCode.CPXa | TSOS.OpCode.INCa:
+                        i += 2;
+                        break;
+                    case TSOS.OpCode.SYS:
+                        if (i < bin.length - 1 && !Object.values(TSOS.OpCode).includes(bin[i + 1])) {
+                            i += 2;
+                        }
+                        break;
+                }
+            }
+            this.timeEstimate = bin.length * (1 + Math.log(1 + branches)); //arbitrary equation
         }
     }
     TSOS.ProcessControlBlock = ProcessControlBlock;

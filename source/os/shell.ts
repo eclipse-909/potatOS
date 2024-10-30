@@ -343,7 +343,7 @@ module TSOS {
 			if (pidIndex === -1) {return;}
 			this.processExitQueue.dequeue();
 			this.pidsWaitingOn.splice(pidIndex, 1);
-			_StdOut.output(["\n" + process.exitCode.processDesc(process.pid) + "\n"]);
+			_StdOut.output(["\n" + process.exitCode.processDesc(process.pid) + "\n"]);//TODO print turnaround time and wait time
 			if (this.cmdQueue.isEmpty()) {
 				this.putPrompt();
 				return;

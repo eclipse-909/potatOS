@@ -22,7 +22,8 @@ var TSOS;
     //Kills the process with the given process ID.
     function kill(pid, exitCode) {
         if (!_Scheduler.remove(pid)) {
-            //TODO what happens if it can't find the pcb with the pid?
+            TSOS.Control.hostLog("Cannot kill non-existent process", "System Call");
+            return;
         }
         TSOS.Control.updatePcbDisplay();
         TSOS.Control.updateMemDisplay();
@@ -45,7 +46,7 @@ var TSOS;
         while (char !== 0) {
             char = _MMU.read(strPtr);
             if (char === undefined) {
-                return /*TODO what happens when the system call arguments are invalid?*/;
+                return _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SEGMENTATION_FAULT]));
             }
             buffer += String.fromCharCode(char);
             strPtr++;

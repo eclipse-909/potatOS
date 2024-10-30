@@ -28,6 +28,8 @@ module TSOS {
 		cpuTime: number;
 		waitTime: number;
 		priority: number;
+		onDisk: boolean;
+		segment: number;
 
 		static highestPID: number = 0;
 
@@ -44,8 +46,8 @@ module TSOS {
 
 			//allocate memory
 			if (_MMU.fixedSegments && bin.length > _MMU.segmentSize) {
-				pcb.stdErr.error(["Binary too large\n"]);
-				return undefined;//TODO find out if I can make processes span multiple blocks of length 256, like a 512 block for example.
+				pcb.stdErr.error(["Binary too large, could not load\n"]);
+				return undefined;
 			}
 			const alloc: {base: number, limit: number} | undefined = _MMU.malloc(bin.length);
 			if (alloc === undefined) {
@@ -75,6 +77,8 @@ module TSOS {
 			pcb.cpuTime = 0;
 			pcb.waitTime = 0;
 			pcb.priority = 0;
+			pcb.onDisk = false;
+			pcb.segment = Math.floor(pcb.base / 0x100);
 
 			//Estimate how long this binary should take
 			pcb.estimateTime(bin);
@@ -86,9 +90,26 @@ module TSOS {
 			_MMU.free(this.base);
 		}
 
+		//Uses the length of the binary and the number of branch instructions, and sets this.timeEstimate
 		private estimateTime(bin: number[]): void {
-			//TODO use things like number of instructions, number of branches, etc
-			this.timeEstimate = 0;
+			let branches: number = 0;
+			for (let i: number = 0; i < bin.length; i++) {
+				if (!Object.values(OpCode).includes(bin[i])) {return;}//We must be in the data section
+				switch (bin[i] as OpCode) {
+					case OpCode.LDAi | OpCode.LDXi | OpCode.LDYi | OpCode.BNEr:
+						i++;
+						break;
+					case OpCode.LDAa | OpCode.STAa | OpCode.LDXa | OpCode.LDYa | OpCode.ADCa | OpCode.CPXa | OpCode.INCa:
+						i += 2;
+						break;
+					case OpCode.SYS:
+						if (i < bin.length - 1 && !Object.values(OpCode).includes(bin[i+1])) {
+							i += 2;
+						}
+						break;
+				}
+			}
+			this.timeEstimate = bin.length * (1 + Math.log(1 + branches));//arbitrary equation
 		}
 	}
 }

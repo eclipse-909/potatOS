@@ -43,6 +43,7 @@ module TSOS {
 		}
 
 		segFault(): void {
+			Control.hostLog("Memory access violation", "CPU");
 			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.SEGMENTATION_FAULT]));
 		}
 
@@ -56,6 +57,7 @@ module TSOS {
 				_Scheduler.cycle++;
 			}
 			// TODO: Accumulate CPU usage and profiling statistics here.
+			_Scheduler.currPCB.timeEstimate--;
 			// Do the real work here. Be sure to set this.isExecuting appropriately.
 
 			//fetch
@@ -161,8 +163,7 @@ module TSOS {
 					break;
 				case OpCode.NOP:break;
 				case OpCode.BRK:
-					_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.SUCCESS]));
-					break;
+					return _KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.SUCCESS]));
 				case OpCode.CPXa:
 					arg0 = this.fetch();
 					if (arg0 === undefined) {return this.segFault();}
@@ -196,50 +197,41 @@ module TSOS {
 					buffer = _MMU.read(vPtr) + 1;
 					if (buffer === undefined) {return this.segFault();}
 					if (buffer > 0xFF) {
-						buffer = 0;
+						buffer = 0x00;
 					}
-					this.Zflag = buffer === 0;
+					this.Zflag = buffer === 0x00;
 					if (!_MMU.write(vPtr, buffer)) {return this.segFault();}
 					Control.updateMemDisplay();
 					break;
 				case OpCode.SYS:
-					let irq: IRQ;
 					let params: any[] = [_Scheduler.currPCB.stdOut];
 					switch (this.Xreg) {
 						case 0x01://print number in Y reg
-							irq = IRQ.writeIntConsole;
 							params[1] = this.Yreg;
-							_KernelInterruptQueue.enqueue(new Interrupt(irq, params));
-							break;
+							return _KernelInterruptQueue.enqueue(new Interrupt(IRQ.writeIntConsole, params));
 						case 0x02://print C string at indirect address given by Y reg
-							irq = IRQ.writeStrConsole;
 							if (this.Yreg < 0x80) {
-								params[1] = this.PC + this.Yreg;
+								params[1] = this.Yreg;
 							} else {
-								params[1] = this.PC - 0x100 + this.Yreg;
+								params[1] = 0x100 + this.Yreg;
 							}
-							_KernelInterruptQueue.enqueue(new Interrupt(irq, params));
-							break;
+							return _KernelInterruptQueue.enqueue(new Interrupt(IRQ.writeStrConsole, params));
 						case 0x03://print C string at absolute address given in operand
 							//I know the specifications for this class don't include this system call,
 							//but I wanted to make it backwards-compatible with the emulator I made in org and arch.
 							//Prof. Gormanly said he added some instructions and this system call to the instruction set in this class.
-							irq = IRQ.writeStrConsole;
 							arg0 = this.fetch();
 							if (arg0 === undefined) {return this.segFault();}
 							arg1 = this.fetch();
 							if (arg1 === undefined) {return this.segFault();}
 							params[1] = leToU16(arg0, arg1);
-							_KernelInterruptQueue.enqueue(new Interrupt(irq, params));
-							break;
+							return _KernelInterruptQueue.enqueue(new Interrupt(IRQ.writeStrConsole, params));
 						default:
-							//TODO what happens when the system call has an invalid argument?
-							//Right now nothing will happen and it's undefined behavior that kinda works like a NOP
-							break;
+							Control.hostLog("Invalid system call argument", "CPU");
+							return this.illegalInstruction();
 					}
-					break;
 				default:
-					this.illegalInstruction();
+					return this.illegalInstruction();
 			}
 			Control.updateCpuDisplay();
 			//check for round-robin quantum

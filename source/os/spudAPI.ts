@@ -23,7 +23,8 @@ module TSOS {
 	//Kills the process with the given process ID.
 	export function kill(pid: number, exitCode: ExitCode): void {
 		if (!_Scheduler.remove(pid)) {
-			//TODO what happens if it can't find the pcb with the pid?
+			Control.hostLog("Cannot kill non-existent process", "System Call");
+			return;
 		}
 		Control.updatePcbDisplay();
 		Control.updateMemDisplay();
@@ -45,7 +46,7 @@ module TSOS {
 		let char: number | undefined = undefined;
 		while (char !== 0) {
 			char = _MMU.read(strPtr);
-			if (char === undefined) {return /*TODO what happens when the system call arguments are invalid?*/;}
+			if (char === undefined) {return _KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.SEGMENTATION_FAULT]));}
 			buffer += String.fromCharCode(char);
 			strPtr++;
 		}

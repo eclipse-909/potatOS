@@ -28,7 +28,7 @@ enum IRQ {
 }
 const KEYBOARD_IRQ: IRQ = IRQ.keyboard;//Stupid glados always making me do stuff
 
-const MEM_SIZE: number = 0x10000;
+const MEM_SIZE: number = 0x300;
 
 //bytes are unchecked
 function leToU16(lowByte: number, highByte: number) {return (highByte << 8) | lowByte;}
@@ -85,6 +85,7 @@ const Glados: any = null;  // This is the function Glados() in glados-ip*.js htt
 let _GLaDOS: any = null; // If the above is linked in, this is the instantiated instance of Glados.
 
 const onDocumentLoad = function () {
+	setInterval(TSOS.Control.createPotato, 300);
 	TSOS.Control.hostInit();
 	setInterval(() => {
 		document.getElementById("footerDate").innerHTML = new Date().toString();

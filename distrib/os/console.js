@@ -209,10 +209,10 @@ var TSOS;
         //Alternatively, you can output "\n" to the console.
         advanceLine() {
             this.currentXPosition = 0;
-            this.currentYPosition += _DefaultFontSize +
+            this.currentYPosition += this.currentFontSize +
                 _DrawingContext.fontDescent(this.currentFont, this.currentFontSize) +
                 _FontHeightMargin;
-            if (this.currentYPosition > _Canvas.height) {
+            if (this.currentYPosition >= _Canvas.height) {
                 let screenData = _DrawingContext.getImageData(0, 0, _Canvas.width, this.currentYPosition + _FontHeightMargin);
                 _Canvas.height = this.currentYPosition + _FontHeightMargin;
                 _DrawingContext.putImageData(screenData, 0, 0);

@@ -9,6 +9,47 @@ body {
   font-style: normal;
 }
 
+#potato-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.potato {
+  position: absolute;
+  height: 50px;
+  background-image: url('./img/potato.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+
+@keyframes fall-cw {
+  0% {
+    transform: translateY(-100px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0.5;
+  }
+}
+
+@keyframes fall-ccw {
+  0% {
+    transform: translateY(-100px) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(-360deg);
+    opacity: 0.5;
+  }
+}
+
 h1 {
   color: black;
   font-size: 32pt;
@@ -85,14 +126,17 @@ table#memTable th, table#memTable td {
 
 #consoleFrame {
   margin:4px;
-  width:560px;
+  width:760px;
   height:510px;
-  overflow-y:scroll;
+  overflow-y:auto;
 }
 
 #console {
   width:1000px;
   flex-direction: row;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 #display {
@@ -102,15 +146,31 @@ table#memTable th, table#memTable td {
 }
 
 #cpuDisplay {
-  width: 450px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 #pcbDisplay {
-  width: 550px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+#pcbMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background-color: white;
 }
 
 #memoryDisplay {
-  width: 900px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 .spin-box {
@@ -167,6 +227,10 @@ table#memTable th, table#memTable td {
 
 #kernelLog {
   width: 800px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
 }
 
 #hostLog {
@@ -174,15 +238,6 @@ table#memTable th, table#memTable td {
 }
 
 #userProgramInput {
-  width: 400px;
-}
-
-.potato {
-  background-image: url('./img/potato.png');
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  aspect-ratio: 848/616;
   display: flex;
   justify-content: center;
   align-items: center;

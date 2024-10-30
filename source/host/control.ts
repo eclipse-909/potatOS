@@ -51,6 +51,7 @@ module TSOS {
 			(<HTMLButtonElement>document.getElementById("btnReset")).disabled = false;
 			document.getElementById("display").focus();
 			_Scheduler = new Scheduler();
+			Control.updatePcbMeta()
 			_Dispatcher = new Dispatcher();
 			_MemoryController = new TSOS.MemoryController();
 			_MMU = new MMU();
@@ -87,6 +88,7 @@ module TSOS {
 			if (_KernelInterruptQueue.getSize() === 0) {
 				_CPU.isExecuting? _CPU.cycle() : _Kernel.krnTrace("Idle");
 			} else {
+				Control.updateCpuDisplay();
 				_Kernel.krnTrace("Processing interrupt, try again");
 			}
 		}
@@ -98,9 +100,10 @@ module TSOS {
 			document.getElementById("xReg").innerHTML = `0x${_CPU.Xreg.toString(16).toUpperCase().padStart(2, '0')}`;
 			document.getElementById("yReg").innerHTML = `0x${_CPU.Yreg.toString(16).toUpperCase().padStart(2, '0')}`;
 			document.getElementById("zFlag").innerHTML = String(_CPU.Zflag);
+			document.getElementById("Quantum").innerHTML = `Quantum: ${_Scheduler.cycle}/${_Scheduler.quantum}`;
 		}
 
-		public static updatePcbDisplay(): void {//TODO display turnaround time and wait time
+		public static updatePcbDisplay(): void {
 			let str: string =
 				"<tr>" +
 					"<th>PID</th>" +
@@ -108,6 +111,8 @@ module TSOS {
 					"<th>Turnaround Time</th>" +
 					"<th>Wait Time</th>" +
 					"<th>Priority</th>" +
+					"<th>Location</th>" +//location means - memory/disk
+					"<th>Segment</th>" +//0, 1, or 2
 					"<th>Base</th>" +
 					"<th>Limit</th>" +
 					"<th>IR</th>" +
@@ -131,6 +136,8 @@ module TSOS {
 				`<td>${pcb.cpuTime + pcb.waitTime}</td>` +
 				`<td>${pcb.waitTime}</td>` +
 				`<td>${pcb.priority}</td>` +
+				`<td>${pcb.onDisk? "Disk" : "Memory"}</td>` +
+				`<td>${pcb.segment}</td>` +
 				`<td>0x${pcb.base.toString(16).toUpperCase().padStart(4, '0')}</td>` +
 				`<td>0x${pcb.limit.toString(16).toUpperCase().padStart(4, '0')}</td>` +
 				`<td>${OpCode[pcb.IR]}</td>` +
@@ -140,6 +147,24 @@ module TSOS {
 				`<td>0x${pcb.Yreg.toString(16).toUpperCase().padStart(2, '0')}</td>` +
 				`<td>${pcb.Zflag}</td>` +
 			"</tr>"
+		}
+
+		public static updatePcbMeta(): void {
+			let mode: string;
+			switch (_Scheduler.scheduleMode) {
+				case ScheduleMode.RR:
+					mode = "Round Robin";
+					break;
+				case TSOS.ScheduleMode.NP_FCFS:
+					mode = "Non-Preemptive First Come First Served";
+					break;
+				case TSOS.ScheduleMode.P_SJF:
+					mode = "Preemptive Shortest Job First";
+					break;
+			}
+			document.getElementById("scheduleMode").innerHTML = "Schedule Mode: " + mode;
+			const quantum: HTMLElement = document.getElementById("Quantum");
+			quantum.style.display = _Scheduler.scheduleMode === ScheduleMode.RR? 'flex' : 'none';
 		}
 
 		public static updateMemDisplay(page: number = NaN): void {
@@ -194,6 +219,30 @@ module TSOS {
 				input.value = "0x00";
 			}
 			Control.updateMemDisplay(currentValue);
+		}
+
+		public static createPotato(): void {
+			const container: HTMLElement = document.getElementById('potato-container');
+			const potato: HTMLDivElement = document.createElement("div");
+			potato.classList.add("potato");
+
+			// randomize horizontal position, fall duration, and size
+			potato.style.left = `${Math.random() * 100}vw`;
+			potato.style.animationDuration = `${2 + Math.random() * 4}s`;
+			potato.style.width = `${50 + Math.random() * 70}px`;
+
+			// randomize rotation direction and initial angle
+			const spinDirection: 'fall-cw' | 'fall-ccw' = Math.random() < 0.5 ? 'fall-cw' : 'fall-ccw';
+			const startAngle: number = Math.random() * 360;
+
+			potato.style.transform = `rotate(${startAngle}deg)`;
+			potato.style.animation = `${spinDirection} linear ${potato.style.animationDuration}`;
+			container.appendChild(potato);
+
+			// Remove the potato after it falls out of view
+			potato.addEventListener("animationend", (): void => {
+				potato.remove();
+			});
 		}
 	}
 }

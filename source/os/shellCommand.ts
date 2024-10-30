@@ -41,9 +41,9 @@ module TSOS {
 			new ShellCommand(ShellCommand.shellKill, "kill", "<process ID> - Terminates the process with the given process ID.\n"),
 			new ShellCommand(ShellCommand.shellKillAll, "killall", "- Terminates all processes.\n"),
 			new ShellCommand(ShellCommand.shellQuantum, "quantum", "<int> - Set the quantum (measured in CPU cycles) for Round-Robin scheduling. Must be non-zero. Negative quantum will reverse the order of execution\n"),
-			new ShellCommand(ShellCommand.shellChAlloc, "challoc", "<FirstFit / BestFit / WorstFit> - Set the mode for allocating new processes.\n", ["FirstFit", "BestFit", "WorstFit"]),
-			new ShellCommand(ShellCommand.shellChSegment, "chsegment", "<fixed / variable> [<int>] - Change segment allocation to fixed or variable size. If fixed, pass the size as a positive integer.\n", ["fixed", "variable"]),
-			new ShellCommand(ShellCommand.shellChSched, "chsched", "<RR / NP_FCFS / P_SJF> - Change the CPU scheduling mode.\n", ["RR", "NP_FCFS", "P_SJF"])
+			new ShellCommand(ShellCommand.shellChAlloc, "challoc", "<FirstFit | BestFit | WorstFit> - Set the mode for allocating new processes.\n", ["FirstFit", "BestFit", "WorstFit"]),
+			new ShellCommand(ShellCommand.shellChSegment, "chsegment", "<fixed | variable> [<int>] - Change segment allocation to fixed or variable size. If fixed, pass the size as a positive integer.\n", ["fixed", "variable"]),
+			new ShellCommand(ShellCommand.shellChSched, "chsched", "<RR | NP_FCFS | P_SJF> - Change the CPU scheduling mode.\n", ["RR", "NP_FCFS", "P_SJF"])
 		] as const;
 
 		static shellVer(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
@@ -262,6 +262,13 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: run <pid> [&]\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
+			//add support for "run all" with space
+			if (args[0].toLowerCase() === "all" && args.length === 1) {
+				for (const pcb of _Scheduler.allProcs()) {
+					ShellCommand.runHelper(pcb.pid, true, stdout, stderr);
+				}
+				return null;
+			}
 			let async: boolean = false;
 			if (args.length === 2) {
 				if (args[1] === '&') {
@@ -290,6 +297,7 @@ module TSOS {
 				pcb.stdErr = stderr;
 			}
 			Control.updatePcbDisplay();
+			Control.updateCpuDisplay();
 			return async? null : undefined;
 		}
 
@@ -304,13 +312,14 @@ module TSOS {
 			return ExitCode.SUCCESS;
 		}
 
-		static shellClearMem(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+		static shellClearMem(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			const args: string[] = stdin.input();
 			if (args.length !== 0) {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: clearmem\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
 			_Scheduler.clearMem();
+			stdout.output(["Resident processes cleared. Running/ready processes were not affected\n"]);
 			return ExitCode.SUCCESS;
 		}
 
@@ -324,7 +333,9 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			for (const pcb of _Scheduler.allProcs()) {
-				ShellCommand.runHelper(pcb.pid, true, stdout, stderr);
+				if (pcb.status === Status.resident) {
+					ShellCommand.runHelper(pcb.pid, true, stdout, stderr);
+				}
 			}
 			return ExitCode.SUCCESS;
 		}
@@ -346,6 +357,13 @@ module TSOS {
 			if (args.length !== 1) {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: kill <pid>\n"]);
 				return ExitCode.SHELL_MISUSE;
+			}
+			//add support for "kill all" with space
+			if (args[0].toLowerCase() === "all") {
+				for (const pcb of _Scheduler.allProcs()) {
+					kill(pcb.pid, ExitCode.PROC_KILLED);
+				}
+				return ExitCode.SUCCESS;
 			}
 			const pid: number = Number.parseInt(args[0]);
 			if (Number.isNaN(pid)) {
@@ -386,7 +404,7 @@ module TSOS {
 		static shellChAlloc(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			const args: string[] = stdin.input();
 			if (args.length !== 1) {
-				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: challoc <FirstFit / BestFit / WorstFit>\n"]);
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: challoc <FirstFit | BestFit | WorstFit>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
 			switch (args[0].toLowerCase()) {
@@ -400,7 +418,7 @@ module TSOS {
 					_MMU.allocMode = AllocMode.WorstFit;
 					break;
 				default:
-					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: challoc <FirstFit / BestFit / WorstFit>\n"]);
+					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: challoc <FirstFit | BestFit | WorstFit>\n"]);
 					return ExitCode.SHELL_MISUSE;
 			}
 			return ExitCode.SUCCESS;
@@ -409,32 +427,32 @@ module TSOS {
 		static shellChSegment(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			const args: string[] = stdin.input();
 			if (args.length !== 1 && args.length !== 2) {
-				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed / variable> [<int>]\n"]);
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed | variable> [<int>]\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
 			switch (args[0].toLowerCase()) {
 				case "fixed":
 					if (args.length !== 2) {
-						stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed / variable> [<int>]\n"]);
+						stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed | variable> [<int>]\n"]);
 						return ExitCode.SHELL_MISUSE;
 					}
 					_MMU.fixedSegments = true;
 					const size: number = Number.parseInt(args[1]);
 					if (Number.isNaN(size) || size <= 0) {
-						stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Size must be a positive integer. Usage: chsegment <fixed / variable> [<int>]\n"]);
+						stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Size must be a positive integer. Usage: chsegment <fixed | variable> [<int>]\n"]);
 						return ExitCode.SHELL_MISUSE;
 					}
 					_MMU.segmentSize = size;
 					break;
 				case "variable":
 					if (args.length !== 1) {
-						stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Cannot use a specific size for variable-sized segments. Usage: chsegment <fixed / variable> [<int>]\n"]);
+						stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Cannot use a specific size for variable-sized segments. Usage: chsegment <fixed | variable> [<int>]\n"]);
 						return ExitCode.SHELL_MISUSE;
 					}
 					_MMU.fixedSegments = false;
 					break;
 				default:
-					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed / variable> [<int>]\n"]);
+					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed | variable> [<int>]\n"]);
 					return ExitCode.SHELL_MISUSE;
 			}
 			return ExitCode.SUCCESS;
@@ -443,7 +461,7 @@ module TSOS {
 		static shellChSched(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			const args: string[] = stdin.input();
 			if (args.length !== 1) {
-				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR / NP_FCFS / P_SJF>\n"]);
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR | NP_FCFS | P_SJF>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
 			switch (args[0].toUpperCase()) {
@@ -457,10 +475,16 @@ module TSOS {
 					_Scheduler.scheduleMode = ScheduleMode.P_SJF;
 					break;
 				default:
-					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR / NP_FCFS / P_SJF>\n"]);
+					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR | NP_FCFS | P_SJF>\n"]);
 					return ExitCode.SHELL_MISUSE;
 			}
+			Control.updatePcbMeta()
 			return ExitCode.SUCCESS;
+		}
+
+		static shellGrep(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO grep
+			return
 		}
 	}
 }

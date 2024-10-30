@@ -36,11 +36,13 @@
    <!-- Other Routines -->
    <script type="text/javascript" src="distrib/utils.js"></script>
    <!-- Uncomment the line below to enable GLaDOS testing. -->
-   <script type="text/javascript" src="http://alanclasses.github.io/TSOS/test/glados-ip2.js"></script>
+   <script type="text/javascript" src="http://alanclasses.github.io/TSOS/test/glados-ip3.js"></script>
 
 </head>
 
 <body onload="onDocumentLoad()">
+
+<div id="potato-container"></div>
 
 <header>
    <h1>potatOS</h1>
@@ -51,7 +53,7 @@
 
 <div id="divMain">
    <div id="top">
-      <div id="console" class="potato">
+      <div id="console">
          <div id="consoleButtons">
             <input type="button"
                    id = "btnStartOS"
@@ -98,11 +100,11 @@
                    onclick="TSOS.Control.hostBtnStepCpu(this);">
          </div>
          <div id="consoleFrame">
-            <canvas id="display" width="500px" height="500px" tabindex="3"></canvas>
+            <canvas id="display" width="700px" height="500px" tabindex="3"></canvas>
          </div>
       </div>
 
-      <div id="kernelLog" class="potato">
+      <div id="kernelLog">
          <label class="fryLabel">Host Log</label>
          <br>
          <textarea name="taHostLog" id="hostLog" rows="26" cols="48"></textarea>
@@ -110,7 +112,7 @@
    </div>
 
    <div id="middle">
-      <div id="cpuDisplay" class="potato">
+      <div id="cpuDisplay">
          <label class="fryLabel">CPU</label>
          <br>
          <table class="regTable">
@@ -133,8 +135,13 @@
          </table>
       </div>
 
-      <div id="pcbDisplay" class="potato">
+      <div id="pcbDisplay">
          <label class="fryLabel">Processes</label>
+         <!-- TODO schedule mode, quantum -->
+         <div id="pcbMeta">
+            <label id="scheduleMode"></label>
+            <label id="Quantum"></label>
+         </div>
          <br>
          <table id="pcbTable" class="regTable">
             <tr>
@@ -143,6 +150,8 @@
                <th>Turnaround Time</th>
                <th>Wait Time</th>
                <th>Priority</th>
+               <th>Location</th>
+               <th>Segment</th>
                <th>Base</th>
                <th>Limit</th>
                <th>IR</th>
@@ -155,7 +164,7 @@
          </table>
       </div>
 
-      <div id="userProgramInput" class="potato">
+      <div id="userProgramInput">
          <label class="fryLabel">User Program Input</label>
          <br>
          <textarea name="taProgramInput" id="taProgramInput" rows="8" cols="48"></textarea>
@@ -163,10 +172,10 @@
    </div>
 
    <div id="bottom">
-      <div id="memoryDisplay" class="potato">
+      <div id="memoryDisplay">
          <label class="fryLabel">Memory</label>
          <br>
-         <label for="numberInput">Page:</label>
+         <label for="numberInput" style="background: white;">Page:</label>
          <div class="spin-box">
             <button onclick="TSOS.Control.decreaseValue();">-</button>
             <input type="text" id="numberInput" value="0x00" onchange="TSOS.Control.checkValue();">

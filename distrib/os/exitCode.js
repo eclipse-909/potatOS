@@ -16,7 +16,7 @@ var TSOS;
                 return `Process ${pid} exited successfully.`;
             }
             else if (this.code < 128) {
-                return `Error in process ${pid}: - ${this.description} - exit code ${this.code}`;
+                return `Error in process ${pid}: ${this.description} - exit code ${this.code}`;
             }
             else {
                 return `Fatal error - process ${pid} exited abnormally: ${this.description} - exit code ${this.code}`;

@@ -75,6 +75,7 @@ module TSOS {
 			}
 			if (this.currPCB !== null) {
 				this.currPCB.status = Status.ready
+				_Scheduler.updateCurrPCB();
 				this.ready(this.currPCB);
 			}
 			let nextPcb: ProcessControlBlock;

@@ -74,6 +74,7 @@ var TSOS;
             }
             if (this.currPCB !== null) {
                 this.currPCB.status = TSOS.Status.ready;
+                _Scheduler.updateCurrPCB();
                 this.ready(this.currPCB);
             }
             let nextPcb;

@@ -268,15 +268,17 @@ var TSOS;
                     switch (this.Xreg) {
                         case 0x01: //print number in Y reg
                             params[1] = this.Yreg;
-                            return _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeIntConsole, params));
+                            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeIntConsole, params));
+                            break;
                         case 0x02: //print C string at indirect address given by Y reg
                             if (this.Yreg < 0x80) {
-                                params[1] = this.PC + this.Yreg; //FIXME is this supposed to be relative to the PC or the base?
+                                params[1] = this.Yreg;
                             }
                             else {
-                                params[1] = this.PC - 0x100 + this.Yreg;
+                                params[1] = 0x100 + this.Yreg;
                             }
-                            return _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeStrConsole, params));
+                            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeStrConsole, params));
+                            break;
                         case 0x03: //print C string at absolute address given in operand
                             //I know the specifications for this class don't include this system call,
                             //but I wanted to make it backwards-compatible with the emulator I made in org and arch.
@@ -290,11 +292,13 @@ var TSOS;
                                 return this.segFault();
                             }
                             params[1] = leToU16(arg0, arg1);
-                            return _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeStrConsole, params));
+                            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeStrConsole, params));
+                            break;
                         default:
                             TSOS.Control.hostLog("Invalid system call argument", "CPU");
                             return this.illegalInstruction();
                     }
+                    break;
                 default:
                     return this.illegalInstruction();
             }

@@ -6,6 +6,7 @@
      ------------ */
 
 module TSOS {
+	//TODO remake the entire console
 	export class Console implements OutStream<string[]>, InStream<string[]>, ErrStream<string[]> {
 		constructor(public currentFont: string = _DefaultFontFamily,
 		            public currentFontSize: number = _DefaultFontSize,
@@ -64,6 +65,7 @@ module TSOS {
 						this.putText(this.buffer);
 						break;
 					case String.fromCharCode(3): // ctrl + c
+						//Only kill if synchronous
 						if (_Scheduler.currPCB && _OsShell.pidsWaitingOn.some((item: {pid: number, connector: string | null}): boolean => {
 							return _Scheduler.currPCB.pid === item.pid;
 						})) {

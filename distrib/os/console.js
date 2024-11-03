@@ -6,6 +6,7 @@
      ------------ */
 var TSOS;
 (function (TSOS) {
+    //TODO remake the entire console
     class Console {
         currentFont;
         currentFontSize;
@@ -76,6 +77,7 @@ var TSOS;
                         this.putText(this.buffer);
                         break;
                     case String.fromCharCode(3): // ctrl + c
+                        //Only kill if synchronous
                         if (_Scheduler.currPCB && _OsShell.pidsWaitingOn.some((item) => {
                             return _Scheduler.currPCB.pid === item.pid;
                         })) {

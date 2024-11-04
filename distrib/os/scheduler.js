@@ -114,14 +114,15 @@ var TSOS;
             }
         }
         //Removes a pcb from the currPCB, readyQueue, or residentPcb map if it exists.
-        //Returns if successful.
+        //Returns the PCB or null.
         remove(pid) {
             //check currPCB
             if (this.currPCB !== null && this.currPCB.pid === pid) {
                 this.currPCB.status = TSOS.Status.terminated;
                 this.currPCB.free();
+                const temp = this.currPCB;
                 this.currPCB = null;
-                return true;
+                return temp;
             }
             else {
                 //check readyQueue
@@ -130,8 +131,7 @@ var TSOS;
                     if (readyArr[i].pid === pid) {
                         readyArr[i].status = TSOS.Status.terminated;
                         readyArr[i].free();
-                        this.readyQueue.remove(i);
-                        return true;
+                        return this.readyQueue.remove(i);
                     }
                 }
                 //check residentPcbs
@@ -140,10 +140,10 @@ var TSOS;
                     _Scheduler.residentPcbs.delete(pid);
                     pcb.status = TSOS.Status.terminated;
                     pcb.free();
-                    return true;
+                    return pcb;
                 }
             }
-            return false;
+            return null;
         }
         //Updates the values in the currPCB with the values in the CPU
         updateCurrPCB() {

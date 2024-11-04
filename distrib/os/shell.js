@@ -9,6 +9,19 @@
 // TODO: Write a base class / prototype for system services and let Shell inherit from it.
 var TSOS;
 (function (TSOS) {
+    class ShellProcess {
+        pid;
+        exitCode;
+        turnaroundTime;
+        waitTime;
+        constructor(pid, exitCode, tt, wt) {
+            this.pid = pid;
+            this.exitCode = exitCode;
+            this.turnaroundTime = tt;
+            this.waitTime = wt;
+        }
+    }
+    TSOS.ShellProcess = ShellProcess;
     class Shell {
         // Properties
         promptStr = "$ ";
@@ -64,7 +77,7 @@ var TSOS;
             let process = this.processExitQueue.dequeue();
             while (process) {
                 if (process) {
-                    _StdOut.output([process.exitCode.processDesc(process.pid) + "\n"]);
+                    _StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
                 }
                 process = this.processExitQueue.dequeue();
             }
@@ -234,10 +247,11 @@ var TSOS;
                     else {
                         exitCode = TSOS.ExitCode.COMMAND_NOT_FOUND;
                         stderr.error([
-                            _SarcasticMode
-                                ? "Unbelievable. You, [subject name here],\nmust be the pride of [subject hometown here]."
-                                : "Type 'help' for, well... help.\n"
+                            exitCode.shellDesc() + (_SarcasticMode
+                                ? "Unbelievable. You, [subject name here],\nmust be the pride of [subject hometown here].\n"
+                                : "Type 'help' for, well... help.\n")
                         ]);
+                        this.putPrompt(); //is this correct or just a band-aid solution?
                         return;
                     }
                 }
@@ -320,7 +334,7 @@ var TSOS;
         onProcessFinished() {
             //see if a process has finished
             const process = this.processExitQueue.peek();
-            if (!process) {
+            if (process === null) {
                 return;
             }
             let pidIndex = this.pidsWaitingOn.findIndex((item) => {
@@ -332,7 +346,7 @@ var TSOS;
             }
             this.processExitQueue.dequeue();
             this.pidsWaitingOn.splice(pidIndex, 1);
-            _StdOut.output(["\n" + process.exitCode.processDesc(process.pid) + "\n"]); //TODO print turnaround time and wait time
+            _StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
             if (this.cmdQueue.isEmpty()) {
                 this.putPrompt();
                 return;

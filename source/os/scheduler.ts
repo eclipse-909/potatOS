@@ -118,14 +118,15 @@ module TSOS {
 		}
 
 		//Removes a pcb from the currPCB, readyQueue, or residentPcb map if it exists.
-		//Returns if successful.
-		public remove(pid: number): boolean {
+		//Returns the PCB or null.
+		public remove(pid: number): ProcessControlBlock | null {
 			//check currPCB
 			if (this.currPCB !== null && this.currPCB.pid === pid) {
 				this.currPCB.status = Status.terminated;
 				this.currPCB.free();
+				const temp: ProcessControlBlock = this.currPCB;
 				this.currPCB = null;
-				return true;
+				return temp;
 			} else {
 				//check readyQueue
 				const readyArr: ProcessControlBlock[] = this.readyQueue.asArr();
@@ -133,8 +134,7 @@ module TSOS {
 					if (readyArr[i].pid === pid) {
 						readyArr[i].status = Status.terminated;
 						readyArr[i].free();
-						this.readyQueue.remove(i);
-						return true;
+						return this.readyQueue.remove(i);
 					}
 				}
 				//check residentPcbs
@@ -143,10 +143,10 @@ module TSOS {
 					_Scheduler.residentPcbs.delete(pid);
 					pcb.status = Status.terminated;
 					pcb.free();
-					return true;
+					return pcb;
 				}
 			}
-			return false;
+			return null;
 		}
 
 		//Updates the values in the currPCB with the values in the CPU

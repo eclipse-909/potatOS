@@ -22,6 +22,20 @@ module TSOS {
 		redirector?: string; // Symbol like >>, >, <, |, etc
 	}
 
+	export class ShellProcess {
+		pid: number;
+		exitCode: ExitCode;
+		turnaroundTime: number;
+		waitTime: number;
+
+		constructor(pid: number, exitCode: ExitCode, tt: number, wt: number) {
+			this.pid = pid;
+			this.exitCode = exitCode;
+			this.turnaroundTime = tt;
+			this.waitTime = wt;
+		}
+	}
+
 	export class Shell implements OutStream<string[]>, InStream<string[]>, ErrStream<string[]> {
 		// Properties
 		public promptStr = "$ ";
@@ -32,7 +46,7 @@ module TSOS {
 		//command IO pipeline
 		ioBuffer: string[] | null = null;
 		//queue of processes that have finished
-		processExitQueue: Queue<{exitCode: ExitCode, pid: number}> = new Queue<{exitCode: ExitCode, pid: number}>();
+		processExitQueue: Queue<ShellProcess> = new Queue<ShellProcess>();
 		//PID of synchronous processes
 		pidsWaitingOn: {pid: number, connector: string | null}[] = [];
 
@@ -80,10 +94,10 @@ module TSOS {
 		public handleInput(input: string): void {
 			_StdOut.advanceLine();
 			//check if an async process has finished before starting a new command
-			let process: {exitCode: ExitCode, pid: number} | null = this.processExitQueue.dequeue();
+			let process: ShellProcess | null = this.processExitQueue.dequeue();
 			while (process) {
 				if (process) {
-					_StdOut.output([process.exitCode.processDesc(process.pid) + "\n"]);
+					_StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
 				}
 				process = this.processExitQueue.dequeue();
 			}
@@ -242,10 +256,12 @@ module TSOS {
 					} else {
 						exitCode = ExitCode.COMMAND_NOT_FOUND;
 						stderr.error([
-							_SarcasticMode
-								? "Unbelievable. You, [subject name here],\nmust be the pride of [subject hometown here]."
+							exitCode.shellDesc() + (_SarcasticMode
+								? "Unbelievable. You, [subject name here],\nmust be the pride of [subject hometown here].\n"
 								: "Type 'help' for, well... help.\n"
+							)
 						]);
+						this.putPrompt();//is this correct or just a band-aid solution?
 						return;
 					}
 				}
@@ -334,8 +350,8 @@ module TSOS {
 		//Called when a process is killed to determine how the shell should react
 		onProcessFinished(): void {
 			//see if a process has finished
-			const process: {exitCode: ExitCode, pid: number} | null = this.processExitQueue.peek();
-			if (!process) {return;}
+			const process: ShellProcess | null = this.processExitQueue.peek();
+			if (process === null) {return;}
 			let pidIndex: number = this.pidsWaitingOn.findIndex((item: {pid: number, connector: string | null}): boolean => {
 				return item.pid === process.pid;
 			});
@@ -343,7 +359,7 @@ module TSOS {
 			if (pidIndex === -1) {return;}
 			this.processExitQueue.dequeue();
 			this.pidsWaitingOn.splice(pidIndex, 1);
-			_StdOut.output(["\n" + process.exitCode.processDesc(process.pid) + "\n"]);//TODO print turnaround time and wait time
+			_StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
 			if (this.cmdQueue.isEmpty()) {
 				this.putPrompt();
 				return;

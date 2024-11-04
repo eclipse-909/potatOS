@@ -85,24 +85,38 @@ var TSOS;
         estimateTime(bin) {
             let branches = 0;
             for (let i = 0; i < bin.length; i++) {
-                if (!Object.values(TSOS.OpCode).includes(bin[i])) {
-                    return;
+                const opcode = TSOS.OpCode[bin[i]];
+                // console.log(opcode);
+                // console.log(bin[0]);
+                // console.log(bin[0] as OpCode);
+                if (opcode === undefined) {
+                    break;
                 } //We must be in the data section
                 switch (bin[i]) {
-                    case TSOS.OpCode.LDAi | TSOS.OpCode.LDXi | TSOS.OpCode.LDYi | TSOS.OpCode.BNEr:
+                    case TSOS.OpCode.BNEr:
+                        branches++;
+                    case TSOS.OpCode.LDAi:
+                    case TSOS.OpCode.LDXi:
+                    case TSOS.OpCode.LDYi:
                         i++;
                         break;
-                    case TSOS.OpCode.LDAa | TSOS.OpCode.STAa | TSOS.OpCode.LDXa | TSOS.OpCode.LDYa | TSOS.OpCode.ADCa | TSOS.OpCode.CPXa | TSOS.OpCode.INCa:
+                    case TSOS.OpCode.LDAa:
+                    case TSOS.OpCode.STAa:
+                    case TSOS.OpCode.LDXa:
+                    case TSOS.OpCode.LDYa:
+                    case TSOS.OpCode.ADCa:
+                    case TSOS.OpCode.CPXa:
+                    case TSOS.OpCode.INCa:
                         i += 2;
                         break;
                     case TSOS.OpCode.SYS:
-                        if (i < bin.length - 1 && !Object.values(TSOS.OpCode).includes(bin[i + 1])) {
+                        if (i < bin.length - 1 && TSOS.OpCode[bin[i + 1]] === undefined) {
                             i += 2;
                         }
                         break;
                 }
             }
-            this.timeEstimate = bin.length * (1 + Math.log(1 + branches)); //arbitrary equation
+            this.timeEstimate = bin.length * (1 + Math.log2(1 + branches)); //arbitrary equation
         }
     }
     TSOS.ProcessControlBlock = ProcessControlBlock;

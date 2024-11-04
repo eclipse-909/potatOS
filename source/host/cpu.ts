@@ -63,10 +63,11 @@ module TSOS {
 			//fetch
 			const byte: number | undefined = this.fetch();
 			if (byte === undefined) {return this.segFault();}
-			this.IR = byte as OpCode;
-			if (!Object.values(OpCode).includes(this.IR)) {
+			const opcode: OpCode | undefined = OpCode[byte as unknown as keyof typeof OpCode];
+			if (opcode === undefined) {
 				return this.illegalInstruction();
 			}
+			this.IR = byte;
 			let arg0: number | undefined;
 			let arg1: number | undefined;
 			let buffer: number | undefined;

@@ -22,13 +22,14 @@ module TSOS {
 
 	//Kills the process with the given process ID.
 	export function kill(pid: number, exitCode: ExitCode): void {
-		if (!_Scheduler.remove(pid)) {
+		const pcb: ProcessControlBlock = _Scheduler.remove(pid);
+		if (pcb === null) {
 			Control.hostLog("Cannot kill non-existent process", "System Call");
 			return;
 		}
 		Control.updatePcbDisplay();
 		Control.updateMemDisplay();
-		_OsShell.processExitQueue.enqueue({exitCode: exitCode, pid: pid});
+		_OsShell.processExitQueue.enqueue(new ShellProcess(pcb.pid, exitCode, pcb.cpuTime + pcb.waitTime, pcb.waitTime));
 		if (_Scheduler.currPCB === null) {
 			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));
 		}

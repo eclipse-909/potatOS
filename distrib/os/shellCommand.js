@@ -58,7 +58,7 @@ var TSOS;
             for (const i in ShellCommand.COMMAND_LIST) {
                 text += "  " + ShellCommand.COMMAND_LIST[i].command + " " + ShellCommand.COMMAND_LIST[i].description;
             }
-            stdout.output([text + "\n"]);
+            stdout.output([text]);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellShutdown(stdin, stdout, stderr) {

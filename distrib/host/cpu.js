@@ -68,10 +68,11 @@ var TSOS;
             if (byte === undefined) {
                 return this.segFault();
             }
-            this.IR = byte;
-            if (!Object.values(OpCode).includes(this.IR)) {
+            const opcode = OpCode[byte];
+            if (opcode === undefined) {
                 return this.illegalInstruction();
             }
+            this.IR = byte;
             let arg0;
             let arg1;
             let buffer;

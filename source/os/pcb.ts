@@ -94,22 +94,36 @@ module TSOS {
 		private estimateTime(bin: number[]): void {
 			let branches: number = 0;
 			for (let i: number = 0; i < bin.length; i++) {
-				if (!Object.values(OpCode).includes(bin[i])) {return;}//We must be in the data section
-				switch (bin[i] as OpCode) {
-					case OpCode.LDAi | OpCode.LDXi | OpCode.LDYi | OpCode.BNEr:
+				const opcode: OpCode | undefined = OpCode[bin[i] as unknown as keyof typeof OpCode];
+				// console.log(opcode);
+				// console.log(bin[0]);
+				// console.log(bin[0] as OpCode);
+				if (opcode === undefined) {break;}//We must be in the data section
+				switch (bin[i]) {
+					case OpCode.BNEr:
+						branches++;
+					case OpCode.LDAi:
+					case OpCode.LDXi:
+					case OpCode.LDYi:
 						i++;
 						break;
-					case OpCode.LDAa | OpCode.STAa | OpCode.LDXa | OpCode.LDYa | OpCode.ADCa | OpCode.CPXa | OpCode.INCa:
+					case OpCode.LDAa:
+					case OpCode.STAa:
+					case OpCode.LDXa:
+					case OpCode.LDYa:
+					case OpCode.ADCa:
+					case OpCode.CPXa:
+					case OpCode.INCa:
 						i += 2;
 						break;
 					case OpCode.SYS:
-						if (i < bin.length - 1 && !Object.values(OpCode).includes(bin[i+1])) {
+						if (i < bin.length - 1 && OpCode[bin[i+1] as unknown as keyof typeof OpCode] === undefined) {
 							i += 2;
 						}
 						break;
 				}
 			}
-			this.timeEstimate = bin.length * (1 + Math.log(1 + branches));//arbitrary equation
+			this.timeEstimate = bin.length * (1 + Math.log2(branches * 50 + 1));//arbitrary equation
 		}
 	}
 }

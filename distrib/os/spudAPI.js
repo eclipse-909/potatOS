@@ -21,13 +21,14 @@ var TSOS;
     */
     //Kills the process with the given process ID.
     function kill(pid, exitCode) {
-        if (!_Scheduler.remove(pid)) {
+        const pcb = _Scheduler.remove(pid);
+        if (pcb === null) {
             TSOS.Control.hostLog("Cannot kill non-existent process", "System Call");
             return;
         }
         TSOS.Control.updatePcbDisplay();
         TSOS.Control.updateMemDisplay();
-        _OsShell.processExitQueue.enqueue({ exitCode: exitCode, pid: pid });
+        _OsShell.processExitQueue.enqueue(new TSOS.ShellProcess(pcb.pid, exitCode, pcb.cpuTime + pcb.waitTime, pcb.waitTime));
         if (_Scheduler.currPCB === null) {
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, []));
         }

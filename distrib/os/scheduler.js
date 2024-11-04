@@ -117,7 +117,7 @@ var TSOS;
         //Returns if successful.
         remove(pid) {
             //check currPCB
-            if (this.currPCB.pid === pid) {
+            if (this.currPCB !== null && this.currPCB.pid === pid) {
                 this.currPCB.status = TSOS.Status.terminated;
                 this.currPCB.free();
                 this.currPCB = null;

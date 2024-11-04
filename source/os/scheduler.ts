@@ -121,7 +121,7 @@ module TSOS {
 		//Returns if successful.
 		public remove(pid: number): boolean {
 			//check currPCB
-			if (this.currPCB.pid === pid) {
+			if (this.currPCB !== null && this.currPCB.pid === pid) {
 				this.currPCB.status = Status.terminated;
 				this.currPCB.free();
 				this.currPCB = null;

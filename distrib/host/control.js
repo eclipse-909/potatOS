@@ -39,6 +39,9 @@ var TSOS;
             const now = new Date().getTime();
             const str = "({ clock:" + clock + ", source:" + source + ", msg:" + msg + ", now:" + now + " })" + "\n";
             const taLog = document.getElementById("hostLog");
+            if (taLog.value.split('\n').length >= 1500) {
+                taLog.value = ""; //It gets really slow if you leave it
+            }
             taLog.value = str + taLog.value;
             // TODO in the future: Optionally update a log database or some streaming service.
         }

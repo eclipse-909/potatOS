@@ -152,6 +152,11 @@ table#memTable th, table#memTable td {
   flex-direction: column;
 }
 
+#cpuDisplay table {
+  table-layout: fixed;
+  width: 375px;
+}
+
 #pcbDisplay {
   display: flex;
   justify-content: center;

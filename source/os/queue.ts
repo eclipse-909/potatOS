@@ -37,6 +37,7 @@ module TSOS {
 			return retVal;
 		}
 
+		//Returns the next item on the queue or null
 		public peek(): T | null {
 			return this.q.length === 0? null : this.q[0];
 		}

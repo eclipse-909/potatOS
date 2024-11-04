@@ -43,8 +43,8 @@ var TSOS;
                 this.readyQueue.sort((a, b) => {
                     return a.timeEstimate - b.timeEstimate;
                 });
-                const readyArr = this.readyQueue.asArr();
-                if (readyArr[this.quantum > 0 ? 0 : readyArr.length - 1].timeEstimate < this.currPCB.timeEstimate) {
+                const next = this.readyQueue.peek();
+                if (next !== null && this.currPCB !== null && next.timeEstimate < this.currPCB.timeEstimate) {
                     _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, [])); //preemptive
                     return;
                 }

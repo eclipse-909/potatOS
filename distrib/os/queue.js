@@ -30,6 +30,7 @@ var TSOS;
             }
             return retVal;
         }
+        //Returns the next item on the queue or null
         peek() {
             return this.q.length === 0 ? null : this.q[0];
         }

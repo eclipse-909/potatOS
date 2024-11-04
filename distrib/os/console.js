@@ -118,7 +118,7 @@ var TSOS;
                         const tokens = (lastIndex === -1
                             ? this.buffer
                             : this.buffer.substring(lastIndex + matchedDelimiter.length)).trim().split(/\s+/); //split by 1 or more spaces
-                        if (tokens.length == 1) {
+                        if (tokens.length == 1) { //TODO when you type a command then a space, hitting tab should show the possible arguments
                             this.autocompleteCmd(tokens[0]);
                         }
                         else if (tokens.length === 2) {

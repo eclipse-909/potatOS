@@ -69,7 +69,7 @@ module TSOS {
 			}
 			let arg0: number | undefined;
 			let arg1: number | undefined;
-			let buffer: number;
+			let buffer: number | undefined;
 
 			//decode and execute
 			switch (this.IR) {
@@ -84,8 +84,9 @@ module TSOS {
 					if (arg0 === undefined) {return this.segFault();}
 					arg1 = this.fetch();
 					if (arg1 === undefined) {return this.segFault();}
-					this.Acc = _MMU.read(leToU16(arg0, arg1));
-					if (this.Acc === undefined) {return this.segFault();}
+					buffer = _MMU.read(leToU16(arg0, arg1));
+					if (buffer === undefined) {return this.segFault();}
+					this.Acc = buffer;
 					this.Zflag = this.Acc === 0;
 					break;
 				case OpCode.STAa:
@@ -134,8 +135,9 @@ module TSOS {
 					if (arg0 === undefined) {return this.segFault();}
 					arg1 = this.fetch();
 					if (arg1 === undefined) {return this.segFault();}
-					this.Xreg = _MMU.read(leToU16(arg0, arg1));
-					if (this.Xreg === undefined) {return this.segFault();}
+					buffer = _MMU.read(leToU16(arg0, arg1));
+					if (buffer === undefined) {return this.segFault();}
+					this.Xreg = buffer;
 					this.Zflag = this.Xreg === 0;
 					break;
 				case OpCode.TAX:
@@ -153,8 +155,9 @@ module TSOS {
 					if (arg0 === undefined) {return this.segFault();}
 					arg1 = this.fetch();
 					if (arg1 === undefined) {return this.segFault();}
-					this.Yreg = _MMU.read(leToU16(arg0, arg1));
-					if (this.Yreg === undefined) {return this.segFault();}
+					buffer = _MMU.read(leToU16(arg0, arg1));
+					if (buffer === undefined) {return this.segFault();}
+					this.Yreg = buffer;
 					this.Zflag = this.Yreg === 0;
 					break;
 				case OpCode.TAY:
@@ -169,8 +172,9 @@ module TSOS {
 					if (arg0 === undefined) {return this.segFault();}
 					arg1 = this.fetch();
 					if (arg1 === undefined) {return this.segFault();}
-					this.Zflag = this.Xreg === _MMU.read(leToU16(arg0, arg1));
-					if (this.Zflag === undefined) {return this.segFault();}
+					buffer = _MMU.read(leToU16(arg0, arg1));
+					if (buffer === undefined) {return this.segFault();}
+					this.Zflag = this.Xreg === buffer;
 					break;
 				case OpCode.BNEr:
 					arg0 = this.fetch();

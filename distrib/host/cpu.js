@@ -94,10 +94,11 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    this.Acc = _MMU.read(leToU16(arg0, arg1));
-                    if (this.Acc === undefined) {
+                    buffer = _MMU.read(leToU16(arg0, arg1));
+                    if (buffer === undefined) {
                         return this.segFault();
                     }
+                    this.Acc = buffer;
                     this.Zflag = this.Acc === 0;
                     break;
                 case OpCode.STAa:
@@ -166,10 +167,11 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    this.Xreg = _MMU.read(leToU16(arg0, arg1));
-                    if (this.Xreg === undefined) {
+                    buffer = _MMU.read(leToU16(arg0, arg1));
+                    if (buffer === undefined) {
                         return this.segFault();
                     }
+                    this.Xreg = buffer;
                     this.Zflag = this.Xreg === 0;
                     break;
                 case OpCode.TAX:
@@ -193,10 +195,11 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    this.Yreg = _MMU.read(leToU16(arg0, arg1));
-                    if (this.Yreg === undefined) {
+                    buffer = _MMU.read(leToU16(arg0, arg1));
+                    if (buffer === undefined) {
                         return this.segFault();
                     }
+                    this.Yreg = buffer;
                     this.Zflag = this.Yreg === 0;
                     break;
                 case OpCode.TAY:
@@ -215,10 +218,11 @@ var TSOS;
                     if (arg1 === undefined) {
                         return this.segFault();
                     }
-                    this.Zflag = this.Xreg === _MMU.read(leToU16(arg0, arg1));
-                    if (this.Zflag === undefined) {
+                    buffer = _MMU.read(leToU16(arg0, arg1));
+                    if (buffer === undefined) {
                         return this.segFault();
                     }
+                    this.Zflag = this.Xreg === buffer;
                     break;
                 case OpCode.BNEr:
                     arg0 = this.fetch();

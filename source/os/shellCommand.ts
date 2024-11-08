@@ -88,8 +88,7 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: cls\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_StdOut.clearScreen();
-			_StdOut.resetXY();
+			_StdOut.init();
 			return ExitCode.SUCCESS;
 		}
 
@@ -361,7 +360,7 @@ module TSOS {
 			//add support for "kill all" with space
 			if (args[0].toLowerCase() === "all") {
 				for (const pcb of _Scheduler.allProcs()) {
-					kill(pcb.pid, ExitCode.PROC_KILLED);
+					_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [pcb.pid, ExitCode.PROC_KILLED]));
 				}
 				return ExitCode.SUCCESS;
 			}
@@ -370,7 +369,7 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid pid (must be a non-negative integer). Usage: kill <pid>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			kill(pid, ExitCode.PROC_KILLED);
+			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [pid, ExitCode.PROC_KILLED]));
 			return ExitCode.SUCCESS;
 		}
 
@@ -381,7 +380,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			for (const pcb of _Scheduler.allProcs()) {
-				kill(pcb.pid, ExitCode.PROC_KILLED);
+				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [pcb.pid, ExitCode.PROC_KILLED]));
 			}
 			return ExitCode.SUCCESS;
 		}

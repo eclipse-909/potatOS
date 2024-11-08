@@ -57,6 +57,9 @@ module TSOS {
 				case 38: return -1;   //up arrow
 				case 40: return -2;   //down arrow
 
+				case 45: return -3;//insert
+				case 46: return 127;//delete
+
 				case 48: return isShifted ? 41 : 48;  // ')' or '0'
 				case 49: return isShifted ? 33 : 49;  // '!' or '1'
 				case 50: return isShifted ? 64 : 50;  // '@' or '2'

@@ -116,7 +116,7 @@ var TSOS;
                         break;
                 }
             }
-            this.timeEstimate = bin.length * (1 + Math.log2(1 + branches)); //arbitrary equation
+            this.timeEstimate = bin.length * (1 + Math.log2(branches * 50 + 1)); //arbitrary equation
         }
     }
     TSOS.ProcessControlBlock = ProcessControlBlock;

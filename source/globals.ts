@@ -46,11 +46,13 @@ let _OSclock: number = 0;  // Page 23.
 //let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
 
 let _Canvas: HTMLCanvasElement;          // Initialized in Control.hostInit().
-let CANVAS_HEIGHT: number = 500;
-let _DrawingContext: any;                // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
-const _DefaultFontFamily: string = "sans"; // Ignored, I think. The was just a place-holder in 2008, but the HTML canvas may have use for it.
-const _DefaultFontSize: number = 13;
+const CANVAS_NUM_LINES: number = 30;
+let _DrawingContext: any;    // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
+// const _FontFamily: string = "sans"; // Ignored, I think. The was just a place-holder in 2008, but the HTML canvas may have use for it.
+const _FontSize: number = 13;
 const _FontHeightMargin: number = 4;       // Additional space added to font size when advancing a line.
+const CANVAS_MARGIN: number = 5;
+const CANVAS_HEIGHT: number = 30 * (_FontSize + _FontHeightMargin) + 2 * CANVAS_MARGIN;
 
 let _Trace: boolean = true;              // Default the OS trace to be on.
 

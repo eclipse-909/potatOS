@@ -78,8 +78,7 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: cls\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _StdOut.clearScreen();
-            _StdOut.resetXY();
+            _StdOut.init();
             return TSOS.ExitCode.SUCCESS;
         }
         static shellMan(stdin, stdout, stderr) {
@@ -336,7 +335,7 @@ var TSOS;
             //add support for "kill all" with space
             if (args[0].toLowerCase() === "all") {
                 for (const pcb of _Scheduler.allProcs()) {
-                    TSOS.kill(pcb.pid, TSOS.ExitCode.PROC_KILLED);
+                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [pcb.pid, TSOS.ExitCode.PROC_KILLED]));
                 }
                 return TSOS.ExitCode.SUCCESS;
             }
@@ -345,7 +344,7 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid pid (must be a non-negative integer). Usage: kill <pid>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            TSOS.kill(pid, TSOS.ExitCode.PROC_KILLED);
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [pid, TSOS.ExitCode.PROC_KILLED]));
             return TSOS.ExitCode.SUCCESS;
         }
         static shellKillAll(stdin, _stdout, stderr) {
@@ -355,7 +354,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             for (const pcb of _Scheduler.allProcs()) {
-                TSOS.kill(pcb.pid, TSOS.ExitCode.PROC_KILLED);
+                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [pcb.pid, TSOS.ExitCode.PROC_KILLED]));
             }
             return TSOS.ExitCode.SUCCESS;
         }

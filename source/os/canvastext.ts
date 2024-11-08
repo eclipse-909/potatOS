@@ -38,7 +38,6 @@ module TSOS {
 			')': { width: 14, points: [[3,25],[5,23],[7,20],[9,16],[10,11],[10,7],[9,2],[7,-2],[5,-5],[3,-7]] },
 			'*': { width: 16, points: [[8,21],[8,9],[-1,-1],[3,18],[13,12],[-1,-1],[13,18],[3,12]] },
 			'+': { width: 26, points: [[13,18],[13,0],[-1,-1],[4,9],[22,9]] },
-
 			'-': { width: 26, points: [[4,9],[22,9]] },
 			'.': { width: 10, points: [[5,2],[4,1],[5,0],[6,1],[5,2]] },
 			'/': { width: 22, points: [[20,25],[2,-7]] },
@@ -128,31 +127,32 @@ module TSOS {
 			return CanvasTextFunctions.symbols[ch];
 		}
 
-		public static ascent(_font: string, size: number) {
-			return size;
+		// public static ascent() {
+		// 	return _FontSize;
+		// }
+
+		public static descent(): number {
+			return 7.0*_FontSize/25.0;
 		}
 
-		public static descent(_font: string, size: number) {
-			return 7.0*size/25.0;
-		}
-
-		public static measure(_font: string, size: number, str: string) {
+		//returns the width of the text
+		public static measure(str: string): number {
 			let total = 0;
 			const len = str.length;
 
 			for (let i = 0; i < len; i++) {
 				const c = CanvasTextFunctions.letter(str.charAt(i));
 				if (c) {
-					total += c.width * size / 25.0;
+					total += c.width * _FontSize / 25.0;
 				}
 			}
 			return total;
 		}
 
-		public static draw(ctx, font: string, size: number, _x: number, _y: number, str: string): number {
+		public static draw(ctx, str: string, x: number, y: number): number {
 			const total = 0;
 			const len: number = str.length;
-			const mag: number = size / 25.0;
+			const mag: number = _FontSize / 25.0;
 
 			ctx.save();
 			ctx.lineCap = "round";
@@ -160,13 +160,7 @@ module TSOS {
 			ctx.strokeStyle = "black";
 
 			for (let i: number = 0; i < len; i++) {
-				//advance line if character will spill off the edge of the canvas
-				const char: string = str.charAt(i);
-				const charWidth: number = this.measure(font, size, char);
-				if (_Console.currentXPosition + charWidth >= _Canvas.width - 5) {
-					_Console.advanceLine();
-				}
-				const c = CanvasTextFunctions.letter(char);
+				const c = CanvasTextFunctions.letter(str.charAt(i));
 				if (!c) {
 					continue;
 				}
@@ -179,33 +173,24 @@ module TSOS {
 						continue;
 					}
 					if (penUp) {
-						ctx.moveTo(_Console.currentXPosition + a[0]*mag, _Console.currentYPosition - a[1]*mag);
+						ctx.moveTo(x + a[0]*mag, y - a[1]*mag);
 						penUp = false;
 					} else {
-						ctx.lineTo(_Console.currentXPosition + a[0]*mag, _Console.currentYPosition - a[1]*mag);
+						ctx.lineTo(x + a[0]*mag, y - a[1]*mag);
 					}
 				}
 				ctx.stroke();
-				// We're gonna offset the X pos here instead of in Console.putText to handle line-wrapping
-				_Console.currentXPosition += c.width*mag;
+				x += c.width*mag;
 			}
 			ctx.restore();
 			return total;
 		}
 
-		public static enable(ctx) {
-			ctx.drawText = function(font: string, size: number, x: number, y: number, text: string) { return CanvasTextFunctions.draw( ctx, font,size,x,y,text); };
-			ctx.measureText = function(font: string, size: number, text: string) { return CanvasTextFunctions.measure( font,size,text); };
-			ctx.fontAscent = function(font: string, size: number) { return CanvasTextFunctions.ascent(font,size); };
-			ctx.fontDescent = function(font: string, size: number) { return CanvasTextFunctions.descent(font,size); };
-			ctx.drawTextRight = function(font: string, size: number, x: number, y: number, text: string) {
-				const w = CanvasTextFunctions.measure(font, size, text);
-				return CanvasTextFunctions.draw( ctx, font,size,x-w,y,text);
-			};
-			ctx.drawTextCenter = function(font: string, size: number, x: number, y: number, text: string) {
-				const w = CanvasTextFunctions.measure(font, size, text);
-				return CanvasTextFunctions.draw( ctx, font,size,x-w/2,y,text);
-			};
+		public static enable(ctx): void {
+			ctx.drawText = function(text: string, x: number, y: number): number {return CanvasTextFunctions.draw(ctx, text, x, y);};
+			ctx.measureText = function(text: string): number {return CanvasTextFunctions.measure(text);};
+			//TODO find out what this function does
+			ctx.fontDescent = function(): number {return CanvasTextFunctions.descent();};
 		}
 	}
 }

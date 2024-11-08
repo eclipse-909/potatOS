@@ -81,18 +81,8 @@ module TSOS {
 
 		constructor() {}
 
-		public init() {
-			// Display the initial prompt.
-			this.putPrompt();
-		}
-
-		public putPrompt() {
-			_StdOut.putText(this.promptStr);
-			_StdIn.inputEnabled = true;
-		}
-
 		public handleInput(input: string): void {
-			_StdOut.advanceLine();
+			_StdOut.print('\n');
 			//check if an async process has finished before starting a new command
 			let process: ShellProcess | null = this.processExitQueue.dequeue();
 			while (process) {
@@ -102,7 +92,7 @@ module TSOS {
 				process = this.processExitQueue.dequeue();
 			}
 			if (input === "") {
-				return this.putPrompt();
+				return _Console.putPrompt();
 			}
 			const tokens: Token[] = this.tokenize(input);
 			const commands: Command[] | undefined = this.parseTokens(tokens);
@@ -152,10 +142,10 @@ module TSOS {
 					}
 				}
 				if (pushed) {continue;}
-				// Otherwise, add to buffer
+				// Otherwise, add to inputBuffer
 				buffer += char;
 			}
-			// Add remaining buffer as a word
+			// Add remaining inputBuffer as a word
 			if (buffer) {
 				tokens.push({type: 'WORD', value: buffer});
 			}
@@ -172,9 +162,8 @@ module TSOS {
 				unexpectedToken = tokens[tokens.length - 1];
 			}
 			if (unexpectedToken) {
-				_StdOut.putText(`Invalid token: '${unexpectedToken.value}', expected command or argument.`);
-				_StdOut.advanceLine();
-				this.putPrompt();
+				_StdOut.print(`Invalid token: '${unexpectedToken.value}', expected command or argument.\n`);
+				_Console.putPrompt();
 				return undefined;
 			}
 			for (const token of tokens) {
@@ -190,9 +179,8 @@ module TSOS {
 						commands.push(currentCommand);
 						currentCommand = null;
 					} else {
-						_StdOut.putText(`Invalid token: '${token.value}', expected command or argument.`);
-						_StdOut.advanceLine();
-						this.putPrompt();
+						_StdOut.print(`Invalid token: '${token.value}', expected command or argument.\n`);
+						_Console.putPrompt();
 						return undefined;
 					}
 				} else if (token.type === 'REDIRECTOR') {
@@ -201,9 +189,8 @@ module TSOS {
 						commands.push(currentCommand);
 						currentCommand = null;
 					} else {
-						_StdOut.putText(`Invalid token: '${token.value}', expected command or argument.`);
-						_StdOut.advanceLine();
-						this.putPrompt();
+						_StdOut.print(`Invalid token: '${token.value}', expected command or argument.\n`);
+						_Console.putPrompt();
 						return undefined;
 					}
 				}
@@ -237,7 +224,7 @@ module TSOS {
 
 				//if the previous command is being piped into this one
 				//add the arguments of this command before the output of the previous command.
-				//The output of the previous command should already be in the buffer
+				//The output of the previous command should already be in the inputBuffer
 				if (this.ioBuffer === null) {
 					this.ioBuffer = currCmd.args;
 				} else {
@@ -261,7 +248,7 @@ module TSOS {
 								: "Type 'help' for, well... help.\n"
 							)
 						]);
-						this.putPrompt();//is this correct or just a band-aid solution?
+						_Console.putPrompt();//is this correct or just a band-aid solution?
 						return;
 					}
 				}
@@ -304,7 +291,7 @@ module TSOS {
 				//add the pid and connector to the queue so we can wait for it to finish.
 				//then keep executing remaining chained commands.
 				if (command.command === "runall") {
-					this.putPrompt();
+					_Console.putPrompt();
 					this.executeCmdQueue();
 					this.tryEnableInput();
 					return;
@@ -315,7 +302,7 @@ module TSOS {
 						if (exitCode === undefined) {//synchronous
 							this.pidsWaitingOn.push({pid: pid, connector: currCmd.connector});
 						} else if (exitCode === null) {//asynchronous
-							this.putPrompt();
+							_Console.putPrompt();
 							this.executeCmdQueue();
 							this.tryEnableInput();
 						}
@@ -344,7 +331,7 @@ module TSOS {
 			}
 
 			//if everything finished executing, and we aren't waiting on any processes, allow input
-			this.putPrompt();
+			_Console.putPrompt();
 		}
 
 		//Called when a process is killed to determine how the shell should react
@@ -361,7 +348,7 @@ module TSOS {
 			this.pidsWaitingOn.splice(pidIndex, 1);
 			_StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
 			if (this.cmdQueue.isEmpty()) {
-				this.putPrompt();
+				_Console.putPrompt();
 				return;
 			}
 			this.executeCmdQueue();

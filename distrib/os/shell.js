@@ -63,16 +63,8 @@ var TSOS;
             "|", //pipe stdout of first command to stdin of second command.
         ];
         constructor() { }
-        init() {
-            // Display the initial prompt.
-            this.putPrompt();
-        }
-        putPrompt() {
-            _StdOut.putText(this.promptStr);
-            _StdIn.inputEnabled = true;
-        }
         handleInput(input) {
-            _StdOut.advanceLine();
+            _StdOut.print('\n');
             //check if an async process has finished before starting a new command
             let process = this.processExitQueue.dequeue();
             while (process) {
@@ -82,7 +74,7 @@ var TSOS;
                 process = this.processExitQueue.dequeue();
             }
             if (input === "") {
-                return this.putPrompt();
+                return _Console.putPrompt();
             }
             const tokens = this.tokenize(input);
             const commands = this.parseTokens(tokens);
@@ -137,10 +129,10 @@ var TSOS;
                 if (pushed) {
                     continue;
                 }
-                // Otherwise, add to buffer
+                // Otherwise, add to inputBuffer
                 buffer += char;
             }
-            // Add remaining buffer as a word
+            // Add remaining inputBuffer as a word
             if (buffer) {
                 tokens.push({ type: 'WORD', value: buffer });
             }
@@ -157,9 +149,8 @@ var TSOS;
                 unexpectedToken = tokens[tokens.length - 1];
             }
             if (unexpectedToken) {
-                _StdOut.putText(`Invalid token: '${unexpectedToken.value}', expected command or argument.`);
-                _StdOut.advanceLine();
-                this.putPrompt();
+                _StdOut.print(`Invalid token: '${unexpectedToken.value}', expected command or argument.\n`);
+                _Console.putPrompt();
                 return undefined;
             }
             for (const token of tokens) {
@@ -178,9 +169,8 @@ var TSOS;
                         currentCommand = null;
                     }
                     else {
-                        _StdOut.putText(`Invalid token: '${token.value}', expected command or argument.`);
-                        _StdOut.advanceLine();
-                        this.putPrompt();
+                        _StdOut.print(`Invalid token: '${token.value}', expected command or argument.\n`);
+                        _Console.putPrompt();
                         return undefined;
                     }
                 }
@@ -191,9 +181,8 @@ var TSOS;
                         currentCommand = null;
                     }
                     else {
-                        _StdOut.putText(`Invalid token: '${token.value}', expected command or argument.`);
-                        _StdOut.advanceLine();
-                        this.putPrompt();
+                        _StdOut.print(`Invalid token: '${token.value}', expected command or argument.\n`);
+                        _Console.putPrompt();
                         return undefined;
                     }
                 }
@@ -226,7 +215,7 @@ var TSOS;
                 let stderr = _StdErr;
                 //if the previous command is being piped into this one
                 //add the arguments of this command before the output of the previous command.
-                //The output of the previous command should already be in the buffer
+                //The output of the previous command should already be in the inputBuffer
                 if (this.ioBuffer === null) {
                     this.ioBuffer = currCmd.args;
                 }
@@ -251,7 +240,7 @@ var TSOS;
                                 ? "Unbelievable. You, [subject name here],\nmust be the pride of [subject hometown here].\n"
                                 : "Type 'help' for, well... help.\n")
                         ]);
-                        this.putPrompt(); //is this correct or just a band-aid solution?
+                        _Console.putPrompt(); //is this correct or just a band-aid solution?
                         return;
                     }
                 }
@@ -290,7 +279,7 @@ var TSOS;
                 //add the pid and connector to the queue so we can wait for it to finish.
                 //then keep executing remaining chained commands.
                 if (command.command === "runall") {
-                    this.putPrompt();
+                    _Console.putPrompt();
                     this.executeCmdQueue();
                     this.tryEnableInput();
                     return;
@@ -302,7 +291,7 @@ var TSOS;
                             this.pidsWaitingOn.push({ pid: pid, connector: currCmd.connector });
                         }
                         else if (exitCode === null) { //asynchronous
-                            this.putPrompt();
+                            _Console.putPrompt();
                             this.executeCmdQueue();
                             this.tryEnableInput();
                         }
@@ -328,7 +317,7 @@ var TSOS;
                 nextCmd = this.cmdQueue.peek();
             }
             //if everything finished executing, and we aren't waiting on any processes, allow input
-            this.putPrompt();
+            _Console.putPrompt();
         }
         //Called when a process is killed to determine how the shell should react
         onProcessFinished() {
@@ -348,7 +337,7 @@ var TSOS;
             this.pidsWaitingOn.splice(pidIndex, 1);
             _StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
             if (this.cmdQueue.isEmpty()) {
-                this.putPrompt();
+                _Console.putPrompt();
                 return;
             }
             this.executeCmdQueue();

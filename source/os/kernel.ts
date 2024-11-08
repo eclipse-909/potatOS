@@ -31,7 +31,6 @@ module TSOS {
 			this.krnEnableInterrupts();
 			this.krnTrace("Creating and Launching the shell.");
 			_OsShell = new Shell();
-			_OsShell.init();
 			if (_GLaDOS) {
 				_GLaDOS.afterStartup();
 			}

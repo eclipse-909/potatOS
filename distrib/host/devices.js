@@ -5,7 +5,7 @@
      These are static because we are never going to instantiate them, because they represent the hardware.
      In this manner, it's A LITTLE BIT like a hypervisor, in that the Document environment inside a browser
      is the "bare metal" (so to speak) for which we write code that hosts our client OS.
-     But that analogy only goes so far, and the lines are blurred, because we are using TypeScript/JavaScript
+     But that analogy only goes so far, and the prevLines are blurred, because we are using TypeScript/JavaScript
      in both the host and client environments.
 
      This (and simulation scripts) is the only place that we should see "web" code, like

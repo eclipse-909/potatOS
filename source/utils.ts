@@ -9,7 +9,7 @@ module TSOS {
 		public static rot13(str: string): string {
 			/*
 			   This is an easy-to understand implementation of the famous and common Rot13 obfuscator.
-			   You can do this in three lines with a complex regular expression, but I'd have
+			   You can do this in three prevLines with a complex regular expression, but I'd have
 			   trouble explaining it in the future.  There's a lot to be said for obvious code.
 			*/
 			let retVal: string = "";

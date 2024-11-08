@@ -4,7 +4,7 @@
      Routines for the host CPU simulation, NOT for the OS itself.
      In this manner, it's A LITTLE BIT like a hypervisor,
      in that the Document environment inside a browser is the "bare metal" (so to speak) for which we write code
-     that hosts our client OS. But that analogy only goes so far, and the lines are blurred, because we are using
+     that hosts our client OS. But that analogy only goes so far, and the prevLines are blurred, because we are using
      TypeScript/JavaScript in both the host and client environments.
 
      This code references page numbers in the text book:
@@ -77,7 +77,7 @@ var TSOS;
             let arg1;
             let buffer;
             //decode and execute
-            switch (this.IR) {
+            switch (this.IR) { //TODO find out if the Zflag is supposed to be set when a register is loaded with 0x00
                 case OpCode.LDAi:
                     arg0 = this.fetch();
                     if (arg0 === undefined) {

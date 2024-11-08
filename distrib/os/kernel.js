@@ -29,7 +29,6 @@ var TSOS;
             this.krnEnableInterrupts();
             this.krnTrace("Creating and Launching the shell.");
             _OsShell = new TSOS.Shell();
-            _OsShell.init();
             if (_GLaDOS) {
                 _GLaDOS.afterStartup();
             }

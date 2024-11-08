@@ -123,39 +123,34 @@ var TSOS;
         static letter(ch) {
             return CanvasTextFunctions.symbols[ch];
         }
-        static ascent(_font, size) {
-            return size;
+        // public static ascent() {
+        // 	return _FontSize;
+        // }
+        static descent() {
+            return 7.0 * _FontSize / 25.0;
         }
-        static descent(_font, size) {
-            return 7.0 * size / 25.0;
-        }
-        static measure(_font, size, str) {
+        //returns the width of the text
+        static measure(str) {
             let total = 0;
             const len = str.length;
             for (let i = 0; i < len; i++) {
                 const c = CanvasTextFunctions.letter(str.charAt(i));
                 if (c) {
-                    total += c.width * size / 25.0;
+                    total += c.width * _FontSize / 25.0;
                 }
             }
             return total;
         }
-        static draw(ctx, font, size, _x, _y, str) {
+        static draw(ctx, str, x, y) {
             const total = 0;
             const len = str.length;
-            const mag = size / 25.0;
+            const mag = _FontSize / 25.0;
             ctx.save();
             ctx.lineCap = "round";
             ctx.lineWidth = 2.0 * mag;
             ctx.strokeStyle = "black";
             for (let i = 0; i < len; i++) {
-                //advance line if character will spill off the edge of the canvas
-                const char = str.charAt(i);
-                const charWidth = this.measure(font, size, char);
-                if (_Console.currentXPosition + charWidth >= _Canvas.width - 5) {
-                    _Console.advanceLine();
-                }
-                const c = CanvasTextFunctions.letter(char);
+                const c = CanvasTextFunctions.letter(str.charAt(i));
                 if (!c) {
                     continue;
                 }
@@ -168,33 +163,24 @@ var TSOS;
                         continue;
                     }
                     if (penUp) {
-                        ctx.moveTo(_Console.currentXPosition + a[0] * mag, _Console.currentYPosition - a[1] * mag);
+                        ctx.moveTo(x + a[0] * mag, y - a[1] * mag);
                         penUp = false;
                     }
                     else {
-                        ctx.lineTo(_Console.currentXPosition + a[0] * mag, _Console.currentYPosition - a[1] * mag);
+                        ctx.lineTo(x + a[0] * mag, y - a[1] * mag);
                     }
                 }
                 ctx.stroke();
-                // We're gonna offset the X pos here instead of in Console.putText to handle line-wrapping
-                _Console.currentXPosition += c.width * mag;
+                x += c.width * mag;
             }
             ctx.restore();
             return total;
         }
         static enable(ctx) {
-            ctx.drawText = function (font, size, x, y, text) { return CanvasTextFunctions.draw(ctx, font, size, x, y, text); };
-            ctx.measureText = function (font, size, text) { return CanvasTextFunctions.measure(font, size, text); };
-            ctx.fontAscent = function (font, size) { return CanvasTextFunctions.ascent(font, size); };
-            ctx.fontDescent = function (font, size) { return CanvasTextFunctions.descent(font, size); };
-            ctx.drawTextRight = function (font, size, x, y, text) {
-                const w = CanvasTextFunctions.measure(font, size, text);
-                return CanvasTextFunctions.draw(ctx, font, size, x - w, y, text);
-            };
-            ctx.drawTextCenter = function (font, size, x, y, text) {
-                const w = CanvasTextFunctions.measure(font, size, text);
-                return CanvasTextFunctions.draw(ctx, font, size, x - w / 2, y, text);
-            };
+            ctx.drawText = function (text, x, y) { return CanvasTextFunctions.draw(ctx, text, x, y); };
+            ctx.measureText = function (text) { return CanvasTextFunctions.measure(text); };
+            //TODO find out what this function does
+            ctx.fontDescent = function () { return CanvasTextFunctions.descent(); };
         }
     }
     TSOS.CanvasTextFunctions = CanvasTextFunctions;

@@ -43,7 +43,7 @@ var TSOS;
         //Gets the line number of the first input line, or where it would be if it exists.
         getInputLineNum() { return this.prevLines.length + (this.outputBuffer === null ? 0 : 1); }
         getCursorLineNum() {
-            const input = Console.splitText(this.inputBuffer, CANVAS_MARGIN + _DrawingContext.measureText(_OsShell.promptStr).width);
+            const input = Console.splitText(this.inputBuffer, this.endPromptXPos());
             let line = 0;
             let pos = this.cursorPos;
             for (; line < input.length - 1 && this.cursorPos >= input[line].length; line++) {
@@ -53,6 +53,7 @@ var TSOS;
         }
         //Returns the Y position of where you can write text on this line.
         getLineYPos(lineNum) { return (lineNum - this.scroll + 1) * (_FontSize + _FontHeightMargin) + CANVAS_MARGIN; }
+        endPromptXPos() { return CANVAS_MARGIN + _DrawingContext.measureText(_OsShell.promptStr).width; }
         //This erases the inputBuffer and the cursorPos, so save it before calling this function if you need to.
         eraseInput() {
             const y = this.getLineYPos(this.getInputLineNum()) - _FontSize;
@@ -95,7 +96,7 @@ var TSOS;
                 this.scroll = 0;
             }
             else {
-                const lastLine = this.getInputLineNum() + Console.splitText(this.inputBuffer, CANVAS_MARGIN + _DrawingContext.measureText(_OsShell.promptStr).width).length - 1;
+                const lastLine = this.getInputLineNum() + Console.splitText(this.inputBuffer, this.endPromptXPos()).length - 1;
                 if (this.scroll >= lastLine) {
                     this.scroll = lastLine;
                 }
@@ -125,7 +126,7 @@ var TSOS;
             }
             //render prompt and first input line
             //we can't call this.printInput() since we don't want to automatically scroll when we draw too much text
-            const input = Console.splitText(this.inputBuffer, _DrawingContext.measureText(_OsShell.promptStr).width);
+            const input = Console.splitText(this.inputBuffer, this.endPromptXPos());
             _DrawingContext.fillText(_OsShell.promptStr + (this.inputBuffer.length > 0 ? input[0] : ""), CANVAS_MARGIN, this.getLineYPos(currLineNum));
             currLineNum++;
             //render input buffer on next lines
@@ -148,9 +149,9 @@ var TSOS;
                     continue;
                 }
                 const width = _DrawingContext.measureText(char).width;
-                if (xPos + width >= _Canvas.width - (2 * CANVAS_MARGIN)) {
+                if (xPos + width >= _Canvas.width - CANVAS_MARGIN) {
                     lines.push(char);
-                    xPos = CANVAS_MARGIN;
+                    xPos = CANVAS_MARGIN + width;
                 }
                 else {
                     lines[lines.length - 1] += char;
@@ -230,7 +231,7 @@ var TSOS;
             }
         }
         getCursorPos() {
-            const input = Console.splitText(this.inputBuffer, CANVAS_MARGIN + _DrawingContext.measureText(_OsShell.promptStr).width);
+            const input = Console.splitText(this.inputBuffer, this.endPromptXPos());
             let line = 0;
             let pos = this.cursorPos;
             for (; line < input.length - 1 && this.cursorPos >= input[line].length; line++) {
@@ -254,28 +255,31 @@ var TSOS;
             }
             else if (this.cursorPos === this.inputBuffer.length) {
                 //when the cursor is at the very end
-                const newInputText = Console.splitText(this.inputBuffer + text, _DrawingContext.measureText(_OsShell.promptStr).width);
-                const cursorPos = this.getCursorPos();
+                const newInputText = Console.splitText(this.inputBuffer + text, this.endPromptXPos());
+                // const cursorPos: {x: number, y: number} = this.getCursorPos();
                 let line = 0;
                 let pos = this.cursorPos;
                 for (; line < newInputText.length - 1 && this.cursorPos >= newInputText[line].length; line++) {
                     pos -= newInputText[line].length;
-                    line++;
                 }
-                _DrawingContext.fillText(newInputText[line].substring(pos), cursorPos.x, cursorPos.y);
+                let xPos = CANVAS_MARGIN +
+                    (line === 0 ? _DrawingContext.measureText(_OsShell.promptStr).width : 0) +
+                    (newInputText.length > 0 ? _DrawingContext.measureText(newInputText[line].substring(0, pos)).width : 0);
+                let yPos = this.getLineYPos(this.getInputLineNum() + line);
+                _DrawingContext.fillText(newInputText[line].substring(pos), xPos, yPos);
                 line++;
                 for (; line < newInputText.length; line++) {
-                    cursorPos.x = CANVAS_MARGIN;
-                    cursorPos.y = this.advanceLine(cursorPos.y);
-                    _DrawingContext.fillText(newInputText[line], cursorPos.x, cursorPos.y);
+                    xPos = CANVAS_MARGIN;
+                    yPos = this.advanceLine(yPos);
+                    _DrawingContext.fillText(newInputText[line], xPos, yPos);
                 }
                 this.inputBuffer = newInputText.join("");
                 this.moveCursor(text.length);
             }
             else {
                 //all other cases
-                const oldInputText = Console.splitText(this.inputBuffer, _DrawingContext.measureText(_OsShell.promptStr).width);
-                const newInputText = Console.splitText(this.inputBuffer.substring(0, this.cursorPos) + text + this.inputBuffer.substring(this.cursorPos + (this.insert ? 0 : text.length)), _DrawingContext.measureText(_OsShell.promptStr).width);
+                const oldInputText = Console.splitText(this.inputBuffer, this.endPromptXPos());
+                const newInputText = Console.splitText(this.inputBuffer.substring(0, this.cursorPos) + text + this.inputBuffer.substring(this.cursorPos + (this.insert ? 0 : text.length)), this.endPromptXPos());
                 let line = this.getCursorLineNum();
                 const startLine = line + (newInputText[line] === newInputText[line] ? 1 : 0);
                 //exclusive
@@ -321,32 +325,33 @@ var TSOS;
             let xPos = CANVAS_MARGIN;
             let yPos = this.getLineYPos(this.getInputLineNum());
             //Put the prompt back
+            const input = this.inputBuffer;
             const newPos = this.drawPrompt(xPos, yPos);
+            this.inputBuffer = input;
             xPos = newPos.xPos;
             yPos = newPos.yPos;
             //Put the input text back
-            const input = Console.splitText(this.inputBuffer, _DrawingContext.measureText(_OsShell.promptStr).width);
-            _DrawingContext.fillText(input[0], xPos, yPos);
-            for (let i = 1; i < input.length - 1; i++) {
+            const inputLines = Console.splitText(this.inputBuffer, this.endPromptXPos());
+            _DrawingContext.fillText(inputLines[0], xPos, yPos);
+            for (let i = 1; i < inputLines.length; i++) {
                 xPos = CANVAS_MARGIN;
                 yPos = this.advanceLine(yPos);
-                _DrawingContext.fillText(input[i], xPos, yPos);
+                _DrawingContext.fillText(inputLines[i], xPos, yPos);
             }
             this.moveCursor(0); //if the cursor is beyond the text area, this will move it back to the end
         }
         drawPrompt(xPos, yPos) {
             const promptLines = Console.splitText(_OsShell.promptStr, xPos);
-            for (let i = 0; i < promptLines.length - 1; i++) {
-                _DrawingContext.fillText(promptLines[i], xPos, yPos);
-                xPos = CANVAS_MARGIN;
+            _DrawingContext.fillText(promptLines[0], xPos, yPos);
+            for (let i = 1; i < promptLines.length; i++) {
                 yPos = this.advanceLine(yPos);
+                _DrawingContext.fillText(promptLines[i], CANVAS_MARGIN, yPos);
             }
-            _DrawingContext.fillText(promptLines[promptLines.length - 1], xPos, yPos);
-            xPos += _DrawingContext.measureText(promptLines[promptLines.length - 1]).width;
             this.inputBuffer = "";
-            return { xPos, yPos };
+            this.outputBuffer = null;
+            return { xPos: CANVAS_MARGIN + _DrawingContext.measureText(promptLines[promptLines.length - 1]).width, yPos };
         }
-        putPrompt() { this.drawPrompt(CANVAS_MARGIN, this.getLineYPos(this.getInputLineNum())); }
+        putPrompt() { this.drawPrompt(CANVAS_MARGIN, this.getLineYPos(this.getOutputLineNum())); }
         clearScreen() {
             _DrawingContext.clearRect(0, 0, _Canvas.width, CANVAS_HEIGHT);
             this.prevLines = [];
@@ -499,6 +504,7 @@ var TSOS;
                     case String.fromCharCode(13): // the Enter key (carriage return)
                         const input2 = this.inputBuffer === null ? "" : this.inputBuffer;
                         this.pushInputToPrev();
+                        this.cursorPos = 0;
                         _OsShell.handleInput(input2);
                         this.shellHistory.push(input2);
                         this.shellHistoryIndex = this.shellHistory.length;
@@ -533,7 +539,7 @@ var TSOS;
                 return;
             }
             this.inputBuffer = _OsShell.promptStr + this.inputBuffer;
-            this.prevLines = this.prevLines.concat(Console.splitText(this.inputBuffer, _DrawingContext.measureText(_OsShell.promptStr).width));
+            this.prevLines = this.prevLines.concat(Console.splitText(this.inputBuffer, this.endPromptXPos()));
             this.inputBuffer = null;
         }
         //I/O interface functions

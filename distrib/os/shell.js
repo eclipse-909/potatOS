@@ -224,7 +224,7 @@ var TSOS;
                 }
                 //verify command
                 let exitCode;
-                if (!command) {
+                if (command === undefined) {
                     if (this.curses.indexOf("[" + TSOS.Utils.rot13(currCmd.name) + "]") >= 0) { // Check for curses.
                         exitCode = this.shellCurse(stdin, stdout, stderr);
                     }

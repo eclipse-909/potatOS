@@ -233,7 +233,7 @@ module TSOS {
 
 				//verify command
 				let exitCode: ExitCode | undefined | null;
-				if (!command) {
+				if (command === undefined) {
 					if (this.curses.indexOf("[" + Utils.rot13(currCmd.name) + "]") >= 0) {// Check for curses.
 						exitCode = this.shellCurse(stdin, stdout, stderr);
 					} else if (this.apologies.indexOf("[" + currCmd.name + "]") >= 0) {// Check for apologies.

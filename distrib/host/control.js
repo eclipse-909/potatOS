@@ -26,7 +26,9 @@ var TSOS;
             _Canvas = document.getElementById('display');
             _Canvas.height = CANVAS_HEIGHT;
             _DrawingContext = _Canvas.getContext("2d");
-            TSOS.CanvasTextFunctions.enable(_DrawingContext);
+            _DrawingContext.font = '16px "DejaVu Sans Mono", monospace';
+            _DrawingContext.fillStyle = "#000000";
+            // CanvasTextFunctions.enable(_DrawingContext);
             document.getElementById("hostLog").value = "";
             document.getElementById("btnStartOS").focus();
             if (typeof Glados === "function") {

@@ -82,13 +82,11 @@ module TSOS {
 		constructor() {}
 
 		public handleInput(input: string): void {
-			_StdOut.print('\n');
+			// _StdOut.print('\n');
 			//check if an async process has finished before starting a new command
 			let process: ShellProcess | null = this.processExitQueue.dequeue();
-			while (process) {
-				if (process) {
-					_StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
-				}
+			while (process !== null) {
+				_StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
 				process = this.processExitQueue.dequeue();
 			}
 			if (input === "") {

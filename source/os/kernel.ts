@@ -16,7 +16,6 @@ module TSOS {
 			_KernelBuffers = [];         // Buffers... for the kernel.
 			_KernelInputQueue = new Queue<string>();      // Where device input lands before being processed out somewhere.
 			_Console = new Console();             // The command line interface / console I/O device.
-			_Console.init();
 			_StdIn  = _Console;
 			_StdOut = _Console;
 			_StdErr = _Console;
@@ -31,6 +30,7 @@ module TSOS {
 			this.krnEnableInterrupts();
 			this.krnTrace("Creating and Launching the shell.");
 			_OsShell = new Shell();
+			_Console.init();
 			if (_GLaDOS) {
 				_GLaDOS.afterStartup();
 			}
@@ -89,7 +89,7 @@ module TSOS {
 					break;
 				case IRQ.keyboard:
 					_krnKeyboardDriver.isr(params);   // Kernel mode device driver
-					_StdIn.handleInput();
+					_StdIn.input();
 					break;
 				case IRQ.kill:
 					kill(params[0], params[1]);

@@ -26,7 +26,9 @@ module TSOS {
 			_Canvas = <HTMLCanvasElement>document.getElementById('display');
 			_Canvas.height = CANVAS_HEIGHT;
 			_DrawingContext = _Canvas.getContext("2d");
-			CanvasTextFunctions.enable(_DrawingContext);
+			_DrawingContext.font = '16px "DejaVu Sans Mono", monospace';
+			_DrawingContext.fillStyle = "#000000";
+			// CanvasTextFunctions.enable(_DrawingContext);
 			(<HTMLInputElement> document.getElementById("hostLog")).value="";
 			(<HTMLInputElement> document.getElementById("btnStartOS")).focus();
 			if (typeof Glados === "function") {

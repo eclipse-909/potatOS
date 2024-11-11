@@ -47,7 +47,7 @@ let _OSclock: number = 0;  // Page 23.
 
 let _Canvas: HTMLCanvasElement;          // Initialized in Control.hostInit().
 const CANVAS_NUM_LINES: number = 30;
-let _DrawingContext: any;    // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
+let _DrawingContext: CanvasRenderingContext2D;  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
 // const _FontFamily: string = "sans"; // Ignored, I think. The was just a place-holder in 2008, but the HTML canvas may have use for it.
 const _FontSize: number = 13;
 const _FontHeightMargin: number = 4;       // Additional space added to font size when advancing a line.

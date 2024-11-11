@@ -38,7 +38,7 @@ let _OSclock = 0; // Page 23.
 //let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
 let _Canvas; // Initialized in Control.hostInit().
 const CANVAS_NUM_LINES = 30;
-let _DrawingContext; // = _Canvas.getContext("2d");  // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
+let _DrawingContext; // Assigned here for type safety, but re-initialized in Control.hostInit() for OCD and logic.
 // const _FontFamily: string = "sans"; // Ignored, I think. The was just a place-holder in 2008, but the HTML canvas may have use for it.
 const _FontSize = 13;
 const _FontHeightMargin = 4; // Additional space added to font size when advancing a line.

@@ -128,7 +128,6 @@ table#memTable th, table#memTable td {
   margin:4px;
   width:760px;
   height:510px;
-  overflow-y:auto;
 }
 
 #console {

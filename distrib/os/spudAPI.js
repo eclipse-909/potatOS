@@ -23,7 +23,7 @@ var TSOS;
     function kill(pid, exitCode) {
         const pcb = _Scheduler.remove(pid);
         if (pcb === null) {
-            TSOS.Control.hostLog("Cannot kill non-existent process", "System Call");
+            TSOS.Control.hostLog("Process not found", "Kernel");
             return;
         }
         TSOS.Control.updatePcbDisplay();

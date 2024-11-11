@@ -51,17 +51,17 @@ module TSOS {
 				case 13: return 13;    // 'Enter'
 
 				case 32: return 32;    // ' ' (space) remains the same
-				case 33: return isShifted ? 33 : 0; // page up
-				case 34: return isShifted ? 34 : 0; // page down
-				case 35: return isShifted ? 35 : -6; // end - shifted = scroll to bottom - unshifted = move cursor to end of line
-				case 36: return isShifted ? 36 : -7; // home - shifted = scroll to top - unshifted = move cursor to beginning of line
+				case 33: return isShifted ? -8 : 0; // page up
+				case 34: return isShifted ? -9 : 0; // page down
+				case 35: return isShifted ? -10 : -6; // end - shifted = scroll to bottom - unshifted = move cursor to end of line
+				case 36: return isShifted ? -11 : -7; // home - shifted = scroll to top - unshifted = move cursor to beginning of line
 
 				// I had to make up my own char codes since these aren't ascii characters,
 				//but the number still needs to make it to the kernel input queue.
 				case 37: return -1; // left arrow
-				case 38: return -2; // up arrow
+				case 38: return isShifted && isCtrl ? -12 : -2; // up arrow - shifted = up one line - unshifted = previous command in history
 				case 39: return -3; // right arrow
-				case 40: return -4; // down arrow
+				case 40: return isShifted && isCtrl ? -13 : -4; // down arrow - shifted = down one line - unshifted = next command in history
 
 				case 45: return -5;//insert
 				case 46: return 127;//delete

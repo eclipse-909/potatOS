@@ -86,9 +86,6 @@ var TSOS;
             let branches = 0;
             for (let i = 0; i < bin.length; i++) {
                 const opcode = TSOS.OpCode[bin[i]];
-                // console.log(opcode);
-                // console.log(bin[0]);
-                // console.log(bin[0] as OpCode);
                 if (opcode === undefined) {
                     break;
                 } //We must be in the data section
@@ -109,11 +106,11 @@ var TSOS;
                     case TSOS.OpCode.INCa:
                         i += 2;
                         break;
-                    case TSOS.OpCode.SYS:
-                        if (i < bin.length - 1 && TSOS.OpCode[bin[i + 1]] === undefined) {
-                            i += 2;
-                        }
-                        break;
+                    // case OpCode.SYS:
+                    // 	if (i < bin.length - 1 && OpCode[bin[i+1] as unknown as keyof typeof OpCode] === undefined) {
+                    // 		i += 2;
+                    // 	}
+                    // 	break;
                 }
             }
             this.timeEstimate = bin.length * (1 + Math.log2(branches * 50 + 1)); //arbitrary equation

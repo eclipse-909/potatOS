@@ -54,7 +54,17 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: help\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            let text = "Key:\n  <> = parameter type/option\n  ... = repeatable parameter\n  [] = optional parameter\n  | = either parameter is acceptable\nCommands:\n";
+            let text = "Keybindings:\n" +
+                "  Arrow Up/Down = previous/next command in history\n" +
+                "  CTRL + Shift + Arrow Up/Down = scroll one line\n" +
+                "  Shift + Page Up/Down = scroll one page\n" +
+                "  Shift + Home/End = scroll to top/bottom\n" +
+                "Command Syntax:\n" +
+                "  <> = parameter type/option\n" +
+                "  ... = repeatable parameter\n" +
+                "  [] = optional parameter\n" +
+                "  | = either parameter is acceptable\n" +
+                "Commands:\n";
             for (const i in ShellCommand.COMMAND_LIST) {
                 text += "  " + ShellCommand.COMMAND_LIST[i].command + " " + ShellCommand.COMMAND_LIST[i].description;
             }

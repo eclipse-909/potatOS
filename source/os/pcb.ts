@@ -95,9 +95,6 @@ module TSOS {
 			let branches: number = 0;
 			for (let i: number = 0; i < bin.length; i++) {
 				const opcode: OpCode | undefined = OpCode[bin[i] as unknown as keyof typeof OpCode];
-				// console.log(opcode);
-				// console.log(bin[0]);
-				// console.log(bin[0] as OpCode);
 				if (opcode === undefined) {break;}//We must be in the data section
 				switch (bin[i]) {
 					case OpCode.BNEr:
@@ -116,11 +113,11 @@ module TSOS {
 					case OpCode.INCa:
 						i += 2;
 						break;
-					case OpCode.SYS:
-						if (i < bin.length - 1 && OpCode[bin[i+1] as unknown as keyof typeof OpCode] === undefined) {
-							i += 2;
-						}
-						break;
+					// case OpCode.SYS:
+					// 	if (i < bin.length - 1 && OpCode[bin[i+1] as unknown as keyof typeof OpCode] === undefined) {
+					// 		i += 2;
+					// 	}
+					// 	break;
 				}
 			}
 			this.timeEstimate = bin.length * (1 + Math.log2(branches * 50 + 1));//arbitrary equation

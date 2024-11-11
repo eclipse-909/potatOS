@@ -34,6 +34,10 @@ module TSOS {
 			if (_GLaDOS) {
 				_GLaDOS.afterStartup();
 			}
+			//All errors are caught and handled via BSOD
+			window.onerror = (message: string | Event, _source: string, _lineno: number, _colno: number, _error: Error): void => {
+				_Kernel.krnTrapError(message.toString());
+			};
 		}
 
 		public krnShutdown(): void {
@@ -140,6 +144,8 @@ module TSOS {
 			const image = new Image();
 			image.src = './img/Bsodwindows10.png';
 			image.onload = (): void => {
+				_DrawingContext.fillStyle = "#0078D7";
+				_DrawingContext.fillRect(0, 0, _Canvas.width, _Canvas.height);
 				_DrawingContext.drawImage(image, 0, 0);
 			};
 			image.onerror = (error: string | Event): void => {

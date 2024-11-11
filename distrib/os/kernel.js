@@ -32,6 +32,10 @@ var TSOS;
             if (_GLaDOS) {
                 _GLaDOS.afterStartup();
             }
+            //All errors are caught and handled via BSOD
+            window.onerror = (message, _source, _lineno, _colno, _error) => {
+                _Kernel.krnTrapError(message.toString());
+            };
         }
         krnShutdown() {
             this.krnTrace("begin shutdown OS");
@@ -132,6 +136,8 @@ var TSOS;
             const image = new Image();
             image.src = './img/Bsodwindows10.png';
             image.onload = () => {
+                _DrawingContext.fillStyle = "#0078D7";
+                _DrawingContext.fillRect(0, 0, _Canvas.width, _Canvas.height);
                 _DrawingContext.drawImage(image, 0, 0);
             };
             image.onerror = (error) => {

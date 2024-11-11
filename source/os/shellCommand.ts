@@ -62,7 +62,18 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: help\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			let text: string = "Key:\n  <> = parameter type/option\n  ... = repeatable parameter\n  [] = optional parameter\n  | = either parameter is acceptable\nCommands:\n";
+			let text: string =
+				"Keybindings:\n" +
+				"  Arrow Up/Down = previous/next command in history\n" +
+				"  CTRL + Shift + Arrow Up/Down = scroll one line\n" +
+				"  Shift + Page Up/Down = scroll one page\n" +
+				"  Shift + Home/End = scroll to top/bottom\n" +
+				"Command Syntax:\n" +
+				"  <> = parameter type/option\n" +
+				"  ... = repeatable parameter\n" +
+				"  [] = optional parameter\n" +
+				"  | = either parameter is acceptable\n" +
+				"Commands:\n";
 			for (const i in ShellCommand.COMMAND_LIST) {
 				text += "  " + ShellCommand.COMMAND_LIST[i].command + " " + ShellCommand.COMMAND_LIST[i].description;
 			}
@@ -204,7 +215,7 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: bsod\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_Kernel.krnTrapError("Self-induced error via shell command.")
+			_Kernel.krnTrapError("Self-induced error via shell command.");
 			return ExitCode.SUCCESS;
 		}
 

@@ -211,17 +211,17 @@ module TSOS {
 							}
 							_KernelInterruptQueue.enqueue(new Interrupt(IRQ.writeStrConsole, params));
 							break;
-						case 0x03://print C string at absolute address given in operand
-							//I know the specifications for this class don't include this system call,
-							//but I wanted to make it backwards-compatible with the emulator I made in org and arch.
-							//Prof. Gormanly said he added some instructions and this system call to the instruction set in this class.
-							arg0 = this.fetch();
-							if (arg0 === undefined) {return this.segFault();}
-							arg1 = this.fetch();
-							if (arg1 === undefined) {return this.segFault();}
-							params[1] = leToU16(arg0, arg1);
-							_KernelInterruptQueue.enqueue(new Interrupt(IRQ.writeStrConsole, params));
-							break;
+						// case 0x03://print C string at absolute address given in operand
+						// 	//I know the specifications for this class don't include this system call,
+						// 	//but I wanted to make it backwards-compatible with the emulator I made in org and arch.
+						// 	//Prof. Gormanly said he added some instructions and this system call to the instruction set in this class.
+						// 	arg0 = this.fetch();
+						// 	if (arg0 === undefined) {return this.segFault();}
+						// 	arg1 = this.fetch();
+						// 	if (arg1 === undefined) {return this.segFault();}
+						// 	params[1] = leToU16(arg0, arg1);
+						// 	_KernelInterruptQueue.enqueue(new Interrupt(IRQ.writeStrConsole, params));
+						// 	break;
 						default:
 							Control.hostLog("Invalid system call argument", "CPU");
 							return this.illegalInstruction();
@@ -261,6 +261,6 @@ module TSOS {
 		CPXa = 0xEC,    //compare x with value from memory
 		BNEr = 0xD0,    //branch if zero-flag != 0
 		INCa = 0xEE,    //increment a
-		SYS  = 0xFF     //syscall may have operands
+		SYS  = 0xFF     //syscall
 	}
 }

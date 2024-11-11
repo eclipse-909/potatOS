@@ -24,7 +24,7 @@ module TSOS {
 	export function kill(pid: number, exitCode: ExitCode): void {
 		const pcb: ProcessControlBlock | null = _Scheduler.remove(pid);
 		if (pcb === null) {
-			Control.hostLog("Cannot kill non-existent process", "System Call");
+			Control.hostLog("Process not found", "Kernel");
 			return;
 		}
 		Control.updatePcbDisplay();

@@ -58,7 +58,7 @@ module TSOS {
 		}
 
 		//Returns the Y position of where you can write text on this line.
-		private getLineYPos(lineNum: number): number {return (lineNum - this.scroll + 1) * (_FontSize + _FontHeightMargin) + CANVAS_MARGIN;}
+		private getLineYPos(lineNum: number): number {return (lineNum - this.scroll + 1) * (_FontSize + _FontHeightMargin) + CANVAS_MARGIN - _FontHeightMargin;}
 
 		private endPromptXPos(): number {return CANVAS_MARGIN + _DrawingContext.measureText(_OsShell.promptStr).width;}
 
@@ -388,20 +388,20 @@ module TSOS {
 				if (!this.inputEnabled && chr !== String.fromCharCode(3)) {continue;}
 				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
 				switch (chr) {
-					case String.fromCharCode(-1): // left arrow
+					case String.fromCharCode(-1): // left arrow - move cursor left 1 character
 						//TODO move cursor left 1
 						break;
-					case String.fromCharCode(-2): // up arrow
+					case String.fromCharCode(-2): // up arrow - previous command in history
 						if (this.shellHistoryIndex === 0) {break;}
 						this.shellHistoryIndex--;
 						this.eraseInput();
 						this.inputBuffer = this.shellHistory[this.shellHistoryIndex];
 						this.redrawInput();
 						break;
-					case String.fromCharCode(-3): // right arrow
+					case String.fromCharCode(-3): // right arrow - move cursor right 1 character
 						//TODO move cursor right 1
 						break;
-					case String.fromCharCode(-4): // down arrow
+					case String.fromCharCode(-4): // down arrow - next command in history
 						if (this.shellHistoryIndex === this.shellHistory.length) {break;}
 						this.shellHistoryIndex++;
 						this.eraseInput();
@@ -420,6 +420,30 @@ module TSOS {
 						break;
 					case String.fromCharCode(-7): // move cursor to beginning of line
 						//TODO move cursor to beginning of line
+						break;
+					case String.fromCharCode(-8): // page up
+						this.scrollBy(-CANVAS_NUM_LINES);
+						this.redrawCanvas();
+						break;
+					case String.fromCharCode(-9): // page down
+						this.scrollBy(CANVAS_NUM_LINES);
+						this.redrawCanvas();
+						break;
+					case String.fromCharCode(-10): // scroll to bottom
+						this.scrollBy(Number.MAX_SAFE_INTEGER);
+						this.redrawCanvas();
+						break;
+					case String.fromCharCode(-11): // scroll to top
+						this.scrollBy(-this.scroll);
+						this.redrawCanvas();
+						break;
+					case String.fromCharCode(-12): // scroll up one line
+						this.scrollBy(-1);
+						this.redrawCanvas();
+						break;
+					case String.fromCharCode(-13): // scroll down one line
+						this.scrollBy(1);
+						this.redrawCanvas();
 						break;
 					case String.fromCharCode(3): // ctrl + c
 						//Only kill if synchronous
@@ -528,18 +552,6 @@ module TSOS {
 						if (input2 === "") {break;}
 						this.shellHistory.push(input2);
 						this.shellHistoryIndex = this.shellHistory.length;
-						break;
-					case String.fromCharCode(33): // page up
-						//TODO scroll up CANVAS_NUM_LINES
-						break;
-					case String.fromCharCode(34): // page up
-						//TODO scroll down CANVAS_NUM_LINES
-						break;
-					case String.fromCharCode(35): // scroll to bottom
-						//TODO scroll to bottom
-						break;
-					case String.fromCharCode(36): // scroll to top
-						//TODO scroll to top
 						break;
 					case String.fromCharCode(127): // delete
 						if (this.cursorPos === this.inputBuffer.length) {

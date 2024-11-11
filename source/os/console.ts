@@ -102,7 +102,10 @@ module TSOS {
 			if (this.scroll < 0) {
 				this.scroll = 0;
 			} else {
-				const lastLine: number = this.getInputLineNum() + Console.splitText(this.inputBuffer, this.endPromptXPos()).length - 1;
+				let lastLine: number = this.getInputLineNum();
+				if (this.inputBuffer !== null) {
+					lastLine += Console.splitText(this.inputBuffer, this.endPromptXPos()).length - 1;
+				}
 				if (this.scroll >= lastLine) {
 					this.scroll = lastLine;
 				}
@@ -117,7 +120,7 @@ module TSOS {
 			let currLineNum: number = this.scroll;
 			for (; currLineNum < lastPrevLine; currLineNum++) {
 				const lineYPos: number = this.getLineYPos(currLineNum);
-				_DrawingContext.fillText(this.prevLines[currLineNum - this.scroll], CANVAS_MARGIN, lineYPos);
+				_DrawingContext.fillText(this.prevLines[currLineNum], CANVAS_MARGIN, lineYPos);
 			}
 			if (currLineNum - this.scroll > CANVAS_NUM_LINES) {return;}
 			if (this.outputBuffer !== null) {
@@ -171,9 +174,9 @@ module TSOS {
 			if (newYPos < CANVAS_HEIGHT - CANVAS_MARGIN) {
 				return newYPos;
 			}
-			while (newYPos >= CANVAS_HEIGHT - CANVAS_MARGIN) {
+			while (currYPos >= CANVAS_HEIGHT - CANVAS_MARGIN) {
 				this.scrollBy(1);
-				newYPos -= _FontSize + _FontHeightMargin;
+				currYPos -= _FontSize + _FontHeightMargin;
 			}
 			this.redrawCanvas();
 			return currYPos;
@@ -260,7 +263,6 @@ module TSOS {
 			} else if (this.cursorPos === this.inputBuffer.length) {
 				//when the cursor is at the very end
 				const newInputText: string[] = Console.splitText(this.inputBuffer + text, this.endPromptXPos());
-				// const cursorPos: {x: number, y: number} = this.getCursorPos();
 				let line: number = 0;
 				let pos: number = this.cursorPos;
 				for (; line < newInputText.length - 1 && this.cursorPos >= newInputText[line].length; line++) {
@@ -280,7 +282,7 @@ module TSOS {
 				this.inputBuffer = newInputText.join("");
 				this.moveCursor(text.length);
 			} else {
-				//all other cases
+				//cursor is not at the end of the text
 				const oldInputText: string[] = Console.splitText(this.inputBuffer, this.endPromptXPos());
 				const newInputText: string[] = Console.splitText(
 					this.inputBuffer.substring(0, this.cursorPos) + text + this.inputBuffer.substring(this.cursorPos + (this.insert? 0 : text.length)),
@@ -350,6 +352,9 @@ module TSOS {
 		}
 
 		private drawPrompt(xPos: number, yPos: number): {xPos: number, yPos: number} {
+			if (yPos >= _Canvas.height - CANVAS_MARGIN) {
+				yPos = this.advanceLine(yPos);
+			}
 			const promptLines: string[] = Console.splitText(_OsShell.promptStr, xPos);
 			_DrawingContext.fillText(promptLines[0], xPos, yPos);
 			for (let i: number = 1; i < promptLines.length; i++) {

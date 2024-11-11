@@ -43,7 +43,7 @@ let _DrawingContext; // Assigned here for type safety, but re-initialized in Con
 const _FontSize = 13;
 const _FontHeightMargin = 4; // Additional space added to font size when advancing a line.
 const CANVAS_MARGIN = 5;
-const CANVAS_HEIGHT = 30 * (_FontSize + _FontHeightMargin) + 2 * CANVAS_MARGIN;
+const CANVAS_HEIGHT = CANVAS_NUM_LINES * _FontSize + (CANVAS_NUM_LINES - 1) * _FontHeightMargin + 2 * CANVAS_MARGIN;
 let _Trace = true; // Default the OS trace to be on.
 // The OS Kernel and its queues.
 let _Kernel;

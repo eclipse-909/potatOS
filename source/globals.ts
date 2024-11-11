@@ -52,7 +52,7 @@ let _DrawingContext: CanvasRenderingContext2D;  // Assigned here for type safety
 const _FontSize: number = 13;
 const _FontHeightMargin: number = 4;       // Additional space added to font size when advancing a line.
 const CANVAS_MARGIN: number = 5;
-const CANVAS_HEIGHT: number = 30 * (_FontSize + _FontHeightMargin) + 2 * CANVAS_MARGIN;
+const CANVAS_HEIGHT: number = CANVAS_NUM_LINES * _FontSize + (CANVAS_NUM_LINES - 1) * _FontHeightMargin + 2 * CANVAS_MARGIN;
 
 let _Trace: boolean = true;              // Default the OS trace to be on.
 

@@ -73,7 +73,7 @@ module TSOS {
 			let buffer: number | undefined;
 
 			//decode and execute
-			switch (this.IR) {//TODO find out if the Zflag is supposed to be set when a register is loaded with 0x00
+			switch (this.IR) {
 				case OpCode.LDAi:
 					arg0 = this.fetch();
 					if (arg0 === undefined) {return this.segFault();}

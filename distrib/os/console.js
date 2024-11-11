@@ -96,7 +96,10 @@ var TSOS;
                 this.scroll = 0;
             }
             else {
-                const lastLine = this.getInputLineNum() + Console.splitText(this.inputBuffer, this.endPromptXPos()).length - 1;
+                let lastLine = this.getInputLineNum();
+                if (this.inputBuffer !== null) {
+                    lastLine += Console.splitText(this.inputBuffer, this.endPromptXPos()).length - 1;
+                }
                 if (this.scroll >= lastLine) {
                     this.scroll = lastLine;
                 }
@@ -110,7 +113,7 @@ var TSOS;
             let currLineNum = this.scroll;
             for (; currLineNum < lastPrevLine; currLineNum++) {
                 const lineYPos = this.getLineYPos(currLineNum);
-                _DrawingContext.fillText(this.prevLines[currLineNum - this.scroll], CANVAS_MARGIN, lineYPos);
+                _DrawingContext.fillText(this.prevLines[currLineNum], CANVAS_MARGIN, lineYPos);
             }
             if (currLineNum - this.scroll > CANVAS_NUM_LINES) {
                 return;
@@ -167,9 +170,9 @@ var TSOS;
             if (newYPos < CANVAS_HEIGHT - CANVAS_MARGIN) {
                 return newYPos;
             }
-            while (newYPos >= CANVAS_HEIGHT - CANVAS_MARGIN) {
+            while (currYPos >= CANVAS_HEIGHT - CANVAS_MARGIN) {
                 this.scrollBy(1);
-                newYPos -= _FontSize + _FontHeightMargin;
+                currYPos -= _FontSize + _FontHeightMargin;
             }
             this.redrawCanvas();
             return currYPos;
@@ -256,7 +259,6 @@ var TSOS;
             else if (this.cursorPos === this.inputBuffer.length) {
                 //when the cursor is at the very end
                 const newInputText = Console.splitText(this.inputBuffer + text, this.endPromptXPos());
-                // const cursorPos: {x: number, y: number} = this.getCursorPos();
                 let line = 0;
                 let pos = this.cursorPos;
                 for (; line < newInputText.length - 1 && this.cursorPos >= newInputText[line].length; line++) {
@@ -277,7 +279,7 @@ var TSOS;
                 this.moveCursor(text.length);
             }
             else {
-                //all other cases
+                //cursor is not at the end of the text
                 const oldInputText = Console.splitText(this.inputBuffer, this.endPromptXPos());
                 const newInputText = Console.splitText(this.inputBuffer.substring(0, this.cursorPos) + text + this.inputBuffer.substring(this.cursorPos + (this.insert ? 0 : text.length)), this.endPromptXPos());
                 let line = this.getCursorLineNum();
@@ -341,6 +343,9 @@ var TSOS;
             this.moveCursor(0); //if the cursor is beyond the text area, this will move it back to the end
         }
         drawPrompt(xPos, yPos) {
+            if (yPos >= _Canvas.height - CANVAS_MARGIN) {
+                yPos = this.advanceLine(yPos);
+            }
             const promptLines = Console.splitText(_OsShell.promptStr, xPos);
             _DrawingContext.fillText(promptLines[0], xPos, yPos);
             for (let i = 1; i < promptLines.length; i++) {
@@ -417,6 +422,7 @@ var TSOS;
                         this.moveCursor(-1);
                         break;
                     case String.fromCharCode(9): // tab
+                        //FIXME - it literally does nothing right now
                         let text = this.inputBuffer.substring(0, this.cursorPos);
                         //Use the last command/argument
                         let lastIndex = -1;

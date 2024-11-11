@@ -77,14 +77,13 @@ var TSOS;
             let arg1;
             let buffer;
             //decode and execute
-            switch (this.IR) { //TODO find out if the Zflag is supposed to be set when a register is loaded with 0x00
+            switch (this.IR) {
                 case OpCode.LDAi:
                     arg0 = this.fetch();
                     if (arg0 === undefined) {
                         return this.segFault();
                     }
                     this.Acc = arg0;
-                    this.Zflag = this.Acc === 0;
                     break;
                 case OpCode.LDAa:
                     arg0 = this.fetch();
@@ -100,7 +99,6 @@ var TSOS;
                         return this.segFault();
                     }
                     this.Acc = buffer;
-                    this.Zflag = this.Acc === 0;
                     break;
                 case OpCode.STAa:
                     arg0 = this.fetch();
@@ -118,11 +116,9 @@ var TSOS;
                     break;
                 case OpCode.TXA:
                     this.Acc = this.Xreg;
-                    this.Zflag = this.Acc === 0;
                     break;
                 case OpCode.TYA:
                     this.Acc = this.Yreg;
-                    this.Zflag = this.Acc === 0;
                     break;
                 case OpCode.ADCa:
                     arg0 = this.fetch();
@@ -149,7 +145,6 @@ var TSOS;
                     else if (this.Acc < 0x00) {
                         this.Acc += 0x100;
                     }
-                    this.Zflag = this.Acc === 0;
                     break;
                 case OpCode.LDXi:
                     arg0 = this.fetch();
@@ -157,7 +152,6 @@ var TSOS;
                         return this.segFault();
                     }
                     this.Xreg = arg0;
-                    this.Zflag = this.Xreg === 0;
                     break;
                 case OpCode.LDXa:
                     arg0 = this.fetch();
@@ -173,11 +167,9 @@ var TSOS;
                         return this.segFault();
                     }
                     this.Xreg = buffer;
-                    this.Zflag = this.Xreg === 0;
                     break;
                 case OpCode.TAX:
                     this.Xreg = this.Acc;
-                    this.Zflag = this.Acc === 0;
                     break;
                 case OpCode.LDYi:
                     arg0 = this.fetch();
@@ -185,7 +177,6 @@ var TSOS;
                         return this.segFault();
                     }
                     this.Yreg = arg0;
-                    this.Zflag = this.Yreg === 0;
                     break;
                 case OpCode.LDYa:
                     arg0 = this.fetch();
@@ -201,11 +192,9 @@ var TSOS;
                         return this.segFault();
                     }
                     this.Yreg = buffer;
-                    this.Zflag = this.Yreg === 0;
                     break;
                 case OpCode.TAY:
                     this.Yreg = this.Acc;
-                    this.Zflag = this.Acc === 0;
                     break;
                 case OpCode.NOP: break;
                 case OpCode.BRK:
@@ -262,7 +251,6 @@ var TSOS;
                     if (buffer > 0xFF) {
                         buffer = 0x00;
                     }
-                    this.Zflag = buffer === 0x00;
                     if (!_MMU.write(vPtr, buffer)) {
                         return this.segFault();
                     }

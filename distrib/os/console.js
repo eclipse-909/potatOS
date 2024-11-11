@@ -506,6 +506,9 @@ var TSOS;
                         this.pushInputToPrev();
                         this.cursorPos = 0;
                         _OsShell.handleInput(input2);
+                        if (input2 === "") {
+                            break;
+                        }
                         this.shellHistory.push(input2);
                         this.shellHistoryIndex = this.shellHistory.length;
                         break;

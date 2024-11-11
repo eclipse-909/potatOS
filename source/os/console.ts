@@ -423,6 +423,9 @@ module TSOS {
 						this.moveCursor(-1);
 						break;
 					case String.fromCharCode(9): // tab
+
+						//FIXME - it literally does nothing right now
+
 						let text: string = this.inputBuffer.substring(0, this.cursorPos);
 						//Use the last command/argument
 						let lastIndex: number = -1;
@@ -504,6 +507,7 @@ module TSOS {
 						this.pushInputToPrev();
 						this.cursorPos = 0;
 						_OsShell.handleInput(input2);
+						if (input2 === "") {break;}
 						this.shellHistory.push(input2);
 						this.shellHistoryIndex = this.shellHistory.length;
 						break;

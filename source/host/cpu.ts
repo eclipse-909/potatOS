@@ -78,7 +78,6 @@ module TSOS {
 					arg0 = this.fetch();
 					if (arg0 === undefined) {return this.segFault();}
 					this.Acc = arg0;
-					this.Zflag = this.Acc === 0;
 					break;
 				case OpCode.LDAa:
 					arg0 = this.fetch();
@@ -88,7 +87,6 @@ module TSOS {
 					buffer = _MMU.read(leToU16(arg0, arg1));
 					if (buffer === undefined) {return this.segFault();}
 					this.Acc = buffer;
-					this.Zflag = this.Acc === 0;
 					break;
 				case OpCode.STAa:
 					arg0 = this.fetch();
@@ -100,11 +98,9 @@ module TSOS {
 					break;
 				case OpCode.TXA:
 					this.Acc = this.Xreg;
-					this.Zflag = this.Acc === 0;
 					break;
 				case OpCode.TYA:
 					this.Acc = this.Yreg;
-					this.Zflag = this.Acc === 0;
 					break;
 				case OpCode.ADCa:
 					arg0 = this.fetch();
@@ -123,13 +119,11 @@ module TSOS {
 					} else if (this.Acc < 0x00) {
 						this.Acc += 0x100;
 					}
-					this.Zflag = this.Acc === 0;
 					break;
 				case OpCode.LDXi:
 					arg0 = this.fetch();
 					if (arg0 === undefined) {return this.segFault();}
 					this.Xreg = arg0;
-					this.Zflag = this.Xreg === 0;
 					break;
 				case OpCode.LDXa:
 					arg0 = this.fetch();
@@ -139,17 +133,14 @@ module TSOS {
 					buffer = _MMU.read(leToU16(arg0, arg1));
 					if (buffer === undefined) {return this.segFault();}
 					this.Xreg = buffer;
-					this.Zflag = this.Xreg === 0;
 					break;
 				case OpCode.TAX:
 					this.Xreg = this.Acc;
-					this.Zflag = this.Acc === 0;
 					break;
 				case OpCode.LDYi:
 					arg0 = this.fetch();
 					if (arg0 === undefined) {return this.segFault();}
 					this.Yreg = arg0;
-					this.Zflag = this.Yreg === 0;
 					break;
 				case OpCode.LDYa:
 					arg0 = this.fetch();
@@ -159,11 +150,9 @@ module TSOS {
 					buffer = _MMU.read(leToU16(arg0, arg1));
 					if (buffer === undefined) {return this.segFault();}
 					this.Yreg = buffer;
-					this.Zflag = this.Yreg === 0;
 					break;
 				case OpCode.TAY:
 					this.Yreg = this.Acc;
-					this.Zflag = this.Acc === 0;
 					break;
 				case OpCode.NOP:break;
 				case OpCode.BRK:
@@ -204,7 +193,6 @@ module TSOS {
 					if (buffer > 0xFF) {
 						buffer = 0x00;
 					}
-					this.Zflag = buffer === 0x00;
 					if (!_MMU.write(vPtr, buffer)) {return this.segFault();}
 					Control.updateMemDisplay();
 					break;

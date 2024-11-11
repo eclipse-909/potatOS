@@ -212,7 +212,9 @@ module TSOS {
 					yPos = this.advanceLine(yPos);
 				}
 				//Put the prompt back
+				const output: string = this.outputBuffer;
 				const newPos: {xPos: number, yPos: number} = this.drawPrompt(xPos, yPos);
+				this.outputBuffer = output;
 				xPos = newPos.xPos;
 				yPos = newPos.yPos;
 				//Put the input text back
@@ -336,8 +338,10 @@ module TSOS {
 			let yPos: number = this.getLineYPos(this.getInputLineNum());
 			//Put the prompt back
 			const input: string = this.inputBuffer;
+			const output: string = this.outputBuffer;
 			const newPos: {xPos: number, yPos: number} = this.drawPrompt(xPos, yPos);
 			this.inputBuffer = input;
+			this.outputBuffer = output;
 			xPos = newPos.xPos;
 			yPos = newPos.yPos;
 			//Put the input text back
@@ -384,14 +388,20 @@ module TSOS {
 				if (!this.inputEnabled && chr !== String.fromCharCode(3)) {continue;}
 				// Check to see if it's "special" (enter or ctrl-c) or "normal" (anything else that the keyboard device driver gave us).
 				switch (chr) {
-					case String.fromCharCode(-1): // up arrow
+					case String.fromCharCode(-1): // left arrow
+						//TODO move cursor left 1
+						break;
+					case String.fromCharCode(-2): // up arrow
 						if (this.shellHistoryIndex === 0) {break;}
 						this.shellHistoryIndex--;
 						this.eraseInput();
 						this.inputBuffer = this.shellHistory[this.shellHistoryIndex];
 						this.redrawInput();
 						break;
-					case String.fromCharCode(-2): // down arrow
+					case String.fromCharCode(-3): // right arrow
+						//TODO move cursor right 1
+						break;
+					case String.fromCharCode(-4): // down arrow
 						if (this.shellHistoryIndex === this.shellHistory.length) {break;}
 						this.shellHistoryIndex++;
 						this.eraseInput();
@@ -402,9 +412,15 @@ module TSOS {
 						this.inputBuffer = this.shellHistory[this.shellHistoryIndex];
 						this.redrawInput();
 						break;
-					case String.fromCharCode(-3): // insert
+					case String.fromCharCode(-5): // insert
 						this.insert = !this.insert;
 						break
+					case String.fromCharCode(-6): // move cursor to end of line
+						//TODO move cursor to end of line
+						break;
+					case String.fromCharCode(-7): // move cursor to beginning of line
+						//TODO move cursor to beginning of line
+						break;
 					case String.fromCharCode(3): // ctrl + c
 						//Only kill if synchronous
 						if (_Scheduler.currPCB && _OsShell.pidsWaitingOn.some((item: {pid: number, connector: string | null}): boolean => {
@@ -428,9 +444,6 @@ module TSOS {
 						this.moveCursor(-1);
 						break;
 					case String.fromCharCode(9): // tab
-
-						//FIXME - it literally does nothing right now
-
 						let text: string = this.inputBuffer.substring(0, this.cursorPos);
 						//Use the last command/argument
 						let lastIndex: number = -1;
@@ -454,9 +467,10 @@ module TSOS {
 						}
 						const tokens: string[] = text.trim().split(/\s+/);//split by 1 or more spaces
 						if (tokens.length == 1) {
-							if (!text.endsWith(' ')) {
+							tokens[0] = tokens[0].toLowerCase();
+							if (text.endsWith(' ')) {
 								//Use token 0 as complete command and display all possible 1st arguments
-								const command: ShellCommand = ShellCommand.COMMAND_LIST.find(cmd => {return cmd.command === tokens[0];});
+								const command: ShellCommand = ShellCommand.COMMAND_LIST.find(cmd => {return cmd.command.toLowerCase() === tokens[0];});
 								if (command === undefined || command.validArgs.length === 0) {return;}
 								const input: string = this.inputBuffer;
 								this.pushInputToPrev();
@@ -464,7 +478,6 @@ module TSOS {
 								this.printInput(input);
 							} else {
 								//Sse token 0 as incomplete command and autocomplete it
-								tokens[0] = tokens[0].toLowerCase();
 								const possCmds: string[] = [];
 								for (const cmd of ShellCommand.COMMAND_LIST) {
 									if (cmd.command.substring(0, tokens[0].length).toLowerCase() === tokens[0]) {
@@ -515,6 +528,18 @@ module TSOS {
 						if (input2 === "") {break;}
 						this.shellHistory.push(input2);
 						this.shellHistoryIndex = this.shellHistory.length;
+						break;
+					case String.fromCharCode(33): // page up
+						//TODO scroll up CANVAS_NUM_LINES
+						break;
+					case String.fromCharCode(34): // page up
+						//TODO scroll down CANVAS_NUM_LINES
+						break;
+					case String.fromCharCode(35): // scroll to bottom
+						//TODO scroll to bottom
+						break;
+					case String.fromCharCode(36): // scroll to top
+						//TODO scroll to top
 						break;
 					case String.fromCharCode(127): // delete
 						if (this.cursorPos === this.inputBuffer.length) {

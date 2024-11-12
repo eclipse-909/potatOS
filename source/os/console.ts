@@ -97,7 +97,7 @@ module TSOS {
 		//Positive scrolls down (text moves up), negative scrolls up (text moves down).
 		//You must call this.redrawCanvas() afterwards. It isn't called here since you may need to scroll a bunch before drawing.
 		//Drawing a bunch of times is very slow.
-		private scrollBy(lines: number): void {
+		public scrollBy(lines: number): void {
 			this.scroll += lines;
 			if (this.scroll < 0) {
 				this.scroll = 0;
@@ -112,7 +112,7 @@ module TSOS {
 			}
 		}
 
-		private redrawCanvas(): void {
+		public redrawCanvas(): void {
 			//Don't call this.clearScreen() since we want to save buffer and cursor data
 			_DrawingContext.clearRect(0, 0, _Canvas.width, CANVAS_HEIGHT);
 			//render previous lines
@@ -367,6 +367,7 @@ module TSOS {
 			}
 			this.inputBuffer = "";
 			this.outputBuffer = null;
+			this.inputEnabled = true;
 			return {xPos: CANVAS_MARGIN + _DrawingContext.measureText(promptLines[promptLines.length - 1]).width, yPos};
 		}
 
@@ -375,6 +376,7 @@ module TSOS {
 		public clearScreen(): void {
 			_DrawingContext.clearRect(0, 0, _Canvas.width, CANVAS_HEIGHT);
 			this.prevLines = [];
+			this.scroll = 0;
 			this.outputBuffer = null;
 			this.inputBuffer = null;
 			this.cursorPos = 0;

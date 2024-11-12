@@ -13,7 +13,9 @@ module TSOS {
 	export class ProcessControlBlock {
 		pid: number;
 		status: Status;
+		//lowest memory address addressable by this PCB
 		base: number;
+		//highest memory address addressable by this PCB
 		limit: number;
 		IR: OpCode;
 		PC: number;

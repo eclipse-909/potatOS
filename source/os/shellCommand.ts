@@ -99,7 +99,8 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: cls\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_StdOut.init();
+			_StdOut.clearScreen();
+			_StdOut.putPrompt();
 			return ExitCode.SUCCESS;
 		}
 

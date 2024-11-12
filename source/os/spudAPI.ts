@@ -44,12 +44,12 @@ module TSOS {
 	//Writes the null-terminated-string at the absolute-addressed pointer to the standard output.
 	export function writeStrStdOut(stdout: OutStream<string[]>, strPtr: number): void {
 		let buffer: string = "";
-		let char: number | undefined = undefined;
+		let char: number | undefined = _MMU.read(strPtr);
 		while (char !== 0) {
-			char = _MMU.read(strPtr);
 			if (char === undefined) {return _KernelInterruptQueue.enqueue(new Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, ExitCode.SEGMENTATION_FAULT]));}
 			buffer += String.fromCharCode(char);
 			strPtr++;
+			char = _MMU.read(strPtr);
 		}
 		stdout.output([buffer]);
 	}

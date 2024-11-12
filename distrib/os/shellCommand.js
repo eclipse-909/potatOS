@@ -88,7 +88,8 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: cls\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _StdOut.init();
+            _StdOut.clearScreen();
+            _StdOut.putPrompt();
             return TSOS.ExitCode.SUCCESS;
         }
         static shellMan(stdin, stdout, stderr) {

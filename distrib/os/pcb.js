@@ -14,7 +14,9 @@ var TSOS;
     class ProcessControlBlock {
         pid;
         status;
+        //lowest memory address addressable by this PCB
         base;
+        //highest memory address addressable by this PCB
         limit;
         IR;
         PC;

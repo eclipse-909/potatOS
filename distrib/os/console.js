@@ -358,12 +358,14 @@ var TSOS;
             }
             this.inputBuffer = "";
             this.outputBuffer = null;
+            this.inputEnabled = true;
             return { xPos: CANVAS_MARGIN + _DrawingContext.measureText(promptLines[promptLines.length - 1]).width, yPos };
         }
         putPrompt() { this.drawPrompt(CANVAS_MARGIN, this.getLineYPos(this.getOutputLineNum())); }
         clearScreen() {
             _DrawingContext.clearRect(0, 0, _Canvas.width, CANVAS_HEIGHT);
             this.prevLines = [];
+            this.scroll = 0;
             this.outputBuffer = null;
             this.inputBuffer = null;
             this.cursorPos = 0;

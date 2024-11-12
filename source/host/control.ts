@@ -24,6 +24,7 @@ module TSOS {
 			// This is called from index.html's onLoad event via the onDocumentLoad function pointer.
 			// Get a global reference to the canvas.  TODO: Should we move this stuff into a Display Device Driver?
 			_Canvas = <HTMLCanvasElement>document.getElementById('display');
+			_Canvas.addEventListener("wheel", Control.onwheel);
 			_Canvas.height = CANVAS_HEIGHT;
 			_DrawingContext = _Canvas.getContext("2d");
 			_DrawingContext.font = '16px "DejaVu Sans Mono", monospace';
@@ -248,6 +249,12 @@ module TSOS {
 			potato.addEventListener("animationend", (): void => {
 				potato.remove();
 			});
+		}
+
+		public static onwheel(event: WheelEvent): void {
+			event.preventDefault();
+			_Console.scrollBy(event.deltaY < 0? -3 : 3);
+			_Console.redrawCanvas();
 		}
 	}
 }

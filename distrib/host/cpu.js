@@ -220,17 +220,11 @@ var TSOS;
                         return this.segFault();
                     }
                     if (!this.Zflag) {
-                        if (arg0 < 0x80) {
-                            this.PC += arg0;
-                        }
-                        else {
-                            this.PC -= 0x100 - arg0;
-                        }
-                        if (this.PC > 0xFFFF) {
-                            this.PC -= 0xFFFF;
-                        }
-                        else if (this.PC < 0x0000) {
-                            this.PC += 0x10000;
+                        //wrap around limit and base address of current PCB
+                        this.PC += arg0;
+                        const maxVPtr = _Scheduler.currPCB.limit - _Scheduler.currPCB.base;
+                        if (this.PC > maxVPtr) {
+                            this.PC -= maxVPtr + 1;
                         }
                     }
                     break;
@@ -257,19 +251,12 @@ var TSOS;
                     TSOS.Control.updateMemDisplay();
                     break;
                 case OpCode.SYS:
-                    let params = [_Scheduler.currPCB.stdOut];
+                    let params = [_Scheduler.currPCB.stdOut, this.Yreg];
                     switch (this.Xreg) {
                         case 0x01: //print number in Y reg
-                            params[1] = this.Yreg;
                             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeIntConsole, params));
                             break;
                         case 0x02: //print C string at indirect address given by Y reg
-                            if (this.Yreg < 0x80) {
-                                params[1] = this.Yreg;
-                            }
-                            else {
-                                params[1] = 0x100 + this.Yreg;
-                            }
                             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.writeStrConsole, params));
                             break;
                         // case 0x03://print C string at absolute address given in operand

@@ -43,14 +43,14 @@ var TSOS;
     //Writes the null-terminated-string at the absolute-addressed pointer to the standard output.
     function writeStrStdOut(stdout, strPtr) {
         let buffer = "";
-        let char = undefined;
+        let char = _MMU.read(strPtr);
         while (char !== 0) {
-            char = _MMU.read(strPtr);
             if (char === undefined) {
                 return _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [_Scheduler.currPCB.pid, TSOS.ExitCode.SEGMENTATION_FAULT]));
             }
             buffer += String.fromCharCode(char);
             strPtr++;
+            char = _MMU.read(strPtr);
         }
         stdout.output([buffer]);
     }

@@ -193,15 +193,10 @@ module TSOS {
 				this.prevLines.push(textLines[i]);
 			}
 			text = textLines[textLines.length - 1];
-			if (this.outputBuffer === null) {
-				this.outputBuffer = text;
-			} else {
-				this.outputBuffer += text;
-			}
 			if (this.inputBuffer !== null) {
 				//save input text and cursor position
 				const prevCursor: number = this.cursorPos;
-				const prevInput: string = this.inputBuffer;
+				const prevInput: string[] = Console.splitText(this.inputBuffer, this.endPromptXPos());
 				this.eraseInput();
 				let xPos: number = outputXPos;
 				let yPos: number = outputYPos;
@@ -225,10 +220,20 @@ module TSOS {
 					_DrawingContext.fillText(prevInput[line], xPos, yPos);
 				}
 				this.cursorPos = prevCursor;
-				this.inputBuffer = prevInput;
+				this.inputBuffer = prevInput.join("");
+				if (this.outputBuffer === null) {
+					this.outputBuffer = text;
+				} else {
+					this.outputBuffer += text;
+				}
 			} else {
 				let xPos: number = outputXPos;
 				let yPos: number = outputYPos;
+				if (this.outputBuffer === null) {
+					this.outputBuffer = text;
+				} else {
+					this.outputBuffer += text;
+				}
 				//Start printing output text
 				_DrawingContext.fillText(textLines[0], xPos, yPos);
 				for (let line: number = 1; line < textLines.length; line++) {

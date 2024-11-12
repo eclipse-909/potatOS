@@ -48,12 +48,12 @@ module TSOS {
 
 			//allocate memory
 			if (_MMU.fixedSegments && bin.length > _MMU.segmentSize) {
-				pcb.stdErr.error(["Binary too large, could not load\n"]);
+				_StdErr.error(["Binary too large, could not load\n"]);
 				return undefined;
 			}
 			const alloc: {base: number, limit: number} | undefined = _MMU.malloc(bin.length);
 			if (alloc === undefined) {
-				pcb.stdErr.error(["Out of memory, could not allocate for new process\n"]);
+				_StdErr.error(["Out of memory, could not allocate for new process\n"]);
 				return undefined;
 			}
 			pcb.base = alloc.base;

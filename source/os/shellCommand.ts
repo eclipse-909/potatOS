@@ -66,6 +66,7 @@ module TSOS {
 				"Keybindings:\n" +
 				"  Arrow Up/Down = previous/next command in history\n" +
 				"  CTRL + Shift + Arrow Up/Down = scroll one line\n" +
+				"  Mouse Wheel = scroll three lines\n" +
 				"  Shift + Page Up/Down = scroll one page\n" +
 				"  Shift + Home/End = scroll to top/bottom\n" +
 				"Command Syntax:\n" +

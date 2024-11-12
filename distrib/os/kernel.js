@@ -16,6 +16,7 @@ var TSOS;
             _KernelBuffers = []; // Buffers... for the kernel.
             _KernelInputQueue = new TSOS.Queue(); // Where device input lands before being processed out somewhere.
             _Console = new TSOS.Console(); // The command line interface / console I/O device.
+            _Canvas.addEventListener("wheel", TSOS.Control.onwheel);
             _StdIn = _Console;
             _StdOut = _Console;
             _StdErr = _Console;
@@ -35,6 +36,9 @@ var TSOS;
             //All errors are caught and handled via BSOD
             window.onerror = (message, _source, _lineno, _colno, _error) => {
                 _Kernel.krnTrapError(message.toString());
+            };
+            window.onunhandledrejection = (event) => {
+                _Kernel.krnTrapError(event.reason);
             };
         }
         krnShutdown() {

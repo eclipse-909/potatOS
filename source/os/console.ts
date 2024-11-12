@@ -97,7 +97,7 @@ module TSOS {
 		//Positive scrolls down (text moves up), negative scrolls up (text moves down).
 		//You must call this.redrawCanvas() afterwards. It isn't called here since you may need to scroll a bunch before drawing.
 		//Drawing a bunch of times is very slow.
-		public scrollBy(lines: number): void {
+		public scrollBy(lines: number): void {//BUG sometimes it allows you to scroll too far down
 			this.scroll += lines;
 			if (this.scroll < 0) {
 				this.scroll = 0;
@@ -189,10 +189,21 @@ module TSOS {
 			const outputYPos: number = this.getLineYPos(this.getOutputLineNum());
 			//split text into the lines by how it will be rendered with line wrap
 			const textLines: string[] = Console.splitText(text, outputXPos);
-			for (let i: number = 0; i < textLines.length - 1; i++) {
-				this.prevLines.push(textLines[i]);
+			let prevLines: string[] = []
+			if (textLines.length === 1) {
+				text = textLines[0];
+			} else {
+				if (this.outputBuffer !== null) {
+					prevLines.push(this.outputBuffer + textLines[0]);
+					this.outputBuffer = "";
+				} else {
+					prevLines.push(textLines[0]);
+				}
+				for (let i: number = 1; i < textLines.length - 1; i++) {
+					prevLines.push(textLines[i]);
+				}
+				text = textLines[textLines.length - 1];
 			}
-			text = textLines[textLines.length - 1];
 			if (this.inputBuffer !== null) {
 				//save input text and cursor position
 				const prevCursor: number = this.cursorPos;
@@ -242,6 +253,7 @@ module TSOS {
 					_DrawingContext.fillText(textLines[line], xPos, yPos);
 				}
 			}
+			this.prevLines = this.prevLines.concat(prevLines);
 		}
 
 		private getCursorPos(): {x: number, y: number} {
@@ -403,6 +415,7 @@ module TSOS {
 						this.shellHistoryIndex--;
 						this.eraseInput();
 						this.inputBuffer = this.shellHistory[this.shellHistoryIndex];
+						this.cursorPos = this.inputBuffer.length;
 						this.redrawInput();
 						break;
 					case String.fromCharCode(-3): // right arrow - move cursor right 1 character
@@ -417,6 +430,7 @@ module TSOS {
 							break;
 						}
 						this.inputBuffer = this.shellHistory[this.shellHistoryIndex];
+						this.cursorPos = this.inputBuffer.length;
 						this.redrawInput();
 						break;
 					case String.fromCharCode(-5): // insert

@@ -16,6 +16,7 @@ module TSOS {
 			_KernelBuffers = [];         // Buffers... for the kernel.
 			_KernelInputQueue = new Queue<string>();      // Where device input lands before being processed out somewhere.
 			_Console = new Console();             // The command line interface / console I/O device.
+			_Canvas.addEventListener("wheel", Control.onwheel);
 			_StdIn  = _Console;
 			_StdOut = _Console;
 			_StdErr = _Console;
@@ -37,6 +38,9 @@ module TSOS {
 			//All errors are caught and handled via BSOD
 			window.onerror = (message: string | Event, _source: string, _lineno: number, _colno: number, _error: Error): void => {
 				_Kernel.krnTrapError(message.toString());
+			};
+			window.onunhandledrejection = (event: {reason: string;}): void => {
+				_Kernel.krnTrapError(event.reason);
 			};
 		}
 

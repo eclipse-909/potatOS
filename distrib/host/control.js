@@ -24,7 +24,6 @@ var TSOS;
             // This is called from index.html's onLoad event via the onDocumentLoad function pointer.
             // Get a global reference to the canvas.  TODO: Should we move this stuff into a Display Device Driver?
             _Canvas = document.getElementById('display');
-            _Canvas.addEventListener("wheel", Control.onwheel);
             _Canvas.height = CANVAS_HEIGHT;
             _DrawingContext = _Canvas.getContext("2d");
             _DrawingContext.font = '16px "DejaVu Sans Mono", monospace';

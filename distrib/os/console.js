@@ -184,10 +184,23 @@ var TSOS;
             const outputYPos = this.getLineYPos(this.getOutputLineNum());
             //split text into the lines by how it will be rendered with line wrap
             const textLines = Console.splitText(text, outputXPos);
-            for (let i = 0; i < textLines.length - 1; i++) {
-                this.prevLines.push(textLines[i]);
+            let prevLines = [];
+            if (textLines.length === 1) {
+                text = textLines[0];
             }
-            text = textLines[textLines.length - 1];
+            else {
+                if (this.outputBuffer !== null) {
+                    prevLines.push(this.outputBuffer + textLines[0]);
+                    this.outputBuffer = "";
+                }
+                else {
+                    prevLines.push(textLines[0]);
+                }
+                for (let i = 1; i < textLines.length - 1; i++) {
+                    prevLines.push(textLines[i]);
+                }
+                text = textLines[textLines.length - 1];
+            }
             if (this.inputBuffer !== null) {
                 //save input text and cursor position
                 const prevCursor = this.cursorPos;
@@ -240,6 +253,7 @@ var TSOS;
                     _DrawingContext.fillText(textLines[line], xPos, yPos);
                 }
             }
+            this.prevLines = this.prevLines.concat(prevLines);
         }
         getCursorPos() {
             const input = Console.splitText(this.inputBuffer, this.endPromptXPos());
@@ -396,6 +410,7 @@ var TSOS;
                         this.shellHistoryIndex--;
                         this.eraseInput();
                         this.inputBuffer = this.shellHistory[this.shellHistoryIndex];
+                        this.cursorPos = this.inputBuffer.length;
                         this.redrawInput();
                         break;
                     case String.fromCharCode(-3): // right arrow - move cursor right 1 character
@@ -412,6 +427,7 @@ var TSOS;
                             break;
                         }
                         this.inputBuffer = this.shellHistory[this.shellHistoryIndex];
+                        this.cursorPos = this.inputBuffer.length;
                         this.redrawInput();
                         break;
                     case String.fromCharCode(-5): // insert

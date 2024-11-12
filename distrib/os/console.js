@@ -617,7 +617,11 @@ var TSOS;
         //I/O interface functions
         output(buffer) { this.print(buffer.join("")); }
         input() { return this.handleInput(); }
-        error(buffer) { this.print(buffer.join("")); }
+        error(buffer) {
+            _DrawingContext.fillStyle = "#bb0000";
+            this.print(buffer.join(""));
+            _DrawingContext.fillStyle = "#000000";
+        }
     }
     TSOS.Console = Console;
 })(TSOS || (TSOS = {}));

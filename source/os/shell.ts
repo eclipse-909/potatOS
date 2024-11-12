@@ -82,11 +82,10 @@ module TSOS {
 		constructor() {}
 
 		public handleInput(input: string): void {
-			// _StdOut.print('\n');
 			//check if an async process has finished before starting a new command
 			let process: ShellProcess | null = this.processExitQueue.dequeue();
 			while (process !== null) {
-				_StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
+				this.printProcResult(process);
 				process = this.processExitQueue.dequeue();
 			}
 			if (input === "") {
@@ -96,6 +95,15 @@ module TSOS {
 			const commands: Command[] | undefined = this.parseTokens(tokens);
 			if (!commands) {return;}
 			this.executeCommands(commands);
+		}
+
+		printProcResult(process: ShellProcess): void {
+			const msg: string[] = [`${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`];
+			if (process.exitCode.isSuccess()) {
+				_StdOut.output(msg);
+			} else {
+				_StdOut.error(msg);
+			}
 		}
 
 		tokenize(input: string): Token[] {
@@ -344,7 +352,7 @@ module TSOS {
 			if (pidIndex === -1) {return;}
 			this.processExitQueue.dequeue();
 			this.pidsWaitingOn.splice(pidIndex, 1);
-			_StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
+			this.printProcResult(process);
 			if (this.cmdQueue.isEmpty()) {
 				_Console.putPrompt();
 				return;

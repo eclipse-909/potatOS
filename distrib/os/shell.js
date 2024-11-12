@@ -64,11 +64,10 @@ var TSOS;
         ];
         constructor() { }
         handleInput(input) {
-            // _StdOut.print('\n');
             //check if an async process has finished before starting a new command
             let process = this.processExitQueue.dequeue();
             while (process !== null) {
-                _StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
+                this.printProcResult(process);
                 process = this.processExitQueue.dequeue();
             }
             if (input === "") {
@@ -80,6 +79,15 @@ var TSOS;
                 return;
             }
             this.executeCommands(commands);
+        }
+        printProcResult(process) {
+            const msg = [`${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`];
+            if (process.exitCode.isSuccess()) {
+                _StdOut.output(msg);
+            }
+            else {
+                _StdOut.error(msg);
+            }
         }
         tokenize(input) {
             const tokens = [];
@@ -333,7 +341,7 @@ var TSOS;
             }
             this.processExitQueue.dequeue();
             this.pidsWaitingOn.splice(pidIndex, 1);
-            _StdOut.output([`\n${process.exitCode.processDesc(process.pid)}\nTurnaround Time: ${process.turnaroundTime} - Wait Time ${process.waitTime}\n`]);
+            this.printProcResult(process);
             if (this.cmdQueue.isEmpty()) {
                 _Console.putPrompt();
                 return;

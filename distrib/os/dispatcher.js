@@ -8,6 +8,7 @@ var TSOS;
             if (!_Scheduler.next()) {
                 return false;
             }
+            TSOS.Control.hostLog("Context Switching", "Dispatcher");
             _CPU.IR = _Scheduler.currPCB.IR;
             _CPU.PC = _Scheduler.currPCB.PC;
             _CPU.Acc = _Scheduler.currPCB.Acc;

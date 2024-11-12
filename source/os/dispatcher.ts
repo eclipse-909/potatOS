@@ -6,6 +6,7 @@ module TSOS {
 		//Returns whether a switch was made.
 		public contextSwitch(): boolean {
 			if (!_Scheduler.next()) {return false;}
+			Control.hostLog("Context Switching", "Dispatcher");
 			_CPU.IR = _Scheduler.currPCB.IR;
 			_CPU.PC = _Scheduler.currPCB.PC;
 			_CPU.Acc = _Scheduler.currPCB.Acc;

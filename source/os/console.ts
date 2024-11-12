@@ -610,6 +610,10 @@ module TSOS {
 		//I/O interface functions
 		output(buffer: string[]): void {this.print(buffer.join(""));}
 		input(): string[] {return this.handleInput();}
-		error(buffer: string[]): void {this.print(buffer.join(""));}
+		error(buffer: string[]): void {
+			_DrawingContext.fillStyle = "#bb0000";
+			this.print(buffer.join(""));
+			_DrawingContext.fillStyle = "#000000";
+		}
 	}
 }

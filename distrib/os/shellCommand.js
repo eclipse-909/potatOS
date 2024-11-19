@@ -462,6 +462,38 @@ var TSOS;
             TSOS.Control.updatePcbMeta();
             return TSOS.ExitCode.SUCCESS;
         }
+        static shellFormat(stdin, stdout, stderr) {
+            //TODO format
+            return;
+        }
+        static shellCreate(stdin, stdout, stderr) {
+            //TODO create
+            return;
+        }
+        static shellRead(stdin, stdout, stderr) {
+            //TODO read
+            return;
+        }
+        static shellWrite(stdin, stdout, stderr) {
+            //TODO write
+            return;
+        }
+        static shellDelete(stdin, stdout, stderr) {
+            //TODO delete
+            return;
+        }
+        static shellCopy(stdin, stdout, stderr) {
+            //TODO copy
+            return;
+        }
+        static shellRename(stdin, stdout, stderr) {
+            //TODO rename
+            return;
+        }
+        static shellLs(stdin, stdout, stderr) {
+            //TODO ls
+            return;
+        }
         static shellGrep(stdin, stdout, stderr) {
             //TODO grep
             return;

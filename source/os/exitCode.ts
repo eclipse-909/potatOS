@@ -3,7 +3,7 @@ module TSOS {
 		public code: number;
 		public description: string | undefined;
 
-		constructor(code: number, desc: string) {
+		private constructor(code: number, desc: string) {
 			this.code = code;
 			this.description = desc;
 		}

@@ -13,7 +13,7 @@
 //
 
 const APP_NAME: string    = "potatOS";   // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION: string = "0.3.4";   // What did you expect?
+const APP_VERSION: string = "0.4.1";   // What did you expect?
 
 const CPU_CLOCK_INTERVAL: number = 0;   // This is in ms (milliseconds) so 1000 = 1 second.
 
@@ -24,7 +24,8 @@ enum IRQ {
 	kill,
 	writeIntConsole,
 	writeStrConsole,
-	contextSwitch
+	contextSwitch,
+	disk
 }
 const KEYBOARD_IRQ: IRQ = IRQ.keyboard;//Stupid glados always making me do stuff
 
@@ -39,6 +40,7 @@ function leToU16(lowByte: number, highByte: number) {return (highByte << 8) | lo
 //
 let _CPU: TSOS.Cpu;  // Utilize TypeScript's type annotation system to ensure that _CPU is an instance of the Cpu class.
 let _MemoryController: TSOS.MemoryController;
+let _DiskController: TSOS.DiskController;
 let _MMU: TSOS.MMU;
 
 let _OSclock: number = 0;  // Page 23.
@@ -79,6 +81,8 @@ let _SarcasticMode: boolean = false;
 
 // Global Device Driver Objects - page 12
 let _krnKeyboardDriver: TSOS.DeviceDriverKeyboard = null;
+let _krnDiskDriver: TSOS.DiskDriver = null;
+let _FileSystem: TSOS.FileSystem = null;
 
 let _hardwareClockID: number = null;
 

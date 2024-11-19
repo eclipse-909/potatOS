@@ -24,6 +24,10 @@ var TSOS;
             _krnKeyboardDriver = new TSOS.DeviceDriverKeyboard(); // Construct it.
             _krnKeyboardDriver.driverEntry(); // Call the driverEntry() initialization routine.
             this.krnTrace(_krnKeyboardDriver.status);
+            _krnDiskDriver = new TSOS.DiskDriver(); // Construct it.
+            _krnDiskDriver.driverEntry(); // Call the driverEntry() initialization routine.
+            this.krnTrace(_krnDiskDriver.status);
+            _FileSystem = new TSOS.FileSystem();
             // ... more?
             this.krnTrace("Enabling the interrupts.");
             this.krnEnableInterrupts();
@@ -108,6 +112,9 @@ var TSOS;
                         _Scheduler.cycle = 0;
                     }
                     _Dispatcher.contextSwitch();
+                    break;
+                case IRQ.disk:
+                    _krnDiskDriver.isr(params);
                     break;
                 default:
                     this.krnTrapError("Invalid Interrupt Request. irq=" + irq + " params=[" + params + "]");

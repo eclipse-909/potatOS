@@ -494,6 +494,46 @@ module TSOS {
 			return ExitCode.SUCCESS;
 		}
 
+		static shellFormat(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO format
+			return
+		}
+
+		static shellCreate(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO create
+			return
+		}
+
+		static shellRead(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO read
+			return
+		}
+
+		static shellWrite(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO write
+			return
+		}
+
+		static shellDelete(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO delete
+			return
+		}
+
+		static shellCopy(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO copy
+			return
+		}
+
+		static shellRename(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO rename
+			return
+		}
+
+		static shellLs(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO ls
+			return
+		}
+
 		static shellGrep(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			//TODO grep
 			return

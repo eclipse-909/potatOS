@@ -11,7 +11,7 @@
 // Global CONSTANTS (TypeScript 1.5 introduced const. Very cool.)
 //
 const APP_NAME = "potatOS"; // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION = "0.3.4"; // What did you expect?
+const APP_VERSION = "0.4.1"; // What did you expect?
 const CPU_CLOCK_INTERVAL = 0; // This is in ms (milliseconds) so 1000 = 1 second.
 var IRQ;
 (function (IRQ) {
@@ -22,6 +22,7 @@ var IRQ;
     IRQ[IRQ["writeIntConsole"] = 3] = "writeIntConsole";
     IRQ[IRQ["writeStrConsole"] = 4] = "writeStrConsole";
     IRQ[IRQ["contextSwitch"] = 5] = "contextSwitch";
+    IRQ[IRQ["disk"] = 6] = "disk";
 })(IRQ || (IRQ = {}));
 const KEYBOARD_IRQ = IRQ.keyboard; //Stupid glados always making me do stuff
 const MEM_SIZE = 0x300;
@@ -33,6 +34,7 @@ function leToU16(lowByte, highByte) { return (highByte << 8) | lowByte; }
 //
 let _CPU; // Utilize TypeScript's type annotation system to ensure that _CPU is an instance of the Cpu class.
 let _MemoryController;
+let _DiskController;
 let _MMU;
 let _OSclock = 0; // Page 23.
 //let _Mode: number = 0;     // (currently unused)  0 = Kernel Mode, 1 = User Mode.  See page 21.
@@ -63,6 +65,8 @@ let _OsShell;
 let _SarcasticMode = false;
 // Global Device Driver Objects - page 12
 let _krnKeyboardDriver = null;
+let _krnDiskDriver = null;
+let _FileSystem = null;
 let _hardwareClockID = null;
 // For testing (and enrichment)...
 const Glados = null; // This is the function Glados() in glados-ip*.js http://alanclasses.github.io/TSOS/test/ .

@@ -507,7 +507,7 @@ module TSOS {
 
 		static shellFormat(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			const args: string[] = stdin.input();
-			if (args.length !== 0) {
+			if (args.length !== 0) {//TODO allow -quick and -full arguments
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}

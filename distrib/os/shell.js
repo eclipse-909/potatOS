@@ -74,6 +74,10 @@ var TSOS;
                 return _Console.putPrompt();
             }
             const tokens = this.tokenize(input);
+            if (tokens === undefined) {
+                _Console.putPrompt();
+                return;
+            }
             const commands = this.parseTokens(tokens);
             if (!commands) {
                 return;
@@ -92,12 +96,55 @@ var TSOS;
         tokenize(input) {
             const tokens = [];
             let buffer = '';
+            let quoteOpened = false;
             for (let i = 0; i < input.length; i++) {
-                const char = input[i];
+                let char = input[i];
+                //check for quotes
+                if (char === '"') {
+                    quoteOpened = !quoteOpened;
+                    if (!quoteOpened) {
+                        tokens.push({ type: 'WORD', value: buffer });
+                        buffer = '';
+                    }
+                    continue;
+                }
+                if (quoteOpened) {
+                    if (char === "\\") {
+                        i++;
+                        switch (input[i]) {
+                            case "r":
+                                char = "\r";
+                                break;
+                            case "n":
+                                char = "\n";
+                                break;
+                            case "\\":
+                                char = "\\";
+                                break;
+                            case "\"":
+                                char = "\"";
+                                break;
+                            default:
+                                _StdErr.error([`Tokenization error: unrecognized escape sequence \\${input[i]}.\n`]);
+                                return undefined;
+                        }
+                    }
+                    buffer += char;
+                    continue;
+                }
                 // Skip spaces
                 if (char === ' ') {
-                    if (buffer) {
+                    if (buffer.length > 0) {
                         tokens.push({ type: 'WORD', value: buffer });
+                        buffer = '';
+                    }
+                    continue;
+                }
+                else if (char === "\r" || char === "\n") {
+                    //new lines should be treated as ending a command
+                    if (buffer.length > 0) {
+                        tokens.push({ type: 'WORD', value: buffer });
+                        tokens.push({ type: 'CONNECTOR', value: ";" });
                         buffer = '';
                     }
                     continue;
@@ -137,6 +184,10 @@ var TSOS;
                 }
                 // Otherwise, add to inputBuffer
                 buffer += char;
+            }
+            if (quoteOpened) {
+                _StdErr.error(["Tokenization error: open double-quotes must be matched with closing double-quotes.\n"]);
+                return undefined;
             }
             // Add remaining inputBuffer as a word
             if (buffer) {

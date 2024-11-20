@@ -42,7 +42,7 @@ module TSOS {
 		//Takes in the program's binary and creates a process control block out of it.
 		//Returns the process control block if successful, or prints to stdErr and returns undefined if unsuccessful.
 		//Allocated memory is freed if aborted, but you must call ProcessControlBlock.free() when deleting the pcb that was returned.
-		public static new(bin: number[]): ProcessControlBlock | undefined {
+		public static new(bin: Uint8Array): ProcessControlBlock | undefined {
 			//init pcb
 			let pcb: ProcessControlBlock = new ProcessControlBlock();
 
@@ -93,7 +93,7 @@ module TSOS {
 		}
 
 		//Uses the length of the binary and the number of branch instructions, and sets this.timeEstimate
-		private estimateTime(bin: number[]): void {
+		private estimateTime(bin: Uint8Array): void {
 			let branches: number = 0;
 			for (let i: number = 0; i < bin.length; i++) {
 				const opcode: OpCode | undefined = OpCode[bin[i] as unknown as keyof typeof OpCode];

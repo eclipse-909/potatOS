@@ -17,27 +17,38 @@ var TSOS;
             new ShellCommand(ShellCommand.shellHelp, "help", "- This is the help command. Seek help."),
             new ShellCommand(ShellCommand.shellShutdown, "shutdown", "- Shuts down the virtual OS but leaves the underlying host / hardware simulation running.\n"),
             new ShellCommand(ShellCommand.shellCls, "cls", "- Clears the screen and resets the cursor position.\n"),
-            new ShellCommand(ShellCommand.shellMan, "man", "<topic> - Displays the MANual page for <topic>.\n"),
+            new ShellCommand(ShellCommand.shellMan, "man", "<TOPIC> - Displays the MANual page for <TOPIC>.\n"),
             new ShellCommand(ShellCommand.shellTrace, "trace", "<on | off> - Turns the OS trace on or off.\n", ["on", "off"]),
-            new ShellCommand(ShellCommand.shellRot13, "rot13", "<string...> - Does rot13 obfuscation on <string...>.\n"),
-            new ShellCommand(ShellCommand.shellPrompt, "prompt", "<string...> - Sets the prompt.\n"),
+            new ShellCommand(ShellCommand.shellRot13, "rot13", "<STRING>... - Does rot13 obfuscation on <STRING>....\n"),
+            new ShellCommand(ShellCommand.shellPrompt, "prompt", "<STRING>... - Sets the prompt.\n"),
             new ShellCommand(ShellCommand.shellDate, "date", "- Displays the current date and time.\n"),
             new ShellCommand(ShellCommand.shellWhereAmI, "whereami", "- Displays the user's current location.\n"),
             new ShellCommand(ShellCommand.shellEcho, "echo", "- Displays the given text to standard output.\n"),
             new ShellCommand(ShellCommand.shellStatus, "status", "- Displays a message to the task bar.\n"),
             new ShellCommand(ShellCommand.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message.\n"),
             new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.\n"),
-            new ShellCommand(ShellCommand.shellRun, "run", "<process ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.\n"),
+            new ShellCommand(ShellCommand.shellRun, "run", "<PROCESS_ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.\n"),
             new ShellCommand(ShellCommand.shellClh, "clh", "- Clears the host log.\n"),
             new ShellCommand(ShellCommand.shellClearMem, "clearmem", "- Clears memory of all resident/terminated processes.\n"),
             new ShellCommand(ShellCommand.shellRunAll, "runall", "- Runs all programs in memory concurrently.\n"),
             new ShellCommand(ShellCommand.shellPs, "ps", "- Displays the PID and status of all processes.\n"),
-            new ShellCommand(ShellCommand.shellKill, "kill", "<process ID> - Terminates the process with the given process ID.\n"),
+            new ShellCommand(ShellCommand.shellKill, "kill", "<PROCESS_ID> - Terminates the process with the given process ID.\n"),
             new ShellCommand(ShellCommand.shellKillAll, "killall", "- Terminates all processes.\n"),
-            new ShellCommand(ShellCommand.shellQuantum, "quantum", "<int> - Set the quantum (measured in CPU cycles) for Round-Robin scheduling. Must be non-zero. Negative quantum will reverse the order of execution\n"),
+            new ShellCommand(ShellCommand.shellQuantum, "quantum", "<INT> - Set the quantum (measured in CPU cycles) for Round-Robin scheduling. Must be non-zero. Negative quantum will reverse the order of execution\n"),
             new ShellCommand(ShellCommand.shellChAlloc, "challoc", "<FirstFit | BestFit | WorstFit> - Set the mode for allocating new processes.\n", ["FirstFit", "BestFit", "WorstFit"]),
-            new ShellCommand(ShellCommand.shellChSegment, "chsegment", "<fixed | variable> [<int>] - Change segment allocation to fixed or variable size. If fixed, pass the size as a positive integer.\n", ["fixed", "variable"]),
-            new ShellCommand(ShellCommand.shellChSched, "chsched", "<RR | NP_FCFS | P_SJF> - Change the CPU scheduling mode.\n", ["RR", "NP_FCFS", "P_SJF"])
+            new ShellCommand(ShellCommand.shellChSegment, "chsegment", "<fixed | variable> [INT] - Change segment allocation to fixed or variable size. If fixed, pass the size as a positive integer.\n", ["fixed", "variable"]),
+            new ShellCommand(ShellCommand.shellChSched, "chsched", "<RR | NP_FCFS | P_SJF> - Change the CPU scheduling mode.\n", ["RR", "NP_FCFS", "P_SJF"]),
+            new ShellCommand(ShellCommand.shellFormat, "format", "- Formats the disk. This is done automatically during bootstrap.\n"),
+            new ShellCommand(ShellCommand.shellCreate, "create", "<FILE> - Creates a file with the given name if it does not exist.\n"),
+            new ShellCommand(ShellCommand.shellRead, "read", "<FILE> - Output the contents of the given file if it exists.\n"),
+            new ShellCommand(ShellCommand.shellWrite, "write", "<FILE> <STRING>... - Write the given string to the file if it exists.\n"),
+            new ShellCommand(ShellCommand.shellDelete, "delete", "<FILE> - Delete the given file if it exists.\n"),
+            new ShellCommand(ShellCommand.shellCopy, "copy", "<FILE> <COPY_FILE> - Creates a file with the copy name and copies the contents of the file to it if it exists.\n"),
+            new ShellCommand(ShellCommand.shellRename, "rename", "<FILE> <NEW_FILE> - Renames the file, if it exists, to the new name, if it does not exist.\n"),
+            new ShellCommand(ShellCommand.shellLs, "ls", "[-a] [-l] - Outputs a list of open_files in the directory. Use -a to show hidden open_files. Use -l to separate files with a new line.\n", ["-a", "-l", "-la", "-al"]),
+            new ShellCommand(ShellCommand.shellClearDisk, "cleardisk", " - Erases the entire disk and un-formats it.\n"),
+            new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n"),
+            new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n"),
         ];
         static shellVer(stdin, stdout, stderr) {
             const args = stdin.input();
@@ -216,14 +227,14 @@ var TSOS;
             const hexArray = input.split(/[\s,]+/);
             // If you're curious why I'm also allowing hex numbers and separators to be formatted as '0xAD, 0x04, 0x00',
             // it's because I made an assembler for this instruction set that outputs the binary this way.
-            const bin = hexArray.map(hex => {
+            const bin = Uint8Array.from(hexArray.map(hex => {
                 const cleanedHex = hex.startsWith('0x') ? hex.slice(2) : hex;
                 let num = parseInt(cleanedHex, 16);
                 if (num < 0 || num > 0xff) {
                     num = NaN;
                 }
                 return num;
-            });
+            }));
             //textArea.value = "";//don't clear input area on load
             if (bin.some(Number.isNaN)) {
                 stderr.error([
@@ -462,41 +473,165 @@ var TSOS;
             TSOS.Control.updatePcbMeta();
             return TSOS.ExitCode.SUCCESS;
         }
-        static shellFormat(stdin, stdout, stderr) {
-            //TODO format
-            return;
+        static shellFormat(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Format, stderr]));
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellCreate(stdin, stdout, stderr) {
-            //TODO create
-            return;
+        static shellCreate(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: create <FILE_NAME>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Create, stderr, args[0]]));
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Close, null, args[0]]));
+            return TSOS.ExitCode.SUCCESS;
         }
         static shellRead(stdin, stdout, stderr) {
-            //TODO read
-            return;
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: read <FILE_NAME.sh>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.OpenReadClose, stderr, (content) => { stdout.output([content]); }, args[0]]));
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellWrite(stdin, stdout, stderr) {
-            //TODO write
-            return;
+        static shellWrite(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 2) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: write <FILE_NAME> <string...>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.OpenWriteClose, stderr, args[0], args[1]]));
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellDelete(stdin, stdout, stderr) {
-            //TODO delete
-            return;
+        static shellDelete(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: delete <FILE_NAME>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Delete, stderr, args[0]]));
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellCopy(stdin, stdout, stderr) {
-            //TODO copy
-            return;
+        static shellCopy(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 2) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: copy <FILE_NAME> <COPY_FILE_NAME>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Copy, stderr, args[0], args[1]]));
+            return TSOS.ExitCode.SUCCESS;
         }
-        static shellRename(stdin, stdout, stderr) {
-            //TODO rename
-            return;
+        static shellRename(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 2) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: rename <FILE_NAME> <NEW_FILE_NAME>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Rename, stderr, args[0], args[1]]));
+            return TSOS.ExitCode.SUCCESS;
         }
         static shellLs(stdin, stdout, stderr) {
-            //TODO ls
-            return;
+            const args = stdin.input();
+            let sh_hidden = false;
+            let list = false;
+            if (args.length == 1) {
+                if (args[0] === "-a") {
+                    sh_hidden = true;
+                }
+                else if (args[0] === "-l") {
+                    list = true;
+                }
+                else if (args[0] === "-la") {
+                    sh_hidden = true;
+                    list = true;
+                }
+                else if (args[0] === "-al") {
+                    sh_hidden = true;
+                    list = true;
+                }
+                else {
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-a] [-l]\n"]);
+                    return TSOS.ExitCode.SHELL_MISUSE;
+                }
+            }
+            else if (args.length == 2) {
+                if ((args[0] === "-a" && args[1] === "-l") || (args[0] === "-l" && args[1] === "-a")) {
+                    sh_hidden = true;
+                    list = true;
+                }
+                else {
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-a] [-l]\n"]);
+                    return TSOS.ExitCode.SHELL_MISUSE;
+                }
+            }
+            else if (args.length > 2) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-a] [-l]\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Ls, stderr, stdout, sh_hidden, list]));
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellClearDisk(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: cleardisk\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.ClearDisk, stderr]));
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellShell(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: shell <FILE_NAME.sh>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            if (!args[0].match(/^.+\.sh$/)) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - The provided file is not a .sh (shell) file.\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [
+                TSOS.DiskAction.OpenReadClose,
+                stderr,
+                (content) => {
+                    _OsShell.handleInput(content);
+                    _Console.redrawCanvas();
+                },
+                args[0]
+            ]));
+            return TSOS.ExitCode.SUCCESS;
         }
         static shellGrep(stdin, stdout, stderr) {
-            //TODO grep
-            return;
+            const args = stdin.input();
+            if (args.length < 2) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: grep <PATTERN> <FILE_NAME>...\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            for (let i = 1; i < args.length; i++) {
+                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [
+                    TSOS.DiskAction.OpenReadClose,
+                    stderr,
+                    (content) => {
+                        const lines = content.split(/(\r?\n)+/);
+                        let matches = [];
+                        for (const line of lines) {
+                            if (line.match(args[0])) {
+                                matches.push(line);
+                            }
+                        }
+                        stdout.output([matches.join("\n") + (i < args.length - 1 ? "\n" : "")]);
+                    },
+                    args[i]
+                ]));
+            }
+            return TSOS.ExitCode.SUCCESS;
         }
     }
     TSOS.ShellCommand = ShellCommand;

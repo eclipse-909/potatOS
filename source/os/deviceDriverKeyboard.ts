@@ -76,10 +76,8 @@ module TSOS {
 				case 55: return isShifted ? 38 : 55;  // '&' or '7'
 				case 56: return isShifted ? 42 : 56;  // '*' or '8'
 				case 57: return isShifted ? 40 : 57;  // '(' or '9'
-				case 59: return isShifted ? 58 : 59;  // ':' or ';'
-				case 61: return isShifted ? 43 : 61;  // '+' or '='
-
 				case 65: return isShifted || this.capsLock ? 65 : 97;  // 'A' or 'a'
+
 				case 66: return isShifted || this.capsLock ? 66 : 98;  // 'B' or 'b'
 				case 67:
 					if (isShifted || this.capsLock) {
@@ -113,6 +111,8 @@ module TSOS {
 				case 89: return isShifted || this.capsLock ? 89 : 121; // 'Y' or 'y'
 				case 90: return isShifted || this.capsLock ? 90 : 122; // 'Z' or 'z'
 
+				case 186: return isShifted ? 58 : 59;  // ':' or ';'
+				case 187: return isShifted ? 43 : 61;  // '+' or '='
 				case 188: return isShifted ? 60 : 44;  // '<' or ','
 				case 189: return isShifted ? 95 : 45;  // '_' or '-'
 				case 190: return isShifted ? 62 : 46;  // '>' or '.'

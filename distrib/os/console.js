@@ -512,6 +512,7 @@ var TSOS;
                             tokens[0] = tokens[0].toLowerCase();
                             if (text.endsWith(' ')) {
                                 //Use token 0 as complete command and display all possible 1st arguments
+                                //TODO autocomplete file names if the command requires it
                                 const command = TSOS.ShellCommand.COMMAND_LIST.find(cmd => { return cmd.command.toLowerCase() === tokens[0]; });
                                 if (command === undefined || command.validArgs.length === 0) {
                                     return;
@@ -545,6 +546,7 @@ var TSOS;
                         }
                         else if (tokens.length === 2) {
                             //Use token 0 as the command and token 1 as an incomplete first argument for that command, and then autocomplete the argument
+                            //TODO autocomplete file names if the command requires it
                             const cmd = TSOS.ShellCommand.COMMAND_LIST.find(c => { return c.command === tokens[0]; });
                             if (cmd === undefined || cmd.validArgs.length === 0) {
                                 return;

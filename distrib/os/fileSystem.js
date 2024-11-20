@@ -1,75 +1,119 @@
 var TSOS;
 (function (TSOS) {
     class FileSystem {
-        files;
+        //Since the shell is the only thing that uses files, and files cannot be opened in two places simultaneously,
+        //we might as well just have a map right here that tracks the open files.
+        open_files;
         constructor() {
-            this.files = new Map();
+            this.open_files = new Map();
         }
         create(file_name) {
-            if (this.files.has(file_name)) {
-                return TSOS.DiskError.FILE_EXISTS;
+            if (this.open_files.has(file_name)) {
+                return TSOS.DiskError.FILE_OPEN;
             }
-            const fcb = TSOS.FCB.new(file_name);
+            const fcb = TSOS.FCB.create(file_name);
             if (fcb instanceof TSOS.DiskError) {
                 return fcb;
             }
-            this.files.set(file_name, fcb);
+            this.open_files.set(file_name, fcb);
             return TSOS.DiskError.SUCCESS;
         }
-        read(file_name) {
-            if (!this.files.has(file_name)) {
-                return TSOS.DiskError.FILE_NOT_FOUND;
+        open(file_name) {
+            if (this.open_files.has(file_name)) {
+                return TSOS.DiskError.FILE_OPEN;
             }
-            return this.files.get(file_name).input().join("");
+            const fcb = TSOS.FCB.open(file_name);
+            if (fcb instanceof TSOS.DiskError) {
+                return fcb;
+            }
+            this.open_files.set(file_name, fcb);
+            return TSOS.DiskError.SUCCESS;
         }
-        write(file_name, content) {
-            if (!this.files.has(file_name)) {
-                return TSOS.DiskError.FILE_NOT_FOUND;
+        close(file_name) {
+            if (!this.open_files.has(file_name)) {
+                return TSOS.DiskError.FILE_NOT_OPEN;
             }
-            this.files.get(file_name).output([content]);
+            this.open_files.delete(file_name);
+            return TSOS.DiskError.SUCCESS;
+        }
+        //I file must be opened before being read.
+        read(file_name) {
+            if (!_DiskController.is_formatted()) {
+                return TSOS.DiskError.DISK_NOT_FORMATTED;
+            }
+            if (!this.open_files.has(file_name)) {
+                return TSOS.DiskError.FILE_NOT_OPEN;
+            }
+            return this.open_files.get(file_name).input().join("");
+        }
+        //I file must be opened before being written to.
+        write(file_name, content) {
+            if (!_DiskController.is_formatted()) {
+                return TSOS.DiskError.DISK_NOT_FORMATTED;
+            }
+            if (!this.open_files.has(file_name)) {
+                return TSOS.DiskError.FILE_NOT_OPEN;
+            }
+            const res = this.open_files.get(file_name).output([content]);
+            if (res instanceof TSOS.DiskError) {
+                return res;
+            }
             return TSOS.DiskError.SUCCESS;
         }
         delete(file_name) {
-            if (!this.files.has(file_name)) {
-                return TSOS.DiskError.FILE_NOT_FOUND;
+            if (this.open_files.has(file_name)) {
+                return TSOS.DiskError.FILE_OPEN;
             }
-            _DiskController.delete(this.files.get(file_name).tsb);
-            this.files.delete(file_name);
-            return TSOS.DiskError.SUCCESS;
+            return _DiskController.delete(file_name);
         }
         copy(file_name, copied_file_name) {
-            let res = this.create(copied_file_name);
+            if (!_DiskController.is_formatted()) {
+                return TSOS.DiskError.DISK_NOT_FORMATTED;
+            }
+            let res = this.open(file_name);
             if (res.code !== 0) {
+                return res;
+            }
+            res = this.create(copied_file_name);
+            if (res.code !== 0) {
+                this.close(file_name);
                 return res;
             }
             const content = this.read(file_name);
             if (content instanceof TSOS.DiskError) {
+                this.close(file_name);
+                this.close(copied_file_name);
                 return content;
             }
-            return this.write(copied_file_name, content);
+            res = this.close(file_name);
+            if (res.code !== 0) {
+                this.close(copied_file_name);
+                return res;
+            }
+            res = this.write(copied_file_name, content);
+            if (res.code !== 0) {
+                this.close(copied_file_name);
+                return res;
+            }
+            return this.close(copied_file_name);
         }
         rename(file_name, new_file_name) {
-            if (!this.files.has(file_name)) {
-                return TSOS.DiskError.FILE_NOT_FOUND;
-            }
-            const fcb = this.files.get(file_name);
-            const res = _DiskController.rename(fcb.tsb, new_file_name);
+            const fcb = this.open_files.get(file_name);
+            const res = _DiskController.rename(file_name, new_file_name);
             if (res.code !== 0) {
                 return res;
             }
-            this.files.delete(file_name);
-            this.files.set(file_name, fcb);
+            this.open_files.delete(file_name);
+            this.open_files.set(file_name, fcb);
             return TSOS.DiskError.SUCCESS;
         }
         ls(sh_hidden) {
-            let files = [];
-            this.files.forEach((_, key) => {
-                if (key.startsWith(".") && !sh_hidden) {
-                    return;
-                }
-                files.push(key);
+            if (!_DiskController.is_formatted()) {
+                return TSOS.DiskError.DISK_NOT_FORMATTED;
+            }
+            return _DiskController.get_all_files().filter(file => {
+                return sh_hidden || !file.startsWith(".");
             });
-            return files;
         }
     }
     TSOS.FileSystem = FileSystem;

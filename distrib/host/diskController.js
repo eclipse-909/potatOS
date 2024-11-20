@@ -6,8 +6,11 @@ var TSOS;
         DiskErrorCode[DiskErrorCode["FileNotFound"] = 1] = "FileNotFound";
         DiskErrorCode[DiskErrorCode["FileExists"] = 2] = "FileExists";
         DiskErrorCode[DiskErrorCode["DiskFormatted"] = 3] = "DiskFormatted";
-        DiskErrorCode[DiskErrorCode["StorageFull"] = 4] = "StorageFull";
-        DiskErrorCode[DiskErrorCode["FileNameTooLong"] = 5] = "FileNameTooLong";
+        DiskErrorCode[DiskErrorCode["DiskNotFormatted"] = 4] = "DiskNotFormatted";
+        DiskErrorCode[DiskErrorCode["StorageFull"] = 5] = "StorageFull";
+        DiskErrorCode[DiskErrorCode["FileNameTooLong"] = 6] = "FileNameTooLong";
+        DiskErrorCode[DiskErrorCode["FileOpen"] = 7] = "FileOpen";
+        DiskErrorCode[DiskErrorCode["FileNotOpen"] = 8] = "FileNotOpen";
     })(DiskErrorCode = TSOS.DiskErrorCode || (TSOS.DiskErrorCode = {}));
     class DiskError {
         code;
@@ -17,11 +20,14 @@ var TSOS;
             this.description = desc;
         }
         static SUCCESS = new DiskError(DiskErrorCode.Success, undefined);
-        static FILE_NOT_FOUND = new DiskError(DiskErrorCode.FileNotFound, "File not found.\n");
-        static FILE_EXISTS = new DiskError(DiskErrorCode.FileExists, "File name already exists.\n");
-        static DISK_FORMATTED = new DiskError(DiskErrorCode.DiskFormatted, "Disk already formatted.\n");
-        static STORAGE_FULL = new DiskError(DiskErrorCode.StorageFull, "Disk's storage is full.\n");
-        static FILE_NAME_TOO_LONG = new DiskError(DiskErrorCode.FileNameTooLong, "File name too long.\n");
+        static FILE_NOT_FOUND = new DiskError(DiskErrorCode.FileNotFound, "File not found.");
+        static FILE_EXISTS = new DiskError(DiskErrorCode.FileExists, "File name already exists.");
+        static DISK_FORMATTED = new DiskError(DiskErrorCode.DiskFormatted, "Disk already formatted.");
+        static DISK_NOT_FORMATTED = new DiskError(DiskErrorCode.DiskNotFormatted, "Disk is not formatted.");
+        static STORAGE_FULL = new DiskError(DiskErrorCode.StorageFull, "Disk's storage is full.");
+        static FILE_NAME_TOO_LONG = new DiskError(DiskErrorCode.FileNameTooLong, "File name too long.");
+        static FILE_OPEN = new DiskError(DiskErrorCode.FileOpen, "File is open.");
+        static FILE_NOT_OPEN = new DiskError(DiskErrorCode.FileNotOpen, "File is not open.");
     }
     TSOS.DiskError = DiskError;
     const TRACKS = 4;
@@ -33,8 +39,11 @@ var TSOS;
     //1 for in-use flag, 1 for tsb
     const FILE_RESERVED = 2;
     class DiskController {
-        formatted;
-        constructor() { this.formatted = false; }
+        constructor() {
+            if (sessionStorage.getItem("formatted") === null) {
+                sessionStorage.setItem("formatted", "false");
+            }
+        }
         //t: 0b1100_0000
         //s: 0b0011_1000
         //b: 0b0000_0111
@@ -47,8 +56,56 @@ var TSOS;
             };
         }
         tsbKey(t, s, b) { return t.toString() + s.toString() + b.toString(); }
+        file_exists(file_name) { return this.get_file(file_name) !== 0; }
+        get_file(file_name) {
+            const encoder = new TextEncoder();
+            const decoder = new TextDecoder();
+            for (let s = 0; s < SECTORS; s++) {
+                for (let b = 0; b < BLOCKS; b++) {
+                    const arr = encoder.encode(sessionStorage.getItem(this.tsbKey(0, s, b)));
+                    if ((arr[0] === 0) || (s === 0 && b === 0)) {
+                        continue;
+                    }
+                    if (decoder.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[2])) === file_name) {
+                        return this.fromTSB(0, s, b);
+                    }
+                }
+            }
+            return 0;
+        }
+        get_all_files() {
+            let files = [];
+            const encoder = new TextEncoder();
+            const decoder = new TextDecoder();
+            for (let s = 0; s < SECTORS; s++) {
+                for (let b = 0; b < BLOCKS; b++) {
+                    const arr = encoder.encode(sessionStorage.getItem(this.tsbKey(0, s, b)));
+                    if ((arr[0] === 0) || (s === 0 && b === 0)) {
+                        continue;
+                    }
+                    files.push(decoder.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[2])));
+                }
+            }
+            return files;
+        }
+        clear_disk() {
+            const decoder = new TextDecoder();
+            for (let t = 0; t < TRACKS; t++) {
+                for (let s = 0; s < SECTORS; s++) {
+                    for (let b = 0; b < BLOCKS; b++) {
+                        let arr = new Uint8Array(BLOCK_SIZE);
+                        if (t === 0 && s === 0 && b === 0) {
+                            arr[0] = 1;
+                        }
+                        sessionStorage.setItem(this.tsbKey(t, s, b), decoder.decode(arr));
+                    }
+                }
+            }
+            sessionStorage.setItem("formatted", "false");
+        }
+        is_formatted() { return sessionStorage.getItem("formatted") === "true"; }
         format() {
-            if (this.formatted) {
+            if (this.is_formatted()) {
                 return DiskError.DISK_FORMATTED;
             }
             const decoder = new TextDecoder();
@@ -63,17 +120,16 @@ var TSOS;
                     }
                 }
             }
-            this.formatted = true;
+            sessionStorage.setItem("formatted", "true");
+            return DiskError.SUCCESS;
         }
         //Returns the tsb of the next unused block in directory space, or 0 if storage is full.
         nextFreeDir() {
-            let tsb = 0;
             const encoder = new TextEncoder();
             for (let s = 0; s < SECTORS; s++) {
                 for (let b = 0; b < BLOCKS; b++) {
-                    const block = sessionStorage.getItem(this.tsbKey(0, s, b));
-                    const arr = encoder.encode(block);
-                    if (tsb === 0 && arr[0] === 0) {
+                    const arr = encoder.encode(sessionStorage.getItem(this.tsbKey(0, s, b)));
+                    if (arr[0] === 0) {
                         return this.fromTSB(0, s, b);
                     }
                 }
@@ -91,7 +147,7 @@ var TSOS;
                         const arr = encoder.encode(block);
                         if (arr[0] === 0) {
                             blocks.push(this.fromTSB(t, s, b));
-                            if (block.length === n) {
+                            if (blocks.length === n) {
                                 return blocks;
                             }
                         }
@@ -101,6 +157,12 @@ var TSOS;
             return [];
         }
         create(file_name) {
+            if (!this.is_formatted()) {
+                return DiskError.DISK_NOT_FORMATTED;
+            }
+            if (this.file_exists(file_name)) {
+                return DiskError.FILE_EXISTS;
+            }
             //get space for file in directory
             const encoder = new TextEncoder();
             const fileNameArr = encoder.encode(file_name);
@@ -111,26 +173,16 @@ var TSOS;
             if (dir === 0) {
                 return DiskError.STORAGE_FULL;
             }
-            //get space for file data
-            const blocks = this.nextFreeFiles(1);
-            if (blocks.length === 0) {
-                return DiskError.STORAGE_FULL;
-            }
             //set file in directory
             const dirTSB = this.toTSB(dir);
             let dirArr = new Uint8Array(BLOCK_SIZE);
             dirArr[0] = 1;
-            dirArr[1] = blocks[0];
+            dirArr[2] = fileNameArr.length;
             for (let i = 0; i < fileNameArr.length; i++) {
                 dirArr[i + DIR_RESERVED] = fileNameArr[i];
             }
             const decoder = new TextDecoder();
-            sessionStorage.setItem(this.tsbKey(dirTSB.t, dirTSB.s, dirTSB.b), decoder.decode(dirArr)); //data is zeroed-out
-            //set file data
-            const fileTSB = this.toTSB(blocks[0]);
-            let fileArr = new Uint8Array(64);
-            fileArr[0] = 1;
-            sessionStorage.setItem(this.tsbKey(fileTSB.t, fileTSB.s, fileTSB.b), decoder.decode(fileArr));
+            sessionStorage.setItem(this.tsbKey(dirTSB.t, dirTSB.s, dirTSB.b), decoder.decode(dirArr));
             return dir;
         }
         read(tsb) {
@@ -169,39 +221,62 @@ var TSOS;
             let TSB = this.toTSB(tsb);
             let key = this.tsbKey(TSB.t, TSB.s, TSB.b);
             let arr = encoder.encode(sessionStorage.getItem(key));
+            let dirArr = arr;
+            const dirKey = key;
             if (arr[0] === 0) {
                 //unreachable
-                _Kernel.krnTrapError("Attempted to read an unused block in the disk.");
+                _Kernel.krnTrapError("Attempted to write to an unused block in the disk.");
             }
             const content_arr = encoder.encode(content);
             let bytes_written = 0;
             tsb = arr[1];
+            //delete all blocks in the file space
             while (tsb !== 0) {
                 TSB = this.toTSB(tsb);
                 key = this.tsbKey(TSB.t, TSB.s, TSB.b);
                 arr = encoder.encode(sessionStorage.getItem(key));
                 if (arr[0] === 0) {
                     //unreachable
-                    _Kernel.krnTrapError("Attempted to read an unused block in the disk.");
-                }
-                if (bytes_written === content_arr.length) {
-                    arr[0] = 0;
-                }
-                let i = FILE_RESERVED;
-                for (; i < arr.length && bytes_written < content_arr.length; i++) {
-                    arr[i] = content_arr[bytes_written];
-                    bytes_written++;
-                }
-                if (bytes_written === content_arr.length) {
-                    for (; i < content_arr.length; i++) {
-                        arr[i] = 0;
-                    }
+                    _Kernel.krnTrapError("Attempted to delete an unused block in the disk.");
                 }
                 tsb = arr[1];
+                arr[0] = 0;
                 sessionStorage.setItem(key, decoder.decode(arr));
             }
+            //get new blocks in file space
+            const blocks = this.nextFreeFiles(Math.ceil(content_arr.length / (BLOCK_SIZE - FILE_RESERVED)));
+            if (blocks.length === 0) {
+                return DiskError.STORAGE_FULL;
+            }
+            dirArr[1] = blocks[0]; //set new tsb link
+            dirArr[3] = content_arr.length & 0xFF; //set length of data
+            dirArr[4] = (content_arr.length >> 8) & 0xFF;
+            sessionStorage.setItem(dirKey, decoder.decode(dirArr));
+            //write into new blocks in file space
+            for (let i = 0; i < blocks.length; i++) {
+                TSB = this.toTSB(blocks[i]);
+                key = this.tsbKey(TSB.t, TSB.s, TSB.b);
+                arr = new Uint8Array(BLOCK_SIZE);
+                arr[0] = 1;
+                if (i + 1 < blocks.length) {
+                    arr[1] = blocks[i + 1];
+                }
+                for (let ii = FILE_RESERVED; ii < BLOCK_SIZE && bytes_written < content_arr.length; ii++) {
+                    arr[ii] = content_arr[bytes_written];
+                    bytes_written++;
+                }
+                sessionStorage.setItem(key, decoder.decode(arr));
+            }
+            return DiskError.SUCCESS;
         }
-        delete(tsb) {
+        delete(file_name) {
+            if (!this.is_formatted()) {
+                return DiskError.DISK_NOT_FORMATTED;
+            }
+            let tsb = this.get_file(file_name);
+            if (tsb === 0) {
+                return DiskError.FILE_NOT_FOUND;
+            }
             const encoder = new TextEncoder();
             const decoder = new TextDecoder();
             let TSB = this.toTSB(tsb);
@@ -209,9 +284,10 @@ var TSOS;
             let arr = encoder.encode(sessionStorage.getItem(key));
             if (arr[0] === 0) {
                 //unreachable
-                _Kernel.krnTrapError("Attempted to read an unused block in the disk.");
+                _Kernel.krnTrapError("Attempted to delete an unused block in the disk.");
             }
             arr[0] = 0;
+            sessionStorage.setItem(key, decoder.decode(arr));
             tsb = arr[1];
             while (tsb !== 0) {
                 TSB = this.toTSB(tsb);
@@ -219,14 +295,22 @@ var TSOS;
                 arr = encoder.encode(sessionStorage.getItem(key));
                 if (arr[0] === 0) {
                     //unreachable
-                    _Kernel.krnTrapError("Attempted to read an unused block in the disk.");
+                    _Kernel.krnTrapError("Attempted to delete an unused block in the disk.");
                 }
                 tsb = arr[1];
                 arr[0] = 0;
                 sessionStorage.setItem(key, decoder.decode(arr));
             }
+            return DiskError.SUCCESS;
         }
-        rename(tsb, new_file_name) {
+        rename(file_name, new_file_name) {
+            if (!this.is_formatted()) {
+                return DiskError.DISK_NOT_FORMATTED;
+            }
+            let tsb = this.get_file(file_name);
+            if (tsb === 0) {
+                return DiskError.FILE_NOT_FOUND;
+            }
             if (new_file_name.length > BLOCK_SIZE - DIR_RESERVED) {
                 return DiskError.FILE_NAME_TOO_LONG;
             }

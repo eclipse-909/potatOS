@@ -133,7 +133,7 @@ var TSOS;
             _DrawingContext.fillText(_OsShell.promptStr + (this.inputBuffer.length > 0 ? input[0] : ""), CANVAS_MARGIN, this.getLineYPos(currLineNum));
             currLineNum++;
             //render input buffer on next lines
-            for (let i = 1; currLineNum <= CANVAS_NUM_LINES + this.scroll && i < this.inputBuffer.length; currLineNum++) {
+            for (let i = 1; currLineNum <= CANVAS_NUM_LINES + this.scroll && i < input.length; currLineNum++) {
                 _DrawingContext.fillText(input[i], CANVAS_MARGIN, this.getLineYPos(currLineNum));
                 i++;
             }
@@ -507,23 +507,50 @@ var TSOS;
                         if (lastIndex !== -1) {
                             text = text.substring(lastIndex + matchedDelimiter.length);
                         }
-                        const tokens = text.trim().split(/\s+/); //split by 1 or more spaces
-                        if (tokens.length == 1) {
-                            tokens[0] = tokens[0].toLowerCase();
-                            if (text.endsWith(' ')) {
-                                //Use token 0 as complete command and display all possible 1st arguments
-                                //TODO autocomplete file names if the command requires it
+                        //split text by whitespace and keep anything within double quotes as one token.
+                        //if there's an unmatched quote, everything from that quote to the end of the text is one token
+                        const regex = /"([^"]*)"?|\S+/g;
+                        const tokens = [];
+                        let match;
+                        while ((match = regex.exec(text)) !== null) {
+                            if (match[1] !== undefined) {
+                                // Matched quoted content, keep the quotes
+                                const quotedString = `"${match[1]}`; // Add back the opening quote
+                                tokens.push(quotedString);
+                            }
+                            else {
+                                // Matched a standalone word
+                                tokens.push(match[0]);
+                            }
+                        }
+                        const complete = text.endsWith(" ");
+                        const last_token = tokens.length - 1;
+                        if (tokens.length === 1) {
+                            if (complete) {
+                                //Use token 0 as a complete command and display all possible 1st arguments
                                 const command = TSOS.ShellCommand.COMMAND_LIST.find(cmd => { return cmd.command.toLowerCase() === tokens[0]; });
                                 if (command === undefined || command.validArgs.length === 0) {
                                     return;
                                 }
+                                const isFile = (command.validArgs.length >= last_token &&
+                                    command.validArgs[last_token - 1].length === 1 &&
+                                    command.validArgs[last_token - 1][0] === "FILE") ||
+                                    (command.validArgs[command.validArgs.length - 1].length === 1 &&
+                                        command.validArgs[command.validArgs.length - 1][0] === "REPEAT" &&
+                                        command.validArgs[command.validArgs.length - 2][0] === "FILE");
                                 const input = this.inputBuffer;
                                 this.pushInputToPrev();
-                                this.print(command.validArgs.join('\n'));
+                                if (isFile) {
+                                    this.print(_DiskController.get_all_files().join("\n"));
+                                }
+                                else {
+                                    this.print(command.validArgs[0].join('\n'));
+                                }
                                 this.printInput(input);
                             }
                             else {
-                                //Sse token 0 as incomplete command and autocomplete it
+                                //Use token 0 as an incomplete command and autocomplete it
+                                //Display all possible commands if it can't be autocompleted
                                 const possCmds = [];
                                 for (const cmd of TSOS.ShellCommand.COMMAND_LIST) {
                                     if (cmd.command.substring(0, tokens[0].length).toLowerCase() === tokens[0]) {
@@ -544,31 +571,74 @@ var TSOS;
                                 }
                             }
                         }
-                        else if (tokens.length === 2) {
-                            //Use token 0 as the command and token 1 as an incomplete first argument for that command, and then autocomplete the argument
-                            //TODO autocomplete file names if the command requires it
+                        else {
                             const cmd = TSOS.ShellCommand.COMMAND_LIST.find(c => { return c.command === tokens[0]; });
-                            if (cmd === undefined || cmd.validArgs.length === 0) {
+                            if (cmd === undefined) {
                                 return;
                             }
-                            tokens[1] = tokens[1].toLowerCase();
-                            const possArgs = [];
-                            for (const arg of cmd.validArgs) {
-                                if (arg.substring(0, tokens[1].length).toLowerCase() === tokens[1]) {
-                                    possArgs.push(arg);
-                                }
+                            const isFile = (cmd.validArgs.length >= last_token &&
+                                cmd.validArgs[last_token - 1].length === 1 &&
+                                cmd.validArgs[last_token - 1][0] === "FILE") ||
+                                (cmd.validArgs[cmd.validArgs.length - 1].length === 1 &&
+                                    cmd.validArgs[cmd.validArgs.length - 1][0] === "REPEAT" &&
+                                    cmd.validArgs[cmd.validArgs.length - 2][0] === "FILE");
+                            if (!isFile && cmd.validArgs.length < tokens.length - 1) {
+                                return;
                             }
-                            if (possArgs.length === 1) { // fill the argument
-                                const remainder = possArgs[0].substring(tokens[1].length) + " ";
-                                //if you start writing the argument in the wrong case, that's okay, but this won't correct the case you were using.
-                                //it will just fill in the rest of the argument in the correct case
-                                this.printInput(remainder);
-                            }
-                            else if (possArgs.length > 1) { // print all possible arguments
+                            if (complete) {
+                                //Use token 0 as the command, and tokens[tokens.length - 1] as a complete argument, and display all possible next arguments
                                 const input = this.inputBuffer;
                                 this.pushInputToPrev();
-                                this.print(possArgs.join('\n'));
+                                if (isFile) {
+                                    this.print(_DiskController.get_all_files().join("\n"));
+                                }
+                                else {
+                                    this.print(cmd.validArgs[tokens.length - 1].join('\n'));
+                                }
                                 this.printInput(input);
+                            }
+                            else {
+                                //Use token 0 as the command, and tokens[tokens.length - 1] as an incomplete argument, and autocomplete it
+                                //Display all possible arguments if it can't be autocompleted
+                                let token = tokens[last_token].toLowerCase();
+                                let quoted = false;
+                                if (token.startsWith('"')) {
+                                    token = token.substring(1);
+                                    quoted = true;
+                                }
+                                if (token.endsWith('"')) {
+                                    token = token.substring(0, token.length - 1);
+                                    quoted = false;
+                                }
+                                const possArgs = [];
+                                if (isFile) {
+                                    //autocomplete file name
+                                    for (const file of _DiskController.get_all_files()) {
+                                        if (file.substring(0, token.length).toLowerCase() === token) {
+                                            possArgs.push(file);
+                                        }
+                                    }
+                                }
+                                else if (cmd.validArgs.length >= last_token) {
+                                    //autocomplete argument
+                                    for (const arg of cmd.validArgs[last_token - 1]) {
+                                        if (arg.substring(0, token.length).toLowerCase() === token) {
+                                            possArgs.push(arg);
+                                        }
+                                    }
+                                }
+                                if (possArgs.length === 1) { // fill the argument
+                                    const remainder = possArgs[0].substring(tokens[last_token].length) + (quoted ? '" ' : " ");
+                                    //if you start writing the argument in the wrong case, that's okay, but this won't correct the case you were using.
+                                    //it will just fill in the rest of the argument in the correct case
+                                    this.printInput(remainder);
+                                }
+                                else if (possArgs.length > 1) { // print all possible arguments
+                                    const input = this.inputBuffer;
+                                    this.pushInputToPrev();
+                                    this.print(possArgs.join('\n'));
+                                    this.printInput(input);
+                                }
                             }
                         }
                         break;

@@ -2,10 +2,12 @@ module TSOS {
 	export enum ScheduleMode {
 		//Round-robin
 		RR,
-		//Non-preemptive first-come-first-served
-		NP_FCFS,
+		//first-come-first-served
+		FCFS,
 		//Preemptive shortest-job-fist (job length is an inaccurate/possibly wrong estimate)
-		P_SJF
+		P_SJF,
+		//Non-preemptive priority
+		NP_P
 	}
 
 	export class Scheduler {
@@ -46,6 +48,15 @@ module TSOS {
 				});
 				const next: ProcessControlBlock | null = this.readyQueue.peek();
 				if (next !== null && this.currPCB !== null && next.timeEstimate < this.currPCB.timeEstimate) {
+					_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));//preemptive
+					return;
+				}
+			} else if (this.scheduleMode === ScheduleMode.NP_P) {
+				this.readyQueue.sort((a: ProcessControlBlock, b: ProcessControlBlock): number => {
+					return a.priority - b.priority;
+				});
+				const next: ProcessControlBlock | null = this.readyQueue.peek();
+				if (next !== null && this.currPCB !== null && next.priority < this.currPCB.priority) {
 					_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));//preemptive
 					return;
 				}

@@ -24,7 +24,7 @@ var TSOS;
     TSOS.ShellProcess = ShellProcess;
     class Shell {
         // Properties
-        promptStr = "$ ";
+        promptStr = "~$ ";
         curses = "[fuvg],[cvff],[shpx],[phag],[pbpxfhpxre],[zbgureshpxre],[gvgf]";
         apologies = "[sorry]";
         //command execution queue
@@ -265,7 +265,7 @@ var TSOS;
             let nextCmd = this.cmdQueue.peek();
             while (currCmd) {
                 const command = TSOS.ShellCommand.COMMAND_LIST.find((item) => {
-                    return item.command === currCmd.name;
+                    return item.command === currCmd.name || item.aliases.includes(currCmd.name);
                 });
                 let stdin = this;
                 let stdout = _StdOut;

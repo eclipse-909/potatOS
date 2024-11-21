@@ -38,7 +38,7 @@ module TSOS {
 
 	export class Shell implements OutStream<string[]>, InStream<string[]>, ErrStream<string[]> {
 		// Properties
-		public promptStr = "$ ";
+		public promptStr = "~$ ";
 		public curses = "[fuvg],[cvff],[shpx],[phag],[pbpxfhpxre],[zbgureshpxre],[gvgf]";
 		public apologies = "[sorry]";
 		//command execution queue
@@ -272,7 +272,7 @@ module TSOS {
 			let nextCmd: Command | null = this.cmdQueue.peek();
 			while (currCmd) {
 				const command: ShellCommand | undefined = ShellCommand.COMMAND_LIST.find((item: ShellCommand): boolean => {
-					return item.command === currCmd.name;
+					return item.command === currCmd.name || item.aliases.includes(currCmd.name);
 				});
 				let stdin: InStream<string[]> = this;
 				let stdout: OutStream<string[]> = _StdOut;

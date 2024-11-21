@@ -4,10 +4,12 @@ var TSOS;
     (function (ScheduleMode) {
         //Round-robin
         ScheduleMode[ScheduleMode["RR"] = 0] = "RR";
-        //Non-preemptive first-come-first-served
-        ScheduleMode[ScheduleMode["NP_FCFS"] = 1] = "NP_FCFS";
+        //first-come-first-served
+        ScheduleMode[ScheduleMode["FCFS"] = 1] = "FCFS";
         //Preemptive shortest-job-fist (job length is an inaccurate/possibly wrong estimate)
         ScheduleMode[ScheduleMode["P_SJF"] = 2] = "P_SJF";
+        //Non-preemptive priority
+        ScheduleMode[ScheduleMode["NP_P"] = 3] = "NP_P";
     })(ScheduleMode = TSOS.ScheduleMode || (TSOS.ScheduleMode = {}));
     class Scheduler {
         currPCB;
@@ -45,6 +47,16 @@ var TSOS;
                 });
                 const next = this.readyQueue.peek();
                 if (next !== null && this.currPCB !== null && next.timeEstimate < this.currPCB.timeEstimate) {
+                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, [])); //preemptive
+                    return;
+                }
+            }
+            else if (this.scheduleMode === ScheduleMode.NP_P) {
+                this.readyQueue.sort((a, b) => {
+                    return a.priority - b.priority;
+                });
+                const next = this.readyQueue.peek();
+                if (next !== null && this.currPCB !== null && next.priority < this.currPCB.priority) {
                     _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, [])); //preemptive
                     return;
                 }

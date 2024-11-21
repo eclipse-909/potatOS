@@ -30,7 +30,7 @@ var TSOS;
         timeEstimate;
         cpuTime;
         waitTime;
-        priority;
+        priority; //TODO how do you determine the priority of a process?
         onDisk;
         segment;
         static highestPID = 0;

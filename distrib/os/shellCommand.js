@@ -4,51 +4,54 @@ var TSOS;
         func;
         command;
         description;
-        //Used for autocompletion of the FIRST argument only, not for verifying input
+        //Used for autocompletion of the arguments only, not for verifying input
         validArgs;
-        constructor(func, command, description, validArgs = []) {
+        aliases;
+        constructor(func, command, description, validArgs = [], aliases = []) {
             this.func = func;
             this.command = command;
             this.description = description;
             this.validArgs = validArgs;
+            this.aliases = aliases;
         }
         static COMMAND_LIST = [
             new ShellCommand(ShellCommand.shellVer, "ver", "- Displays the current version data.\n"),
             new ShellCommand(ShellCommand.shellHelp, "help", "- This is the help command. Seek help."),
             new ShellCommand(ShellCommand.shellShutdown, "shutdown", "- Shuts down the virtual OS but leaves the underlying host / hardware simulation running.\n"),
-            new ShellCommand(ShellCommand.shellCls, "cls", "- Clears the screen and resets the cursor position.\n"),
+            new ShellCommand(ShellCommand.shellCls, "cls", "- Clears the screen and resets the cursor position.\n", [], ["clear"]),
             new ShellCommand(ShellCommand.shellMan, "man", "<TOPIC> - Displays the MANual page for <TOPIC>.\n"),
-            new ShellCommand(ShellCommand.shellTrace, "trace", "<on | off> - Turns the OS trace on or off.\n", ["on", "off"]),
-            new ShellCommand(ShellCommand.shellRot13, "rot13", "<STRING>... - Does rot13 obfuscation on <STRING>....\n"),
-            new ShellCommand(ShellCommand.shellPrompt, "prompt", "<STRING>... - Sets the prompt.\n"),
+            new ShellCommand(ShellCommand.shellTrace, "trace", "<on | off> - Turns the OS trace on or off.\n", [["on", "off"]]),
+            new ShellCommand(ShellCommand.shellRot13, "rot13", "<TEXT>... - Does rot13 obfuscation on TEXT.\n"),
+            new ShellCommand(ShellCommand.shellPrompt, "prompt", "<TEXT>... - Sets the prompt to TEXT.\n"),
             new ShellCommand(ShellCommand.shellDate, "date", "- Displays the current date and time.\n"),
             new ShellCommand(ShellCommand.shellWhereAmI, "whereami", "- Displays the user's current location.\n"),
             new ShellCommand(ShellCommand.shellEcho, "echo", "- Displays the given text to standard output.\n"),
             new ShellCommand(ShellCommand.shellStatus, "status", "- Displays a message to the task bar.\n"),
             new ShellCommand(ShellCommand.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message.\n"),
             new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.\n"),
-            new ShellCommand(ShellCommand.shellRun, "run", "<PROCESS_ID> [&] - Run the program in memory with the process ID. Use ampersand to run in background asynchronously.\n"),
+            new ShellCommand(ShellCommand.shellRun, "run", "<PROCESS_ID> [&] - Run the program in memory with the PROCESS_ID. Use ampersand to run in background asynchronously.\n"),
             new ShellCommand(ShellCommand.shellClh, "clh", "- Clears the host log.\n"),
             new ShellCommand(ShellCommand.shellClearMem, "clearmem", "- Clears memory of all resident/terminated processes.\n"),
             new ShellCommand(ShellCommand.shellRunAll, "runall", "- Runs all programs in memory concurrently.\n"),
             new ShellCommand(ShellCommand.shellPs, "ps", "- Displays the PID and status of all processes.\n"),
-            new ShellCommand(ShellCommand.shellKill, "kill", "<PROCESS_ID> - Terminates the process with the given process ID.\n"),
+            new ShellCommand(ShellCommand.shellKill, "kill", "<PROCESS_ID> - Terminates the process with the given PROCESS_ID.\n"),
             new ShellCommand(ShellCommand.shellKillAll, "killall", "- Terminates all processes.\n"),
-            new ShellCommand(ShellCommand.shellQuantum, "quantum", "<INT> - Set the quantum (measured in CPU cycles) for Round-Robin scheduling. Must be non-zero. Negative quantum will reverse the order of execution\n"),
-            new ShellCommand(ShellCommand.shellChAlloc, "challoc", "<FirstFit | BestFit | WorstFit> - Set the mode for allocating new processes.\n", ["FirstFit", "BestFit", "WorstFit"]),
-            new ShellCommand(ShellCommand.shellChSegment, "chsegment", "<fixed | variable> [INT] - Change segment allocation to fixed or variable size. If fixed, pass the size as a positive integer.\n", ["fixed", "variable"]),
-            new ShellCommand(ShellCommand.shellChSched, "chsched", "<RR | NP_FCFS | P_SJF> - Change the CPU scheduling mode.\n", ["RR", "NP_FCFS", "P_SJF"]),
+            new ShellCommand(ShellCommand.shellQuantum, "quantum", "<QUANTUM> - Set the quantum (measured in CPU cycles) for Round-Robin scheduling. Must be non-zero. Negative quantum will reverse the order of execution\n"),
+            new ShellCommand(ShellCommand.shellChAlloc, "challoc", "<FirstFit | BestFit | WorstFit> - Set the mode for allocating new processes.\n", [["FirstFit", "BestFit", "WorstFit"]]),
+            new ShellCommand(ShellCommand.shellChSegment, "chsegment", "<fixed | variable> [SIZE] - Change segment allocation to fixed or variable size. If fixed, pass the SIZE as a positive integer.\n", [["fixed", "variable"]]),
+            new ShellCommand(ShellCommand.shellChSched, "chsched", "<RR | FCFS | P_SJF | NP_P> - Change the CPU scheduling mode.\n", [["RR", "FCFS", "P_SJF", "NP_P"]], ["setschedule"]),
             new ShellCommand(ShellCommand.shellFormat, "format", "- Formats the disk. This is done automatically during bootstrap.\n"),
-            new ShellCommand(ShellCommand.shellCreate, "create", "<FILE> - Creates a file with the given name if it does not exist.\n"),
-            new ShellCommand(ShellCommand.shellRead, "read", "<FILE> - Output the contents of the given file if it exists.\n"),
-            new ShellCommand(ShellCommand.shellWrite, "write", "<FILE> <STRING>... - Write the given string to the file if it exists.\n"),
-            new ShellCommand(ShellCommand.shellDelete, "delete", "<FILE> - Delete the given file if it exists.\n"),
-            new ShellCommand(ShellCommand.shellCopy, "copy", "<FILE> <COPY_FILE> - Creates a file with the copy name and copies the contents of the file to it if it exists.\n"),
-            new ShellCommand(ShellCommand.shellRename, "rename", "<FILE> <NEW_FILE> - Renames the file, if it exists, to the new name, if it does not exist.\n"),
-            new ShellCommand(ShellCommand.shellLs, "ls", "[-a] [-l] - Outputs a list of open_files in the directory. Use -a to show hidden open_files. Use -l to separate files with a new line.\n", ["-a", "-l", "-la", "-al"]),
-            new ShellCommand(ShellCommand.shellClearDisk, "cleardisk", " - Erases the entire disk and un-formats it.\n"),
-            new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n"),
-            new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n"),
+            new ShellCommand(ShellCommand.shellCreate, "create", "<FILE> - Creates FILE if it does not exist.\n", [["FILE"]], ["touch"]),
+            new ShellCommand(ShellCommand.shellRead, "read", "<FILE> - Output the contents of FILE if it exists.\n", [["FILE"]], ["cat"]),
+            new ShellCommand(ShellCommand.shellWrite, "write", "<FILE> <TEXT>... - Write TEXT to FILE if it exists.\n", [["FILE"], []]),
+            new ShellCommand(ShellCommand.shellDelete, "delete", "<FILE>... - Delete FILEs if they exists.\n", [["FILE"], ["REPEAT"]], ["rm"]),
+            new ShellCommand(ShellCommand.shellCopy, "copy", "<FILE> <COPY_FILE> - Creates a file with the copy name and copies the contents of the file to it if it exists.\n", [["FILE"], ["FILE"]], ["cp"]),
+            new ShellCommand(ShellCommand.shellRename, "rename", "<FILE> <NEW_FILE> - Renames the file, if it exists, to the new name, if it does not exist.\n", [["FILE"], ["FILE"]], ["mv"]),
+            new ShellCommand(ShellCommand.shellLs, "ls", "[-la] - Outputs a list of open_files in the directory.\n   -a Show hidden open_files.\n   -l Separate files with a new line.\n", [["-a", "-l", "-la", "-al"]]),
+            new ShellCommand(ShellCommand.shellClearDisk, "cleardisk", "- Erases the entire disk and un-formats it.\n"),
+            new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n", [["FILE"]]),
+            new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n", [[], ["FILE"], ["REPEAT"]]),
+            new ShellCommand(ShellCommand.shellGetSchedule, "getschedule", "- Print the current CPU scheduling mode.\n"),
         ];
         static shellVer(stdin, stdout, stderr) {
             const args = stdin.input();
@@ -107,7 +110,7 @@ var TSOS;
         static shellMan(stdin, stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 1) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: man <topic>  Please supply a topic.\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: man <TOPIC>  Please supply a topic.\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             const topic = args[0];
@@ -153,7 +156,7 @@ var TSOS;
                 return TSOS.ExitCode.SUCCESS;
             }
             else {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: rot13 <string>  Please supply a string.\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: rot13 <TEXT>...  Please supply a string.\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
         }
@@ -164,7 +167,7 @@ var TSOS;
                 return TSOS.ExitCode.SUCCESS;
             }
             else {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: prompt <string>  Please supply a string.\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: prompt <TEXT>...  Please supply a string.\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
         }
@@ -189,7 +192,7 @@ var TSOS;
         static shellEcho(stdin, stdout, stderr) {
             const args = stdin.input();
             if (args.length === 0) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: echo <string>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: echo <TEXT>...\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             stdout.output([args.join(" ") + "\n"]);
@@ -198,7 +201,7 @@ var TSOS;
         static shellStatus(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length === 0) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: status <string>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: status <TEXT>...\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             //Is it okay to do GUI stuff here?
@@ -261,7 +264,7 @@ var TSOS;
         static shellRun(stdin, stdout, stderr) {
             const args = stdin.input();
             if (!(args.length === 1 || args.length === 2)) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: run <pid> [&]\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: run <PROCESS_ID> [&]\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             //add support for "run all" with space
@@ -277,13 +280,13 @@ var TSOS;
                     async = true;
                 }
                 else {
-                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: run <pid> [&]\n"]);
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Usage: run <PROCESS_ID> [&]\n"]);
                     return TSOS.ExitCode.SHELL_MISUSE;
                 }
             }
             const pid = Number.parseInt(args[0]);
             if (Number.isNaN(pid)) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <pid> [&]\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - pid must be an integer. Usage: run <PROCESS_ID> [&]\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             return ShellCommand.runHelper(pid, async, stdout, stderr);
@@ -352,7 +355,7 @@ var TSOS;
         static shellKill(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 1) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: kill <pid>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: kill <PROCESS_ID>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             //add support for "kill all" with space
@@ -364,7 +367,7 @@ var TSOS;
             }
             const pid = Number.parseInt(args[0]);
             if (Number.isNaN(pid)) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid pid (must be a non-negative integer). Usage: kill <pid>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid pid (must be a non-negative integer). Usage: kill <PROCESS_ID>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.kill, [pid, TSOS.ExitCode.PROC_KILLED]));
@@ -384,12 +387,12 @@ var TSOS;
         static shellQuantum(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 1) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: quantum <int>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: quantum <QUANTUM>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             let pid = Number.parseInt(args[0]);
             if (Number.isNaN(pid) || pid === 0) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid pid (must be a non-zero integer). Usage: quantum <int>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid pid (must be a non-zero integer). Usage: quantum <QUANTUM>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _Scheduler.quantum = pid;
@@ -420,32 +423,32 @@ var TSOS;
         static shellChSegment(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 1 && args.length !== 2) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed | variable> [<int>]\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed | variable> [SIZE]\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             switch (args[0].toLowerCase()) {
                 case "fixed":
                     if (args.length !== 2) {
-                        stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed | variable> [<int>]\n"]);
+                        stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed | variable> [SIZE]\n"]);
                         return TSOS.ExitCode.SHELL_MISUSE;
                     }
                     _MMU.fixedSegments = true;
                     const size = Number.parseInt(args[1]);
                     if (Number.isNaN(size) || size <= 0) {
-                        stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Size must be a positive integer. Usage: chsegment <fixed | variable> [<int>]\n"]);
+                        stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Size must be a positive integer. Usage: chsegment <fixed | variable> [SIZE]\n"]);
                         return TSOS.ExitCode.SHELL_MISUSE;
                     }
                     _MMU.segmentSize = size;
                     break;
                 case "variable":
                     if (args.length !== 1) {
-                        stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Cannot use a specific size for variable-sized segments. Usage: chsegment <fixed | variable> [<int>]\n"]);
+                        stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Cannot use a specific size for variable-sized segments. Usage: chsegment <fixed | variable> [SIZE]\n"]);
                         return TSOS.ExitCode.SHELL_MISUSE;
                     }
                     _MMU.fixedSegments = false;
                     break;
                 default:
-                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed | variable> [<int>]\n"]);
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: chsegment <fixed | variable> [QUANTUM]\n"]);
                     return TSOS.ExitCode.SHELL_MISUSE;
             }
             return TSOS.ExitCode.SUCCESS;
@@ -453,21 +456,24 @@ var TSOS;
         static shellChSched(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 1) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR | NP_FCFS | P_SJF>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR | FCFS | P_SJF | NP_P>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             switch (args[0].toUpperCase()) {
                 case "RR":
                     _Scheduler.scheduleMode = TSOS.ScheduleMode.RR;
                     break;
-                case "NP_FCFS":
-                    _Scheduler.scheduleMode = TSOS.ScheduleMode.NP_FCFS;
+                case "FCFS":
+                    _Scheduler.scheduleMode = TSOS.ScheduleMode.FCFS;
                     break;
                 case "P_SJF":
                     _Scheduler.scheduleMode = TSOS.ScheduleMode.P_SJF;
                     break;
+                case "NP_P":
+                    _Scheduler.scheduleMode = TSOS.ScheduleMode.NP_P;
+                    break;
                 default:
-                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR | NP_FCFS | P_SJF>\n"]);
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: chsched <RR | FCFS | P_SJF | NP_P>\n"]);
                     return TSOS.ExitCode.SHELL_MISUSE;
             }
             TSOS.Control.updatePcbMeta();
@@ -475,7 +481,7 @@ var TSOS;
         }
         static shellFormat(stdin, _stdout, stderr) {
             const args = stdin.input();
-            if (args.length !== 0) {
+            if (args.length !== 0) { //TODO allow -quick and -full arguments
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
@@ -485,7 +491,7 @@ var TSOS;
         static shellCreate(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 1) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: create <FILE_NAME>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: create <FILE>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Create, stderr, args[0]]));
@@ -495,7 +501,7 @@ var TSOS;
         static shellRead(stdin, stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 1) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: read <FILE_NAME.sh>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: read <FILE.sh>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.OpenReadClose, stderr, (content) => { stdout.output([content]); }, args[0]]));
@@ -504,7 +510,7 @@ var TSOS;
         static shellWrite(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 2) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: write <FILE_NAME> <string...>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: write <FILE> <TEXT>...\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.OpenWriteClose, stderr, args[0], args[1]]));
@@ -512,17 +518,19 @@ var TSOS;
         }
         static shellDelete(stdin, _stdout, stderr) {
             const args = stdin.input();
-            if (args.length !== 1) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: delete <FILE_NAME>\n"]);
+            if (args.length === 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: delete <FILE>...\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Delete, stderr, args[0]]));
+            for (const arg of args) {
+                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Delete, stderr, arg]));
+            }
             return TSOS.ExitCode.SUCCESS;
         }
         static shellCopy(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 2) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: copy <FILE_NAME> <COPY_FILE_NAME>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: copy <FILE> <COPY_FILE>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Copy, stderr, args[0], args[1]]));
@@ -531,7 +539,7 @@ var TSOS;
         static shellRename(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 2) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: rename <FILE_NAME> <NEW_FILE_NAME>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: rename <FILE> <NEW_FILE>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Rename, stderr, args[0], args[1]]));
@@ -557,7 +565,7 @@ var TSOS;
                     list = true;
                 }
                 else {
-                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-a] [-l]\n"]);
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-la]\n"]);
                     return TSOS.ExitCode.SHELL_MISUSE;
                 }
             }
@@ -567,12 +575,12 @@ var TSOS;
                     list = true;
                 }
                 else {
-                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-a] [-l]\n"]);
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-la]\n"]);
                     return TSOS.ExitCode.SHELL_MISUSE;
                 }
             }
             else if (args.length > 2) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-a] [-l]\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-la]\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Ls, stderr, stdout, sh_hidden, list]));
@@ -590,7 +598,7 @@ var TSOS;
         static shellShell(stdin, _stdout, stderr) {
             const args = stdin.input();
             if (args.length !== 1) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: shell <FILE_NAME.sh>\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: shell <FILE.sh>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             if (!args[0].match(/^.+\.sh$/)) {
@@ -611,7 +619,7 @@ var TSOS;
         static shellGrep(stdin, stdout, stderr) {
             const args = stdin.input();
             if (args.length < 2) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: grep <PATTERN> <FILE_NAME>...\n"]);
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: grep <PATTERN> <FILE>...\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             for (let i = 1; i < args.length; i++) {
@@ -626,11 +634,37 @@ var TSOS;
                                 matches.push(line);
                             }
                         }
-                        stdout.output([matches.join("\n") + (i < args.length - 1 ? "\n" : "")]);
+                        if (matches.length > 0) {
+                            stdout.output([matches.join("\n") + (i === args.length - 1 ? "" : "\n")]);
+                        }
                     },
                     args[i]
                 ]));
             }
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellGetSchedule(stdin, stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: getschedule\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            let mode = "";
+            switch (_Scheduler.scheduleMode) {
+                case TSOS.ScheduleMode.RR:
+                    mode = "Round Robin";
+                    break;
+                case TSOS.ScheduleMode.FCFS:
+                    mode = "First Come First Served";
+                    break;
+                case TSOS.ScheduleMode.P_SJF:
+                    mode = "Preemptive Shortest Job First";
+                    break;
+                case TSOS.ScheduleMode.NP_P:
+                    mode = "Non-Preemptive Priority";
+                    break;
+            }
+            stdout.output([mode]);
             return TSOS.ExitCode.SUCCESS;
         }
     }

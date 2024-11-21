@@ -151,11 +151,14 @@ var TSOS;
                 case TSOS.ScheduleMode.RR:
                     mode = "Round Robin";
                     break;
-                case TSOS.ScheduleMode.NP_FCFS:
-                    mode = "Non-Preemptive First Come First Served";
+                case TSOS.ScheduleMode.FCFS:
+                    mode = "First Come First Served";
                     break;
                 case TSOS.ScheduleMode.P_SJF:
                     mode = "Preemptive Shortest Job First";
+                    break;
+                case TSOS.ScheduleMode.NP_P:
+                    mode = "Non-Preemptive Priority";
                     break;
             }
             document.getElementById("scheduleMode").innerHTML = "Schedule Mode: " + mode;

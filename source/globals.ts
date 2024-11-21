@@ -13,7 +13,7 @@
 //
 
 const APP_NAME: string    = "potatOS";   // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION: string = "0.4.1";   // What did you expect?
+const APP_VERSION: string = "0.4.8";   // What did you expect?
 
 const CPU_CLOCK_INTERVAL: number = 0;   // This is in ms (milliseconds) so 1000 = 1 second.
 
@@ -67,7 +67,7 @@ let _KernelBuffers = null;
 let _Scheduler: TSOS.Scheduler = null;
 let _Dispatcher: TSOS.Dispatcher = null;
 
-// Standard input and output
+// Standard input, output, and error
 let _StdIn: TSOS.Console = null;
 let _StdOut: TSOS.Console = null;
 let _StdErr: TSOS.Console = null;

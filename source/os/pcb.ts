@@ -29,7 +29,7 @@ module TSOS {
 		timeEstimate: number;
 		cpuTime: number;
 		waitTime: number;
-		priority: number;
+		priority: number;//TODO how do you determine the priority of a process?
 		onDisk: boolean;
 		segment: number;
 

@@ -12,7 +12,6 @@ module TSOS {
 		Copy,
 		Rename,
 		Ls,
-		ClearDisk
 	}
 
 	export class DiskDriver extends DeviceDriver {
@@ -36,27 +35,33 @@ module TSOS {
 			let err: DiskError;
 			switch (params[0] as DiskAction) {
 				case DiskAction.Format:
-					//no additional params
+					//params[2] is a boolean for if it's a full format
 					_Kernel.krnTrace("Formatting disk");
-					err = _DiskController.format();
+					err = _DiskController.format(params[2]);
 					if (stderr !== null && err.description !== undefined) {
 						stderr.error([err.description]);
 					}
 					break;
 				case DiskAction.Create:
-					//params[2] is the file name
-					_Kernel.krnTrace(`Creating file ${params[2]}`);
-					err = _FileSystem.create(params[2]);
+					//params[2] is a function that is called after the file has been created
+					//params[3] is the file name
+					_Kernel.krnTrace(`Creating file ${params[3]}`);
+					err = _FileSystem.create(params[3]);
 					if (stderr !== null && err.description !== undefined) {
 						stderr.error([err.description]);
+					} else if (params[2] !== null) {
+						(params[2] as () => void)();
 					}
 					break;
 				case DiskAction.Open:
-					//params[2] is the file name
-					_Kernel.krnTrace(`Opening file ${params[2]}`);
-					err = _FileSystem.open(params[2]);
+					//params[2] is a function that is called after the file has been opened
+					//params[3] is the file name
+					_Kernel.krnTrace(`Opening file ${params[3]}`);
+					err = _FileSystem.open(params[3]);
 					if (stderr !== null && err.description !== undefined) {
 						stderr.error([err.description]);
+					} else if (params[2] !== null) {
+						(params[2] as () => void)();
 					}
 					break;
 				case DiskAction.Close:
@@ -171,12 +176,9 @@ module TSOS {
 						}
 						break;
 					}
-					(params[2] as OutStream<string[]>).output([files.join(params[4]? "\n" : " ")]);//TODO do I need to join the open_files into one string, or leave it like this?
-					break;
-				case DiskAction.ClearDisk:
-					//No additional params
-					_Kernel.krnTrace("Erasing disk");
-					_DiskController.clear_disk();
+					if (files.length > 0) {
+						(params[2] as OutStream<string[]>).output([files.join(params[4] ? "\n" : " ")]);
+					}
 					break;
 			}
 		}

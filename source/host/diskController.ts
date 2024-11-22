@@ -3,7 +3,6 @@ module TSOS {
 		Success,
 		FileNotFound,
 		FileExists,
-		DiskFormatted,
 		DiskNotFormatted,
 		StorageFull,
 		FileNameTooLong,
@@ -23,7 +22,6 @@ module TSOS {
 		public static SUCCESS: DiskError = new DiskError(DiskErrorCode.Success, undefined);
 		public static FILE_NOT_FOUND: DiskError = new DiskError(DiskErrorCode.FileNotFound, "File not found.");
 		public static FILE_EXISTS: DiskError = new DiskError(DiskErrorCode.FileExists, "File name already exists.");
-		public static DISK_FORMATTED: DiskError = new DiskError(DiskErrorCode.DiskFormatted, "Disk already formatted.");
 		public static DISK_NOT_FORMATTED: DiskError = new DiskError(DiskErrorCode.DiskNotFormatted, "Disk is not formatted.");
 		public static STORAGE_FULL: DiskError = new DiskError(DiskErrorCode.StorageFull, "Disk's storage is full.");
 		public static FILE_NAME_TOO_LONG: DiskError = new DiskError(DiskErrorCode.FileNameTooLong, "File name too long.");
@@ -93,35 +91,34 @@ module TSOS {
 			return files;
 		}
 
-		public clear_disk(): void {
-			const decoder: TextDecoder = new TextDecoder();
-			for (let t: number = 0; t < TRACKS; t++) {
-				for (let s: number = 0; s < SECTORS; s++) {
-					for (let b: number = 0; b < BLOCKS; b++) {
-						let arr: Uint8Array = new Uint8Array(BLOCK_SIZE);
-						if (t === 0 && s === 0 && b === 0) {
-							arr[0] = 1;
-						}
-						sessionStorage.setItem(this.tsbKey(t, s, b), decoder.decode(arr));
-					}
-				}
-			}
-			sessionStorage.setItem("formatted", "false");
-		}
-
 		public is_formatted(): boolean {return sessionStorage.getItem("formatted") === "true";}
 
-		public format(): DiskError {
-			if (this.is_formatted()) {return DiskError.DISK_FORMATTED;}
+		public format(full: boolean): DiskError {
+			const encoder: TextEncoder = new TextEncoder();
 			const decoder: TextDecoder = new TextDecoder();
-			for (let t: number = 0; t < TRACKS; t++) {
-				for (let s: number = 0; s < SECTORS; s++) {
-					for (let b: number = 0; b < BLOCKS; b++) {
-						let arr: Uint8Array = new Uint8Array(BLOCK_SIZE);
-						if (t === 0 && s === 0 && b === 0) {
-							arr[0] = 1;
+			if (!this.is_formatted() || full) {
+				//full
+				for (let t: number = 0; t < TRACKS; t++) {
+					for (let s: number = 0; s < SECTORS; s++) {
+						for (let b: number = 0; b < BLOCKS; b++) {
+							let arr: Uint8Array = new Uint8Array(BLOCK_SIZE);
+							if (t === 0 && s === 0 && b === 0) {
+								arr[0] = 1;
+							}
+							sessionStorage.setItem(this.tsbKey(t, s, b), decoder.decode(arr));
 						}
-						sessionStorage.setItem(this.tsbKey(t, s, b), decoder.decode(arr));
+					}
+				}
+			} else {
+				//quick
+				for (let t: number = 0; t < TRACKS; t++) {
+					for (let s: number = 0; s < SECTORS; s++) {
+						for (let b: number = 0; b < BLOCKS; b++) {
+							const key: string = this.tsbKey(t, s, b);
+							let arr: Uint8Array = encoder.encode(sessionStorage.getItem(key));
+							arr[0] = t === 0 && s === 0 && b === 0? 1 : 0;
+							sessionStorage.setItem(key, decoder.decode(arr));
+						}
 					}
 				}
 			}

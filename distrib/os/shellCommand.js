@@ -40,7 +40,7 @@ var TSOS;
             new ShellCommand(ShellCommand.shellChAlloc, "challoc", "<FirstFit | BestFit | WorstFit> - Set the mode for allocating new processes.\n", [["FirstFit", "BestFit", "WorstFit"]]),
             new ShellCommand(ShellCommand.shellChSegment, "chsegment", "<fixed | variable> [SIZE] - Change segment allocation to fixed or variable size. If fixed, pass the SIZE as a positive integer.\n", [["fixed", "variable"]]),
             new ShellCommand(ShellCommand.shellChSched, "chsched", "<RR | FCFS | P_SJF | NP_P> - Change the CPU scheduling mode.\n", [["RR", "FCFS", "P_SJF", "NP_P"]], ["setschedule"]),
-            new ShellCommand(ShellCommand.shellFormat, "format", "- Formats the disk. This is done automatically during bootstrap.\n"),
+            new ShellCommand(ShellCommand.shellFormat, "format", "[-quick | -full] - Formats the disk. Defaults to -quick, which allows the possibility to recover deleted files.\n", [["-quick", "-full"]], ["cleardisk"]),
             new ShellCommand(ShellCommand.shellCreate, "create", "<FILE> - Creates FILE if it does not exist.\n", [["FILE"]], ["touch"]),
             new ShellCommand(ShellCommand.shellRead, "read", "<FILE> - Output the contents of FILE if it exists.\n", [["FILE"]], ["cat"]),
             new ShellCommand(ShellCommand.shellWrite, "write", "<FILE> <TEXT>... - Write TEXT to FILE if it exists.\n", [["FILE"], []]),
@@ -48,7 +48,6 @@ var TSOS;
             new ShellCommand(ShellCommand.shellCopy, "copy", "<FILE> <COPY_FILE> - Creates a file with the copy name and copies the contents of the file to it if it exists.\n", [["FILE"], ["FILE"]], ["cp"]),
             new ShellCommand(ShellCommand.shellRename, "rename", "<FILE> <NEW_FILE> - Renames the file, if it exists, to the new name, if it does not exist.\n", [["FILE"], ["FILE"]], ["mv"]),
             new ShellCommand(ShellCommand.shellLs, "ls", "[-la] - Outputs a list of open_files in the directory.\n   -a Show hidden open_files.\n   -l Separate files with a new line.\n", [["-a", "-l", "-la", "-al"]]),
-            new ShellCommand(ShellCommand.shellClearDisk, "cleardisk", "- Erases the entire disk and un-formats it.\n"),
             new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n", [["FILE"]]),
             new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n", [[], ["FILE"], ["REPEAT"]]),
             new ShellCommand(ShellCommand.shellGetSchedule, "getschedule", "- Print the current CPU scheduling mode.\n"),
@@ -481,11 +480,21 @@ var TSOS;
         }
         static shellFormat(stdin, _stdout, stderr) {
             const args = stdin.input();
-            if (args.length !== 0) { //TODO allow -quick and -full arguments
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format\n"]);
+            let full = false;
+            if (args.length === 1) { //TODO allow -quick and -full arguments
+                if (args[0] === "-full") {
+                    full = true;
+                }
+                else if (args[0] !== "-quick") {
+                    stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format [-quick | -full]\n"]);
+                    return TSOS.ExitCode.SHELL_MISUSE;
+                }
+            }
+            else if (args.length > 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format [-quick | -full]\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Format, stderr]));
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Format, stderr, full]));
             return TSOS.ExitCode.SUCCESS;
         }
         static shellCreate(stdin, _stdout, stderr) {
@@ -494,8 +503,9 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: create <FILE>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Create, stderr, args[0]]));
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Close, null, args[0]]));
+            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Create, stderr, () => {
+                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Close, stderr, args[0]]));
+                }, args[0]]));
             return TSOS.ExitCode.SUCCESS;
         }
         static shellRead(stdin, stdout, stderr) {
@@ -584,15 +594,6 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Ls, stderr, stdout, sh_hidden, list]));
-            return TSOS.ExitCode.SUCCESS;
-        }
-        static shellClearDisk(stdin, _stdout, stderr) {
-            const args = stdin.input();
-            if (args.length !== 0) {
-                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: cleardisk\n"]);
-                return TSOS.ExitCode.SHELL_MISUSE;
-            }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.ClearDisk, stderr]));
             return TSOS.ExitCode.SUCCESS;
         }
         static shellShell(stdin, _stdout, stderr) {

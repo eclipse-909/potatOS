@@ -67,7 +67,13 @@ module TSOS {
 				[["RR", "FCFS", "P_SJF", "NP_P"]],
 				["setschedule"]
 			),
-			new ShellCommand(ShellCommand.shellFormat, "format", "- Formats the disk. This is done automatically during bootstrap.\n"),
+			new ShellCommand(
+				ShellCommand.shellFormat,
+				"format",
+				"[-quick | -full] - Formats the disk. Defaults to -quick, which allows the possibility to recover deleted files.\n",
+				[["-quick", "-full"]],
+				["cleardisk"]
+			),
 			new ShellCommand(ShellCommand.shellCreate, "create", "<FILE> - Creates FILE if it does not exist.\n", [["FILE"]], ["touch"]),
 			new ShellCommand(ShellCommand.shellRead, "read", "<FILE> - Output the contents of FILE if it exists.\n", [["FILE"]], ["cat"]),
 			new ShellCommand(ShellCommand.shellWrite, "write", "<FILE> <TEXT>... - Write TEXT to FILE if it exists.\n", [["FILE"], []]),
@@ -91,7 +97,6 @@ module TSOS {
 				"[-la] - Outputs a list of open_files in the directory.\n   -a Show hidden open_files.\n   -l Separate files with a new line.\n",
 				[["-a", "-l", "-la", "-al"]]
 			),
-			new ShellCommand(ShellCommand.shellClearDisk, "cleardisk", "- Erases the entire disk and un-formats it.\n"),
 			new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n", [["FILE"]]),
 			new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n", [[], ["FILE"], ["REPEAT"]]),
 			new ShellCommand(ShellCommand.shellGetSchedule, "getschedule", "- Print the current CPU scheduling mode.\n"),
@@ -550,11 +555,19 @@ module TSOS {
 
 		static shellFormat(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			const args: string[] = stdin.input();
-			if (args.length !== 0) {//TODO allow -quick and -full arguments
-				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format\n"]);
+			let full: boolean = false;
+			if (args.length === 1) {//TODO allow -quick and -full arguments
+				if (args[0] === "-full") {
+					full = true;
+				} else if (args[0] !== "-quick") {
+					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format [-quick | -full]\n"]);
+					return ExitCode.SHELL_MISUSE;
+				}
+			} else if (args.length > 1) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format [-quick | -full]\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Format, stderr]));
+			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Format, stderr, full]));
 			return ExitCode.SUCCESS;
 		}
 
@@ -564,8 +577,9 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: create <FILE>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Create, stderr, args[0]]));
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Close, null, args[0]]));
+			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Create, stderr, (): void => {
+				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Close, stderr, args[0]]));
+			}, args[0]]));
 			return ExitCode.SUCCESS;
 		}
 
@@ -653,16 +667,6 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Ls, stderr, stdout, sh_hidden, list]));
-			return ExitCode.SUCCESS;
-		}
-
-		static shellClearDisk(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
-			const args: string[] = stdin.input();
-			if (args.length !== 0) {
-				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: cleardisk\n"]);
-				return ExitCode.SHELL_MISUSE;
-			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.ClearDisk, stderr]));
 			return ExitCode.SUCCESS;
 		}
 

@@ -737,7 +737,7 @@ module TSOS {
 					mode = "Non-Preemptive Priority";
 					break;
 			}
-			stdout.output([mode]);
+			stdout.output([mode + "\n"]);
 			return ExitCode.SUCCESS;
 		}
 	}

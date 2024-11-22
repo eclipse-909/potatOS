@@ -664,7 +664,7 @@ var TSOS;
                     mode = "Non-Preemptive Priority";
                     break;
             }
-            stdout.output([mode]);
+            stdout.output([mode + "\n"]);
             return TSOS.ExitCode.SUCCESS;
         }
     }

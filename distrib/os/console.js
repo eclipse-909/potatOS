@@ -6,7 +6,6 @@
      ------------ */
 var TSOS;
 (function (TSOS) {
-    //TODO remake the entire console
     class Console {
         //Index of the character in the input buffer that this cursor precedes in insert mode,
         //or the index of the character that this cursor will replace in type-over mode.
@@ -523,18 +522,24 @@ var TSOS;
                                 tokens.push(match[0]);
                             }
                         }
+                        if (tokens.length === 0) {
+                            return;
+                        }
                         const complete = text.endsWith(" ");
                         const last_token = tokens.length - 1;
                         if (tokens.length === 1) {
                             if (complete) {
                                 //Use token 0 as a complete command and display all possible 1st arguments
-                                const command = TSOS.ShellCommand.COMMAND_LIST.find(cmd => { return cmd.command.toLowerCase() === tokens[0]; });
+                                const command = TSOS.ShellCommand.COMMAND_LIST.find(cmd => {
+                                    const c = cmd.command.toLowerCase();
+                                    return c === tokens[0] || cmd.aliases.includes(tokens[0].toLowerCase());
+                                });
                                 if (command === undefined || command.validArgs.length === 0) {
                                     return;
                                 }
-                                const isFile = (command.validArgs.length >= last_token &&
-                                    command.validArgs[last_token - 1].length === 1 &&
-                                    command.validArgs[last_token - 1][0] === "FILE") ||
+                                const isFile = (command.validArgs.length >= 1 &&
+                                    command.validArgs[0].length === 1 &&
+                                    command.validArgs[0][0] === "FILE") ||
                                     (command.validArgs[command.validArgs.length - 1].length === 1 &&
                                         command.validArgs[command.validArgs.length - 1][0] === "REPEAT" &&
                                         command.validArgs[command.validArgs.length - 2][0] === "FILE");
@@ -556,6 +561,11 @@ var TSOS;
                                     if (cmd.command.substring(0, tokens[0].length).toLowerCase() === tokens[0]) {
                                         possCmds.push(cmd.command);
                                     }
+                                    for (const alias of cmd.aliases) {
+                                        if (alias.substring(0, tokens[0].length).toLowerCase() === tokens[0]) {
+                                            possCmds.push(alias);
+                                        }
+                                    }
                                 }
                                 if (possCmds.length === 1) { // fill the command
                                     const remainder = possCmds[0].substring(tokens[0].length) + " ";
@@ -572,7 +582,10 @@ var TSOS;
                             }
                         }
                         else {
-                            const cmd = TSOS.ShellCommand.COMMAND_LIST.find(c => { return c.command === tokens[0]; });
+                            const cmd = TSOS.ShellCommand.COMMAND_LIST.find(cmd => {
+                                const c = cmd.command.toLowerCase();
+                                return c === tokens[0] || cmd.aliases.includes(tokens[0].toLowerCase());
+                            });
                             if (cmd === undefined) {
                                 return;
                             }

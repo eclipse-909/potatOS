@@ -6,10 +6,7 @@ module TSOS {
 		Close,
 		Read,
 		Write,
-		OpenReadClose,
-		OpenWriteClose,
 		Delete,
-		Copy,
 		Rename,
 		Ls,
 	}
@@ -28,157 +25,191 @@ module TSOS {
 		}
 
 		//params[0] must always be a DiskAction.
-		//params[1] must always be a stderr.
+		//params[1] must always be a callback function called when the action succeeds.
+		//params[2] must always be a callback function called when the action fails.
+		//params[3] must always be a callback function called when the action finishes regardless of failure.
 		public krnDskAction(params: any[]): void {
 			//TODO: Check that the params are valid and osTrapError if not.
-			const stderr: ErrStream<string[]> | null = params[1];
-			let err: DiskError;
+			const on_success: null | ((stderr: ErrStream<string[]>, ...params: any[]) => void) = params[1];
+			const on_error: null | ((stderr: ErrStream<string[]>, err: DiskError) => void) = params[2];
+			const callback: null | ((stderr: ErrStream<string[]>, ...params: any[]) => void) = params[3];
+			let err: DiskError | null = null;
+			let fcb: DiskError | FCB;
+			let file: string;
 			switch (params[0] as DiskAction) {
 				case DiskAction.Format:
-					//params[2] is a boolean for if it's a full format
+					//params[4] is a boolean for if it's a full format
 					_Kernel.krnTrace("Formatting disk");
-					err = _DiskController.format(params[2]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
+					err = _DiskController.format(params[4]);
+					if (err.code === 0) {
+						on_success?.(null);
+					} else {
+						on_error?.(null, err);
 					}
+					callback?.(null);
 					break;
 				case DiskAction.Create:
-					//params[2] is a function that is called after the file has been created
-					//params[3] is the file name
-					_Kernel.krnTrace(`Creating file ${params[3]}`);
-					err = _FileSystem.create(params[3]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
-					} else if (params[2] !== null) {
-						(params[2] as () => void)();
+					//params[4] is the file name
+					file = params[4];
+					_Kernel.krnTrace(`Creating file ${file}`);
+					if (_FileSystem.open_files.has(file)) {
+						err = DiskError.FILE_OPEN;
+					} else {
+						fcb = FCB.create(file);
+						if (fcb instanceof DiskError) {
+							err = fcb;
+						} else {
+							_FileSystem.open_files.set(file, fcb);
+						}
 					}
+					if (err === null || err.code === 0) {
+						on_success?.(null);
+					} else {
+						on_error?.(null, err);
+					}
+					callback?.(null);
 					break;
 				case DiskAction.Open:
-					//params[2] is a function that is called after the file has been opened
-					//params[3] is the file name
-					_Kernel.krnTrace(`Opening file ${params[3]}`);
-					err = _FileSystem.open(params[3]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
-					} else if (params[2] !== null) {
-						(params[2] as () => void)();
+					//params[4] is the file name
+					file = params[4];
+					_Kernel.krnTrace(`Opening file ${file}`);
+					if (_FileSystem.open_files.has(file)) {
+						err = DiskError.FILE_OPEN;
+					} else {
+						fcb = FCB.open(file);
+						if (fcb instanceof DiskError) {
+							err = fcb;
+						} else {
+							_FileSystem.open_files.set(file, fcb);
+						}
 					}
+					if (err === null || err.code === 0) {
+						on_success?.(null);
+					} else {
+						on_error?.(null, err);
+					}
+					callback?.(null);
 					break;
 				case DiskAction.Close:
-					//params[2] is the file name
-					_Kernel.krnTrace(`Closing file ${params[2]}`);
-					err = _FileSystem.close(params[2]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
+					//params[4] is the file name
+					file = params[4];
+					_Kernel.krnTrace(`Closing file ${file}`);
+					if (!_FileSystem.open_files.has(file)) {
+						err = DiskError.FILE_NOT_OPEN;
+					} else {
+						_FileSystem.open_files.delete(file);
 					}
+					if (err === null || err.code === 0) {
+						on_success?.(null);
+					} else {
+						on_error?.(null, err);
+					}
+					callback?.(null);
 					break;
 				case DiskAction.Read:
-					//params[2] is a function to call on the file content after reading the output
-					//params[3] is the file name
-					_Kernel.krnTrace(`Reading file ${params[3]}`);
-					const res: string | DiskError = _FileSystem.read(params[3]);
-					if (res instanceof DiskError) {
-						if (stderr !== null && res.description !== undefined) {
-							stderr.error([res.description]);
+					//params[4] is the file name
+					file = params[4];
+					_Kernel.krnTrace(`Reading file ${file}`);
+					if (!_DiskController.is_formatted()) {
+						err = DiskError.DISK_NOT_FORMATTED;
+					} else {
+						if (!_FileSystem.open_files.has(file)) {
+							err = DiskError.FILE_NOT_OPEN;
 						}
-						break;
 					}
-					(params[2] as (content: string) => void)(res);
+					if (err === null || err.code === 0) {
+						on_success?.(null, _FileSystem.open_files.get(file).input().join(""));
+					} else {
+						on_error?.(null, err);
+					}
+					callback?.(null);
 					break;
 				case DiskAction.Write:
-					//params[2] is the file name
-					//params[3] is the content to write
-					_Kernel.krnTrace(`Writing to file ${params[2]}`);
-					err = _FileSystem.write(params[2], params[3]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
-					}
-					break;
-				case DiskAction.OpenReadClose:
-					//params[2] is a function to call on the file content after reading the output
-					//params[3] is the file name
-					_Kernel.krnTrace(`Opening file ${params[3]}`);
-					err = _FileSystem.open(params[3]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
-						break;
-					}
-					_Kernel.krnTrace(`Reading file ${params[3]}`);
-					const result: string | DiskError = _FileSystem.read(params[3]);
-					if (result instanceof DiskError) {
-						if (stderr !== null && result.description !== undefined) {
-							stderr.error([result.description]);
-						}
+					//params[4] is the file name
+					file = params[4];
+					//params[5] is the content to write
+					const content: string = params[5];
+					_Kernel.krnTrace(`Writing to file ${file}`);
+					if (!_DiskController.is_formatted()) {
+						err = DiskError.DISK_NOT_FORMATTED;
 					} else {
-						(params[2] as (content: string) => void)(result);
+						if (!_FileSystem.open_files.has(file)) {
+							err = DiskError.FILE_NOT_OPEN;
+						} else {
+							const res: DiskError | void = _FileSystem.open_files.get(file).output([content]);
+							if (res instanceof DiskError) {
+								err = res;
+							}
+						}
 					}
-					_Kernel.krnTrace(`Closing file ${params[3]}`);
-					err = _FileSystem.close(params[3]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
+					if (err === null || err.code === 0) {
+						on_success?.(null);
+					} else {
+						on_error?.(null, err);
 					}
-					break;
-				case DiskAction.OpenWriteClose:
-					//params[2] is the file name
-					//params[3] is the content to write
-					_Kernel.krnTrace(`Opening file ${params[2]}`);
-					err = _FileSystem.open(params[2]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
-						break;
-					}
-					_Kernel.krnTrace(`Writing to file ${params[2]}`);
-					err = _FileSystem.write(params[2], params[3]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
-					}
-					_Kernel.krnTrace(`Closing file ${params[2]}`);
-					err = _FileSystem.close(params[2]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
-					}
+					callback?.(null);
 					break;
 				case DiskAction.Delete:
-					//params[2] is the file name
-					_Kernel.krnTrace(`Deleting file ${params[2]}`);
-					err = _FileSystem.delete(params[2]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
+					//params[4] is the file name
+					file = params[4];
+					_Kernel.krnTrace(`Deleting file ${file}`);
+					if (_FileSystem.open_files.has(file)) {
+						err = DiskError.FILE_OPEN;
+					} else {
+						_DiskController.delete(file);
 					}
-					break;
-				case DiskAction.Copy:
-					//params[2] is the file name
-					//params[3] is the copy-file name
-					_Kernel.krnTrace(`Copying file ${params[2]} to ${params[3]}`);
-					err = _FileSystem.copy(params[2], params[3]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
+					if (err === null || err.code === 0) {
+						on_success?.(null);
+					} else {
+						on_error?.(null, err);
 					}
+					callback?.(null);
 					break;
 				case DiskAction.Rename:
-					//params[2] is the file name
-					//params[3] is the new file name
-					_Kernel.krnTrace(`Renaming file ${params[2]} to ${params[3]}`);
-					err = _FileSystem.rename(params[2], params[3]);
-					if (stderr !== null && err.description !== undefined) {
-						stderr.error([err.description]);
+					//params[4] is the file name
+					file = params[4];
+					//params[5] is the new file name
+					const new_file: string = params[5];
+					_Kernel.krnTrace(`Renaming file ${file} to ${new_file}`);
+					fcb = _FileSystem.open_files.get(file);
+					err = _DiskController.rename(file, new_file);
+					if (err.code !== 0) {
+						_FileSystem.open_files.delete(file);
+						_FileSystem.open_files.set(file, fcb);
 					}
+					if (err === null || err.code === 0) {
+						on_success?.(null);
+					} else {
+						on_error?.(null, err);
+					}
+					callback?.(null);
 					break;
 				case DiskAction.Ls:
-					//params[2] is stdout
-					//params[3] is a boolean - whether to show hidden open_files
-					//params[4] is a boolean - whether to list each file on a new line
+					//params[4] is stdout
+					const stdout: OutStream<string[]> = params[4];
+					//params[5] is a boolean - whether to show hidden open_files
+					const sh_hidden: boolean = params[5];
+					//params[6] is a boolean - whether to list each file on a new line
+					const new_line: boolean = params[6];
 					_Kernel.krnTrace("Listing files");
-					const files: string[] | DiskError = _FileSystem.ls(params[3]);
-					if (files instanceof DiskError) {
-						if (stderr !== null && files.description !== undefined) {
-							stderr.error([files.description]);
+					if (!_DiskController.is_formatted()) {
+						err = DiskError.DISK_NOT_FORMATTED;
+					} else {
+						const files: string[] | DiskError = _DiskController.get_all_files().filter(file => {
+							return sh_hidden || !file.startsWith(".");
+						});
+						if (files instanceof DiskError) {
+							err = files;
+						} else if (files.length > 0) {
+							stdout.output([files.join(new_line ? "\n" : " ")]);
 						}
-						break;
 					}
-					if (files.length > 0) {
-						(params[2] as OutStream<string[]>).output([files.join(params[4] ? "\n" : " ")]);
+					if (err === null || err.code === 0) {
+						on_success?.(null);
+					} else {
+						on_error?.(null, err);
 					}
+					callback?.(null);
 					break;
 			}
 		}

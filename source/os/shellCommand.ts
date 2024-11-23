@@ -556,7 +556,7 @@ module TSOS {
 		static shellFormat(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
 			const args: string[] = stdin.input();
 			let full: boolean = false;
-			if (args.length === 1) {//TODO allow -quick and -full arguments
+			if (args.length === 1) {
 				if (args[0] === "-full") {
 					full = true;
 				} else if (args[0] !== "-quick") {
@@ -567,7 +567,9 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format [-quick | -full]\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Format, stderr, full]));
+			_FileSystem.format(full)
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
 
@@ -577,9 +579,10 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: create <FILE>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Create, stderr, (): void => {
-				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Close, stderr, args[0]]));
-			}, args[0]]));
+			_FileSystem.create(args[0])
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.and_do(_FileSystem.close(args[0]))
+				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
 
@@ -589,7 +592,14 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: read <FILE.sh>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.OpenReadClose, stderr, (content: string): void => {stdout.output([content]);}, args[0]]));
+			_FileSystem.open(args[0])
+				.and_try(_FileSystem.read(args[0])
+					.and_try_run((_stderr: ErrStream<string[]>, ...params: any[]): void => {stdout.output([params[0]]);})
+					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.and_do(_FileSystem.close(args[0]))
+				)
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
 
@@ -599,7 +609,13 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: write <FILE> <TEXT>...\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.OpenWriteClose, stderr, args[0], args[1]]));
+			_FileSystem.open(args[0])
+				.and_try(_FileSystem.write(args[0], args[1])
+					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.and_do(_FileSystem.close(args[0]))
+				)
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.execute(stderr)
 			return ExitCode.SUCCESS;
 		}
 
@@ -610,7 +626,9 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			for (const arg of args) {
-				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Delete, stderr, arg]));
+				_FileSystem.delete(arg)
+					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.execute(stderr);
 			}
 			return ExitCode.SUCCESS;
 		}
@@ -621,7 +639,9 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: copy <FILE> <COPY_FILE>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Copy, stderr, args[0], args[1]]));
+			_FileSystem.copy(args[0], args[1])
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
 
@@ -631,7 +651,9 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: rename <FILE> <NEW_FILE>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Rename, stderr, args[0], args[1]]));
+			_FileSystem.rename(args[0], args[1])
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
 
@@ -666,7 +688,9 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-la]\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [DiskAction.Ls, stderr, stdout, sh_hidden, list]));
+			_FileSystem.ls(stdout, sh_hidden, list)
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
 
@@ -680,15 +704,17 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - The provided file is not a .sh (shell) file.\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [
-				DiskAction.OpenReadClose,
-				stderr,
-				(content: string): void => {
-					_OsShell.handleInput(content)
-					_Console.redrawCanvas();
-				},
-				args[0]
-			]));
+			_FileSystem.open(args[0])
+				.and_try(_FileSystem.read(args[0])
+					.and_try_run((_stderr: ErrStream<string[]>, ...params: any[]): void => {
+						_OsShell.handleInput(params[0]);
+						_Console.redrawCanvas();
+					})
+					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.and_do(_FileSystem.close(args[0]))
+				)
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
 
@@ -699,23 +725,25 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			for (let i: number = 1; i < args.length; i++) {
-				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.disk, [
-					DiskAction.OpenReadClose,
-					stderr,
-					(content: string): void => {
-						const lines: string[] = content.split(/(\r?\n)+/);
-						let matches: string[] = [];
-						for (const line of lines) {
-							if (line.match(args[0])) {
-								matches.push(line);
+				_FileSystem.open(args[i])
+					.and_try(_FileSystem.read(args[i])
+						.and_try_run((_stderr: ErrStream<string[]>, ...params: any[]): void => {
+							const lines: string[] = params[0].split(/(\r?\n)+/);
+							let matches: string[] = [];
+							for (const line of lines) {
+								if (line.match(args[0])) {
+									matches.push(line);
+								}
 							}
-						}
-						if (matches.length > 0) {
-							stdout.output([matches.join("\n") + (i === args.length - 1 ? "" : "\n")]);
-						}
-					},
-					args[i]
-				]));
+							if (matches.length > 0) {
+								stdout.output([matches.join("\n") + (i === args.length - 1 ? "" : "\n")]);
+							}
+						})
+						.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+						.and_do(_FileSystem.close(args[i]))
+					)
+					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.execute(stderr);
 			}
 			return ExitCode.SUCCESS;
 		}

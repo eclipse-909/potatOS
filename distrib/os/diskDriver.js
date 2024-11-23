@@ -8,12 +8,9 @@ var TSOS;
         DiskAction[DiskAction["Close"] = 3] = "Close";
         DiskAction[DiskAction["Read"] = 4] = "Read";
         DiskAction[DiskAction["Write"] = 5] = "Write";
-        DiskAction[DiskAction["OpenReadClose"] = 6] = "OpenReadClose";
-        DiskAction[DiskAction["OpenWriteClose"] = 7] = "OpenWriteClose";
-        DiskAction[DiskAction["Delete"] = 8] = "Delete";
-        DiskAction[DiskAction["Copy"] = 9] = "Copy";
-        DiskAction[DiskAction["Rename"] = 10] = "Rename";
-        DiskAction[DiskAction["Ls"] = 11] = "Ls";
+        DiskAction[DiskAction["Delete"] = 6] = "Delete";
+        DiskAction[DiskAction["Rename"] = 7] = "Rename";
+        DiskAction[DiskAction["Ls"] = 8] = "Ls";
     })(DiskAction = TSOS.DiskAction || (TSOS.DiskAction = {}));
     class DiskDriver extends TSOS.DeviceDriver {
         constructor() {
@@ -27,160 +24,211 @@ var TSOS;
             // More?
         }
         //params[0] must always be a DiskAction.
-        //params[1] must always be a stderr.
+        //params[1] must always be a callback function called when the action succeeds.
+        //params[2] must always be a callback function called when the action fails.
+        //params[3] must always be a callback function called when the action finishes regardless of failure.
         krnDskAction(params) {
             //TODO: Check that the params are valid and osTrapError if not.
-            const stderr = params[1];
-            let err;
+            const on_success = params[1];
+            const on_error = params[2];
+            const callback = params[3];
+            let err = null;
+            let fcb;
+            let file;
             switch (params[0]) {
                 case DiskAction.Format:
-                    //params[2] is a boolean for if it's a full format
+                    //params[4] is a boolean for if it's a full format
                     _Kernel.krnTrace("Formatting disk");
-                    err = _DiskController.format(params[2]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
-                    }
-                    break;
-                case DiskAction.Create:
-                    //params[2] is a function that is called after the file has been created
-                    //params[3] is the file name
-                    _Kernel.krnTrace(`Creating file ${params[3]}`);
-                    err = _FileSystem.create(params[3]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
-                    }
-                    else if (params[2] !== null) {
-                        params[2]();
-                    }
-                    break;
-                case DiskAction.Open:
-                    //params[2] is a function that is called after the file has been opened
-                    //params[3] is the file name
-                    _Kernel.krnTrace(`Opening file ${params[3]}`);
-                    err = _FileSystem.open(params[3]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
-                    }
-                    else if (params[2] !== null) {
-                        params[2]();
-                    }
-                    break;
-                case DiskAction.Close:
-                    //params[2] is the file name
-                    _Kernel.krnTrace(`Closing file ${params[2]}`);
-                    err = _FileSystem.close(params[2]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
-                    }
-                    break;
-                case DiskAction.Read:
-                    //params[2] is a function to call on the file content after reading the output
-                    //params[3] is the file name
-                    _Kernel.krnTrace(`Reading file ${params[3]}`);
-                    const res = _FileSystem.read(params[3]);
-                    if (res instanceof TSOS.DiskError) {
-                        if (stderr !== null && res.description !== undefined) {
-                            stderr.error([res.description]);
-                        }
-                        break;
-                    }
-                    params[2](res);
-                    break;
-                case DiskAction.Write:
-                    //params[2] is the file name
-                    //params[3] is the content to write
-                    _Kernel.krnTrace(`Writing to file ${params[2]}`);
-                    err = _FileSystem.write(params[2], params[3]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
-                    }
-                    break;
-                case DiskAction.OpenReadClose:
-                    //params[2] is a function to call on the file content after reading the output
-                    //params[3] is the file name
-                    _Kernel.krnTrace(`Opening file ${params[3]}`);
-                    err = _FileSystem.open(params[3]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
-                        break;
-                    }
-                    _Kernel.krnTrace(`Reading file ${params[3]}`);
-                    const result = _FileSystem.read(params[3]);
-                    if (result instanceof TSOS.DiskError) {
-                        if (stderr !== null && result.description !== undefined) {
-                            stderr.error([result.description]);
-                        }
+                    err = _DiskController.format(params[4]);
+                    if (err.code === 0) {
+                        on_success?.(null);
                     }
                     else {
-                        params[2](result);
+                        on_error?.(null, err);
                     }
-                    _Kernel.krnTrace(`Closing file ${params[3]}`);
-                    err = _FileSystem.close(params[3]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
-                    }
+                    callback?.(null);
                     break;
-                case DiskAction.OpenWriteClose:
-                    //params[2] is the file name
-                    //params[3] is the content to write
-                    _Kernel.krnTrace(`Opening file ${params[2]}`);
-                    err = _FileSystem.open(params[2]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
-                        break;
+                case DiskAction.Create:
+                    //params[4] is the file name
+                    file = params[4];
+                    _Kernel.krnTrace(`Creating file ${file}`);
+                    if (_FileSystem.open_files.has(file)) {
+                        err = TSOS.DiskError.FILE_OPEN;
                     }
-                    _Kernel.krnTrace(`Writing to file ${params[2]}`);
-                    err = _FileSystem.write(params[2], params[3]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
+                    else {
+                        fcb = TSOS.FCB.create(file);
+                        if (fcb instanceof TSOS.DiskError) {
+                            err = fcb;
+                        }
+                        else {
+                            _FileSystem.open_files.set(file, fcb);
+                        }
                     }
-                    _Kernel.krnTrace(`Closing file ${params[2]}`);
-                    err = _FileSystem.close(params[2]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
+                    if (err === null || err.code === 0) {
+                        on_success?.(null);
                     }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null);
+                    break;
+                case DiskAction.Open:
+                    //params[4] is the file name
+                    file = params[4];
+                    _Kernel.krnTrace(`Opening file ${file}`);
+                    if (_FileSystem.open_files.has(file)) {
+                        err = TSOS.DiskError.FILE_OPEN;
+                    }
+                    else {
+                        fcb = TSOS.FCB.open(file);
+                        if (fcb instanceof TSOS.DiskError) {
+                            err = fcb;
+                        }
+                        else {
+                            _FileSystem.open_files.set(file, fcb);
+                        }
+                    }
+                    if (err === null || err.code === 0) {
+                        on_success?.(null);
+                    }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null);
+                    break;
+                case DiskAction.Close:
+                    //params[4] is the file name
+                    file = params[4];
+                    _Kernel.krnTrace(`Closing file ${file}`);
+                    if (!_FileSystem.open_files.has(file)) {
+                        err = TSOS.DiskError.FILE_NOT_OPEN;
+                    }
+                    else {
+                        _FileSystem.open_files.delete(file);
+                    }
+                    if (err === null || err.code === 0) {
+                        on_success?.(null);
+                    }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null);
+                    break;
+                case DiskAction.Read:
+                    //params[4] is the file name
+                    file = params[4];
+                    _Kernel.krnTrace(`Reading file ${file}`);
+                    if (!_DiskController.is_formatted()) {
+                        err = TSOS.DiskError.DISK_NOT_FORMATTED;
+                    }
+                    else {
+                        if (!_FileSystem.open_files.has(file)) {
+                            err = TSOS.DiskError.FILE_NOT_OPEN;
+                        }
+                    }
+                    if (err === null || err.code === 0) {
+                        on_success?.(null, _FileSystem.open_files.get(file).input().join(""));
+                    }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null);
+                    break;
+                case DiskAction.Write:
+                    //params[4] is the file name
+                    file = params[4];
+                    //params[5] is the content to write
+                    const content = params[5];
+                    _Kernel.krnTrace(`Writing to file ${file}`);
+                    if (!_DiskController.is_formatted()) {
+                        err = TSOS.DiskError.DISK_NOT_FORMATTED;
+                    }
+                    else {
+                        if (!_FileSystem.open_files.has(file)) {
+                            err = TSOS.DiskError.FILE_NOT_OPEN;
+                        }
+                        else {
+                            const res = _FileSystem.open_files.get(file).output([content]);
+                            if (res instanceof TSOS.DiskError) {
+                                err = res;
+                            }
+                        }
+                    }
+                    if (err === null || err.code === 0) {
+                        on_success?.(null);
+                    }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null);
                     break;
                 case DiskAction.Delete:
-                    //params[2] is the file name
-                    _Kernel.krnTrace(`Deleting file ${params[2]}`);
-                    err = _FileSystem.delete(params[2]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
+                    //params[4] is the file name
+                    file = params[4];
+                    _Kernel.krnTrace(`Deleting file ${file}`);
+                    if (_FileSystem.open_files.has(file)) {
+                        err = TSOS.DiskError.FILE_OPEN;
                     }
-                    break;
-                case DiskAction.Copy:
-                    //params[2] is the file name
-                    //params[3] is the copy-file name
-                    _Kernel.krnTrace(`Copying file ${params[2]} to ${params[3]}`);
-                    err = _FileSystem.copy(params[2], params[3]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
+                    else {
+                        _DiskController.delete(file);
                     }
+                    if (err === null || err.code === 0) {
+                        on_success?.(null);
+                    }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null);
                     break;
                 case DiskAction.Rename:
-                    //params[2] is the file name
-                    //params[3] is the new file name
-                    _Kernel.krnTrace(`Renaming file ${params[2]} to ${params[3]}`);
-                    err = _FileSystem.rename(params[2], params[3]);
-                    if (stderr !== null && err.description !== undefined) {
-                        stderr.error([err.description]);
+                    //params[4] is the file name
+                    file = params[4];
+                    //params[5] is the new file name
+                    const new_file = params[5];
+                    _Kernel.krnTrace(`Renaming file ${file} to ${new_file}`);
+                    fcb = _FileSystem.open_files.get(file);
+                    err = _DiskController.rename(file, new_file);
+                    if (err.code !== 0) {
+                        _FileSystem.open_files.delete(file);
+                        _FileSystem.open_files.set(file, fcb);
                     }
+                    if (err === null || err.code === 0) {
+                        on_success?.(null);
+                    }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null);
                     break;
                 case DiskAction.Ls:
-                    //params[2] is stdout
-                    //params[3] is a boolean - whether to show hidden open_files
-                    //params[4] is a boolean - whether to list each file on a new line
+                    //params[4] is stdout
+                    const stdout = params[4];
+                    //params[5] is a boolean - whether to show hidden open_files
+                    const sh_hidden = params[5];
+                    //params[6] is a boolean - whether to list each file on a new line
+                    const new_line = params[6];
                     _Kernel.krnTrace("Listing files");
-                    const files = _FileSystem.ls(params[3]);
-                    if (files instanceof TSOS.DiskError) {
-                        if (stderr !== null && files.description !== undefined) {
-                            stderr.error([files.description]);
+                    if (!_DiskController.is_formatted()) {
+                        err = TSOS.DiskError.DISK_NOT_FORMATTED;
+                    }
+                    else {
+                        const files = _DiskController.get_all_files().filter(file => {
+                            return sh_hidden || !file.startsWith(".");
+                        });
+                        if (files instanceof TSOS.DiskError) {
+                            err = files;
                         }
-                        break;
+                        else if (files.length > 0) {
+                            stdout.output([files.join(new_line ? "\n" : " ")]);
+                        }
                     }
-                    if (files.length > 0) {
-                        params[2].output([files.join(params[4] ? "\n" : " ")]);
+                    if (err === null || err.code === 0) {
+                        on_success?.(null);
                     }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null);
                     break;
             }
         }

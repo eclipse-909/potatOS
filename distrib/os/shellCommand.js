@@ -481,7 +481,7 @@ var TSOS;
         static shellFormat(stdin, _stdout, stderr) {
             const args = stdin.input();
             let full = false;
-            if (args.length === 1) { //TODO allow -quick and -full arguments
+            if (args.length === 1) {
                 if (args[0] === "-full") {
                     full = true;
                 }
@@ -494,7 +494,9 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: format [-quick | -full]\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Format, stderr, full]));
+            _FileSystem.format(full)
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellCreate(stdin, _stdout, stderr) {
@@ -503,9 +505,10 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: create <FILE>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Create, stderr, () => {
-                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Close, stderr, args[0]]));
-                }, args[0]]));
+            _FileSystem.create(args[0])
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .and_do(_FileSystem.close(args[0]))
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellRead(stdin, stdout, stderr) {
@@ -514,7 +517,13 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: read <FILE.sh>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.OpenReadClose, stderr, (content) => { stdout.output([content]); }, args[0]]));
+            _FileSystem.open(args[0])
+                .and_try(_FileSystem.read(args[0])
+                .and_try_run((_stderr, ...params) => { stdout.output([params[0]]); })
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .and_do(_FileSystem.close(args[0])))
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellWrite(stdin, _stdout, stderr) {
@@ -523,7 +532,12 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: write <FILE> <TEXT>...\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.OpenWriteClose, stderr, args[0], args[1]]));
+            _FileSystem.open(args[0])
+                .and_try(_FileSystem.write(args[0], args[1])
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .and_do(_FileSystem.close(args[0])))
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellDelete(stdin, _stdout, stderr) {
@@ -533,7 +547,9 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             for (const arg of args) {
-                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Delete, stderr, arg]));
+                _FileSystem.delete(arg)
+                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .execute(stderr);
             }
             return TSOS.ExitCode.SUCCESS;
         }
@@ -543,7 +559,9 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: copy <FILE> <COPY_FILE>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Copy, stderr, args[0], args[1]]));
+            _FileSystem.copy(args[0], args[1])
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellRename(stdin, _stdout, stderr) {
@@ -552,7 +570,9 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: rename <FILE> <NEW_FILE>\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Rename, stderr, args[0], args[1]]));
+            _FileSystem.rename(args[0], args[1])
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellLs(stdin, stdout, stderr) {
@@ -593,7 +613,9 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: ls [-la]\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [TSOS.DiskAction.Ls, stderr, stdout, sh_hidden, list]));
+            _FileSystem.ls(stdout, sh_hidden, list)
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellShell(stdin, _stdout, stderr) {
@@ -606,15 +628,16 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - The provided file is not a .sh (shell) file.\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [
-                TSOS.DiskAction.OpenReadClose,
-                stderr,
-                (content) => {
-                    _OsShell.handleInput(content);
-                    _Console.redrawCanvas();
-                },
-                args[0]
-            ]));
+            _FileSystem.open(args[0])
+                .and_try(_FileSystem.read(args[0])
+                .and_try_run((_stderr, ...params) => {
+                _OsShell.handleInput(params[0]);
+                _Console.redrawCanvas();
+            })
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .and_do(_FileSystem.close(args[0])))
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellGrep(stdin, stdout, stderr) {
@@ -624,23 +647,24 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             for (let i = 1; i < args.length; i++) {
-                _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [
-                    TSOS.DiskAction.OpenReadClose,
-                    stderr,
-                    (content) => {
-                        const lines = content.split(/(\r?\n)+/);
-                        let matches = [];
-                        for (const line of lines) {
-                            if (line.match(args[0])) {
-                                matches.push(line);
-                            }
+                _FileSystem.open(args[i])
+                    .and_try(_FileSystem.read(args[i])
+                    .and_try_run((_stderr, ...params) => {
+                    const lines = params[0].split(/(\r?\n)+/);
+                    let matches = [];
+                    for (const line of lines) {
+                        if (line.match(args[0])) {
+                            matches.push(line);
                         }
-                        if (matches.length > 0) {
-                            stdout.output([matches.join("\n") + (i === args.length - 1 ? "" : "\n")]);
-                        }
-                    },
-                    args[i]
-                ]));
+                    }
+                    if (matches.length > 0) {
+                        stdout.output([matches.join("\n") + (i === args.length - 1 ? "" : "\n")]);
+                    }
+                })
+                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .and_do(_FileSystem.close(args[i])))
+                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .execute(stderr);
             }
             return TSOS.ExitCode.SUCCESS;
         }

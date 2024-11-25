@@ -160,6 +160,15 @@ var TSOS;
         ls(stdout, sh_hidden, new_line) {
             return new FileCommand(TSOS.DiskAction.Ls, stdout, sh_hidden, new_line);
         }
+        recover(file_name) {
+            return new FileCommand(TSOS.DiskAction.Recover, file_name);
+        }
+        garbageCollect() {
+            return new FileCommand(TSOS.DiskAction.GarbageCollect);
+        }
+        defragment() {
+            return new FileCommand(TSOS.DiskAction.Defragment);
+        }
     }
     TSOS.FileSystem = FileSystem;
 })(TSOS || (TSOS = {}));

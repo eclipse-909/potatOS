@@ -9,6 +9,9 @@ module TSOS {
 		Delete,
 		Rename,
 		Ls,
+		Recover,
+		GarbageCollect,
+		Defragment
 	}
 
 	export class DiskDriver extends DeviceDriver {
@@ -209,6 +212,36 @@ module TSOS {
 					} else {
 						on_error?.(null, err);
 					}
+					callback?.(null);
+					break;
+				case DiskAction.Recover:
+					//params[4] is the file name
+					file = params[4];
+					_Kernel.krnTrace(`Attempting to recover ${file}`);
+					if (!_DiskController.is_formatted()) {
+						err = DiskError.DISK_NOT_FORMATTED;
+					} else {
+						err = _DiskController.recover(file);
+					}
+					if (err === null || err.code === 0) {
+						on_success?.(null);
+					} else {
+						on_error?.(null, err);
+					}
+					callback?.(null);
+					break;
+				case DiskAction.GarbageCollect:
+					//no additional parameters
+					_Kernel.krnTrace("Performing garbage collection on the disk");
+					_DiskController.garbageCollect();
+					on_success?.(null);
+					callback?.(null);
+					break;
+				case DiskAction.Defragment:
+					//no additional parameters
+					_Kernel.krnTrace("Defragmenting the disk");
+					_DiskController.defragment();
+					on_success?.(null);
 					callback?.(null);
 					break;
 			}

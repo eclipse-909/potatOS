@@ -48,6 +48,9 @@ var TSOS;
             new ShellCommand(ShellCommand.shellCopy, "copy", "<FILE> <COPY_FILE> - Creates a file with the copy name and copies the contents of the file to it if it exists.\n", [["FILE"], ["FILE"]], ["cp"]),
             new ShellCommand(ShellCommand.shellRename, "rename", "<FILE> <NEW_FILE> - Renames the file, if it exists, to the new name, if it does not exist.\n", [["FILE"], ["FILE"]], ["mv"]),
             new ShellCommand(ShellCommand.shellLs, "ls", "[-la] - Outputs a list of open_files in the directory.\n   -a Show hidden open_files.\n   -l Separate files with a new line.\n", [["-a", "-l", "-la", "-al"]]),
+            new ShellCommand(ShellCommand.shellRecover, "recover", "<FILE> - Attempts to recover the deleted FILE.\n", [["FILE"]]),
+            new ShellCommand(ShellCommand.shellDiskGC, "diskgc", "- Performs garbage collection on the disk, and cleans up data that has no file.\n", [["FILE"]]),
+            // new ShellCommand(ShellCommand.shellDefrag, "defrag", "- Defragments the disk.\n", [["FILE"]]),
             new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n", [["FILE"]]),
             new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n", [[], ["FILE"], ["REPEAT"]]),
             new ShellCommand(ShellCommand.shellGetSchedule, "getschedule", "- Print the current CPU scheduling mode.\n"),
@@ -616,6 +619,35 @@ var TSOS;
             _FileSystem.ls(stdout, sh_hidden, list)
                 .catch((stderr, err) => { stderr.error([err.description]); })
                 .execute(stderr);
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellRecover(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: recover <FILE>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _FileSystem.recover(args[0])
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .execute(stderr);
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellDiskGC(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: diskgc\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _FileSystem.garbageCollect();
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellDefrag(stdin, _stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 0) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: defrag\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            _FileSystem.defragment();
             return TSOS.ExitCode.SUCCESS;
         }
         static shellShell(stdin, _stdout, stderr) {

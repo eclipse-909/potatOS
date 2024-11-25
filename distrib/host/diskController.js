@@ -10,6 +10,7 @@ var TSOS;
         DiskErrorCode[DiskErrorCode["FileNameTooLong"] = 5] = "FileNameTooLong";
         DiskErrorCode[DiskErrorCode["FileOpen"] = 6] = "FileOpen";
         DiskErrorCode[DiskErrorCode["FileNotOpen"] = 7] = "FileNotOpen";
+        DiskErrorCode[DiskErrorCode["Unrecoverable"] = 8] = "Unrecoverable";
     })(DiskErrorCode = TSOS.DiskErrorCode || (TSOS.DiskErrorCode = {}));
     class DiskError {
         code;
@@ -26,6 +27,7 @@ var TSOS;
         static FILE_NAME_TOO_LONG = new DiskError(DiskErrorCode.FileNameTooLong, "File name too long.");
         static FILE_OPEN = new DiskError(DiskErrorCode.FileOpen, "File is open.");
         static FILE_NOT_OPEN = new DiskError(DiskErrorCode.FileNotOpen, "File is not open.");
+        static UNRECOVERABLE = new DiskError(DiskErrorCode.Unrecoverable, "File cannot be recovered.");
     }
     TSOS.DiskError = DiskError;
     const TRACKS = 4;
@@ -324,6 +326,109 @@ var TSOS;
             sessionStorage.setItem(key, decoder.decode(arr));
             return DiskError.SUCCESS;
         }
+        recover(file_name) {
+            const encoder = new TextEncoder();
+            const decoder = new TextDecoder();
+            let tsb = -1;
+            let found = false;
+            let length = 0;
+            let tsbs = [];
+            let arr;
+            let key;
+            for (let s = 0; s < SECTORS; s++) {
+                for (let b = 0; b < BLOCKS; b++) {
+                    if (s == 0 && b == 0) {
+                        continue;
+                    }
+                    key = this.tsbKey(0, s, b);
+                    arr = encoder.encode(sessionStorage.getItem(key));
+                    if (decoder.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[2])) !== file_name) {
+                        continue;
+                    }
+                    if (found) {
+                        return DiskError.UNRECOVERABLE;
+                    }
+                    if (arr[0] === 1) {
+                        return DiskError.FILE_EXISTS;
+                    }
+                    found = true;
+                    tsbs.push(this.fromTSB(0, s, b));
+                    tsb = arr[1];
+                    length = (arr[4] << 8) | arr[3];
+                }
+            }
+            if (!found) {
+                return DiskError.UNRECOVERABLE;
+            }
+            while (tsb !== 0) {
+                tsbs.push(tsb);
+                const TSB = this.toTSB(tsb);
+                key = this.tsbKey(TSB.t, TSB.s, TSB.b);
+                arr = encoder.encode(sessionStorage.getItem(key));
+                if (arr[0] === 1 || (tsbs.length - 2) * (BLOCK_SIZE - FILE_RESERVED) > length) {
+                    return DiskError.UNRECOVERABLE;
+                }
+                tsb = arr[1];
+            }
+            if ((tsbs.length - 1) * (BLOCK_SIZE - FILE_RESERVED) < length) {
+                return DiskError.UNRECOVERABLE;
+            }
+            for (const block of tsbs) {
+                const TSB = this.toTSB(block);
+                key = this.tsbKey(TSB.t, TSB.s, TSB.b);
+                arr = encoder.encode(sessionStorage.getItem(key));
+                arr[0] = 1;
+                sessionStorage.setItem(key, decoder.decode(arr));
+            }
+            return DiskError.SUCCESS;
+        }
+        garbageCollect() {
+            const encoder = new TextEncoder();
+            let tsb = -1;
+            let tsbs = [];
+            let arr;
+            let key;
+            //get directory TSBs
+            for (let s = 0; s < SECTORS; s++) {
+                for (let b = 0; b < BLOCKS; b++) {
+                    if (s == 0 && b == 0) {
+                        continue;
+                    }
+                    key = this.tsbKey(0, s, b);
+                    arr = encoder.encode(sessionStorage.getItem(key));
+                    tsb = arr[1];
+                    tsbs.push(tsb);
+                }
+            }
+            //get file TSBs
+            const len = tsbs.length;
+            for (let i = 0; i < len; i++) {
+                tsb = tsbs[0];
+                while (tsb !== 0) {
+                    const TSB = this.toTSB(tsb);
+                    key = this.tsbKey(TSB.t, TSB.s, TSB.b);
+                    arr = encoder.encode(sessionStorage.getItem(key));
+                    tsb = arr[1];
+                    if (tsb !== 0) {
+                        tsbs.push(tsb);
+                    }
+                }
+            }
+            //Delete all untracked TSBs
+            for (let t = 1; t < TRACKS; t++) {
+                for (let s = 0; s < SECTORS; s++) {
+                    for (let b = 0; b < BLOCKS; b++) {
+                        if (tsbs.findIndex(block => { return block === this.fromTSB(t, s, b); }) === -1) {
+                            const TSB = this.toTSB(tsb);
+                            key = this.tsbKey(TSB.t, TSB.s, TSB.b);
+                            arr = encoder.encode(sessionStorage.getItem(key));
+                            arr[1] = 0;
+                        }
+                    }
+                }
+            }
+        }
+        defragment() { }
     }
     TSOS.DiskController = DiskController;
 })(TSOS || (TSOS = {}));

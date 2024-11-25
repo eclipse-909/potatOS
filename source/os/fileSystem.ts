@@ -175,5 +175,17 @@ module TSOS {
 		public ls(stdout: OutStream<string[]>, sh_hidden: boolean, new_line: boolean): FileCommand {
 			return new FileCommand(DiskAction.Ls, stdout, sh_hidden, new_line);
 		}
+
+		public recover(file_name: string): FileCommand {
+			return new FileCommand(DiskAction.Recover, file_name);
+		}
+
+		public garbageCollect(): FileCommand {
+			return new FileCommand(DiskAction.GarbageCollect);
+		}
+
+		public defragment(): FileCommand {
+			return new FileCommand(DiskAction.Defragment);
+		}
 	}
 }

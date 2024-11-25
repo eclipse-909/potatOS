@@ -97,6 +97,14 @@ module TSOS {
 				"[-la] - Outputs a list of open_files in the directory.\n   -a Show hidden open_files.\n   -l Separate files with a new line.\n",
 				[["-a", "-l", "-la", "-al"]]
 			),
+			new ShellCommand(
+				ShellCommand.shellRecover,
+				"recover",
+				"<FILE> - Attempts to recover the deleted FILE.\n",
+				[["FILE"]]
+			),
+			new ShellCommand(ShellCommand.shellDiskGC, "diskgc", "- Performs garbage collection on the disk, and cleans up data that has no file.\n", [["FILE"]]),
+			// new ShellCommand(ShellCommand.shellDefrag, "defrag", "- Defragments the disk.\n", [["FILE"]]),
 			new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n", [["FILE"]]),
 			new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n", [[], ["FILE"], ["REPEAT"]]),
 			new ShellCommand(ShellCommand.shellGetSchedule, "getschedule", "- Print the current CPU scheduling mode.\n"),
@@ -691,6 +699,38 @@ module TSOS {
 			_FileSystem.ls(stdout, sh_hidden, list)
 				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
 				.execute(stderr);
+			return ExitCode.SUCCESS;
+		}
+
+		static shellRecover(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
+			if (args.length !== 1) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: recover <FILE>\n"]);
+				return ExitCode.SHELL_MISUSE;
+			}
+			_FileSystem.recover(args[0])
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.execute(stderr);
+			return ExitCode.SUCCESS;
+		}
+
+		static shellDiskGC(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
+			if (args.length !== 0) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: diskgc\n"]);
+				return ExitCode.SHELL_MISUSE;
+			}
+			_FileSystem.garbageCollect();
+			return ExitCode.SUCCESS;
+		}
+
+		static shellDefrag(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
+			if (args.length !== 0) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: defrag\n"]);
+				return ExitCode.SHELL_MISUSE;
+			}
+			_FileSystem.defragment();
 			return ExitCode.SUCCESS;
 		}
 

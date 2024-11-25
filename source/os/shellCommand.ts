@@ -108,6 +108,8 @@ module TSOS {
 			new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n", [["FILE"]]),
 			new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n", [[], ["FILE"], ["REPEAT"]]),
 			new ShellCommand(ShellCommand.shellGetSchedule, "getschedule", "- Print the current CPU scheduling mode.\n"),
+			// new ShellCommand(ShellCommand.shellLink, "link", "<FILE> <LINK_NAME> - Create a link to FILE.\n", [["FILE"], ["FILE"]]),
+			new ShellCommand(ShellCommand.shellAlias, "alias", "<COMMAND> <ALIAS> - Create an alias for COMMAND.\n"),
 		] as const;
 
 		static shellVer(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
@@ -810,6 +812,30 @@ module TSOS {
 					break;
 			}
 			stdout.output([mode + "\n"]);
+			return ExitCode.SUCCESS;
+		}
+
+		static shellLink(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			//TODO
+			return ExitCode.SUCCESS;
+		}
+
+		static shellAlias(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
+			if (args.length !== 2) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: alias <COMMAND> <ALIAS>\n"]);
+				return ExitCode.SHELL_MISUSE;
+			}
+			let command: ShellCommand | undefined = ShellCommand.COMMAND_LIST.find(cmd => {return cmd.command === args[0] || cmd.command.includes(args[0]);});
+			if (command === undefined) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + ` - Could not find command ${args[0]}\n`]);
+				return ExitCode.CANNOT_EXECUTE_COMMAND;
+			}
+			if (command.command === args[1] || command.aliases.includes(args[1])) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + ` - Command ${args[0]} already has alias ${args[1]}\n`]);
+				return ExitCode.CANNOT_EXECUTE_COMMAND;
+			}
+			command.aliases.push(args[1]);
 			return ExitCode.SUCCESS;
 		}
 	}

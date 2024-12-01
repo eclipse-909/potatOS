@@ -7,7 +7,7 @@ var TSOS;
         on_error;
         callback;
         params;
-        constructor(diskAction, ...params) {
+        constructor(diskAction, params) {
             this.diskAction = diskAction;
             this.on_success = null;
             this.on_error = null;
@@ -17,13 +17,13 @@ var TSOS;
         //Does the file command only if the previous command succeeds.
         and_try(next) {
             if (this.on_success === null) {
-                this.on_success = (stderr, ..._params) => {
+                this.on_success = (stderr, _params) => {
                     next.execute(stderr);
                 };
             }
             else {
                 const fn = this.on_success;
-                this.on_success = (stderr, ...params) => {
+                this.on_success = (stderr, params) => {
                     fn(stderr, params);
                     next.execute(stderr);
                 };
@@ -47,13 +47,13 @@ var TSOS;
         //Will always do the file command regardless of if the previous one succeeds or fails.
         and_do(next) {
             if (this.callback === null) {
-                this.callback = (stderr, ..._params) => {
+                this.callback = (stderr, _params) => {
                     next.execute(stderr);
                 };
             }
             else {
                 const fn = this.callback;
-                this.callback = (stderr, ...params) => {
+                this.callback = (stderr, params) => {
                     fn(stderr, params);
                     next.execute(stderr);
                 };
@@ -67,7 +67,7 @@ var TSOS;
             }
             else {
                 const fn = this.on_success;
-                this.on_success = (stderr, ...params) => {
+                this.on_success = (stderr, params) => {
                     fn(stderr, params);
                     on_success(stderr, params);
                 };
@@ -81,7 +81,7 @@ var TSOS;
             }
             else {
                 const fn = this.callback;
-                this.callback = (stderr, ...params) => {
+                this.callback = (stderr, params) => {
                     fn(stderr, params);
                     callback(stderr, params);
                 };
@@ -91,7 +91,7 @@ var TSOS;
         execute(stderr) {
             if (this.on_success !== null) {
                 const fn = this.on_success;
-                this.on_success = (_stderr, ...params) => {
+                this.on_success = (_stderr, params) => {
                     fn(stderr, params);
                 };
             }
@@ -103,7 +103,7 @@ var TSOS;
             }
             if (this.callback !== null) {
                 const fn = this.callback;
-                this.callback = (_stderr, ...params) => {
+                this.callback = (_stderr, params) => {
                     fn(stderr, params);
                 };
             }
@@ -118,33 +118,33 @@ var TSOS;
             this.open_files = new Map();
         }
         format(full) {
-            return new FileCommand(TSOS.DiskAction.Format, full);
+            return new FileCommand(TSOS.DiskAction.Format, [full]);
         }
         create(file_name) {
-            return new FileCommand(TSOS.DiskAction.Create, file_name);
+            return new FileCommand(TSOS.DiskAction.Create, [file_name]);
         }
         open(file_name) {
-            return new FileCommand(TSOS.DiskAction.Open, file_name);
+            return new FileCommand(TSOS.DiskAction.Open, [file_name]);
         }
         close(file_name) {
-            return new FileCommand(TSOS.DiskAction.Close, file_name);
+            return new FileCommand(TSOS.DiskAction.Close, [file_name]);
         }
         //The file must be opened before being read.
         read(file_name) {
-            return new FileCommand(TSOS.DiskAction.Read, file_name);
+            return new FileCommand(TSOS.DiskAction.Read, [file_name]);
         }
         //The file must be opened before being written to.
         write(file_name, content) {
-            return new FileCommand(TSOS.DiskAction.Write, file_name, content);
+            return new FileCommand(TSOS.DiskAction.Write, [file_name, content]);
         }
         delete(file_name) {
-            return new FileCommand(TSOS.DiskAction.Delete, file_name);
+            return new FileCommand(TSOS.DiskAction.Delete, [file_name]);
         }
         copy(file_name, copied_file_name) {
             return this.open(file_name)
                 .and_try(this.read(file_name)
                 .and_try(this.create(copied_file_name)
-                .and_try_run((_stderr, ...params) => {
+                .and_try_run((_stderr, params) => {
                 this.write(copied_file_name, params[0])
                     .catch((stderr, err) => { stderr.error([err.description]); });
             })
@@ -155,19 +155,19 @@ var TSOS;
                 .catch((stderr, err) => { stderr.error([err.description]); });
         }
         rename(file_name, new_file_name) {
-            return new FileCommand(TSOS.DiskAction.Rename, file_name, new_file_name);
+            return new FileCommand(TSOS.DiskAction.Rename, [file_name, new_file_name]);
         }
         ls(stdout, sh_hidden, new_line) {
-            return new FileCommand(TSOS.DiskAction.Ls, stdout, sh_hidden, new_line);
+            return new FileCommand(TSOS.DiskAction.Ls, [stdout, sh_hidden, new_line]);
         }
         recover(file_name) {
-            return new FileCommand(TSOS.DiskAction.Recover, file_name);
+            return new FileCommand(TSOS.DiskAction.Recover, [file_name]);
         }
         garbageCollect() {
-            return new FileCommand(TSOS.DiskAction.GarbageCollect);
+            return new FileCommand(TSOS.DiskAction.GarbageCollect, []);
         }
         defragment() {
-            return new FileCommand(TSOS.DiskAction.Defragment);
+            return new FileCommand(TSOS.DiskAction.Defragment, []);
         }
     }
     TSOS.FileSystem = FileSystem;

@@ -25,7 +25,7 @@ var TSOS;
             new ShellCommand(ShellCommand.shellPrompt, "prompt", "<TEXT>... - Sets the prompt to TEXT.\n"),
             new ShellCommand(ShellCommand.shellDate, "date", "- Displays the current date and time.\n"),
             new ShellCommand(ShellCommand.shellWhereAmI, "whereami", "- Displays the user's current location.\n"),
-            new ShellCommand(ShellCommand.shellEcho, "echo", "- Displays the given text to standard output.\n"),
+            new ShellCommand(ShellCommand.shellEcho, "echo", "<TEXT>... - Displays the given text to standard output.\n"),
             new ShellCommand(ShellCommand.shellStatus, "status", "- Displays a message to the task bar.\n"),
             new ShellCommand(ShellCommand.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message.\n"),
             new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.\n"),
@@ -47,15 +47,16 @@ var TSOS;
             new ShellCommand(ShellCommand.shellDelete, "delete", "<FILE>... - Delete FILEs if they exists.\n", [["FILE"], ["REPEAT"]], ["rm"]),
             new ShellCommand(ShellCommand.shellCopy, "copy", "<FILE> <COPY_FILE> - Creates a file with the copy name and copies the contents of the file to it if it exists.\n", [["FILE"], ["FILE"]], ["cp"]),
             new ShellCommand(ShellCommand.shellRename, "rename", "<FILE> <NEW_FILE> - Renames the file, if it exists, to the new name, if it does not exist.\n", [["FILE"], ["FILE"]], ["mv"]),
-            new ShellCommand(ShellCommand.shellLs, "ls", "[-la] - Outputs a list of open_files in the directory.\n   -a Show hidden open_files.\n   -l Separate files with a new line.\n", [["-a", "-l", "-la", "-al"]]),
+            new ShellCommand(ShellCommand.shellLs, "ls", "[-la] - Lists the files in the directory.\n   -a Show hidden open_files.\n   -l Separate files with a new line.\n", [["-a", "-l", "-la", "-al"]]),
             new ShellCommand(ShellCommand.shellRecover, "recover", "<FILE> - Attempts to recover the deleted FILE.\n", [["FILE"]]),
             new ShellCommand(ShellCommand.shellDiskGC, "diskgc", "- Performs garbage collection on the disk, and cleans up data that has no file.\n", [["FILE"]]),
-            // new ShellCommand(ShellCommand.shellDefrag, "defrag", "- Defragments the disk.\n", [["FILE"]]),
+            new ShellCommand(ShellCommand.shellDefrag, "defrag", "- Defragments the disk.\n", [["FILE"]]),
             new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n", [["FILE"]]),
             new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n", [[], ["FILE"], ["REPEAT"]]),
             new ShellCommand(ShellCommand.shellGetSchedule, "getschedule", "- Print the current CPU scheduling mode.\n"),
             // new ShellCommand(ShellCommand.shellLink, "link", "<FILE> <LINK_NAME> - Create a link to FILE.\n", [["FILE"], ["FILE"]]),
             new ShellCommand(ShellCommand.shellAlias, "alias", "<COMMAND> <ALIAS> - Create an alias for COMMAND.\n"),
+            new ShellCommand(ShellCommand.shellInfo, "info", "<FILE> - Display the size and creation date of a file.\n", [["FILE"]]),
         ];
         static shellVer(stdin, stdout, stderr) {
             const args = stdin.input();
@@ -524,7 +525,7 @@ var TSOS;
             }
             _FileSystem.open(args[0])
                 .and_try(_FileSystem.read(args[0])
-                .and_try_run((_stderr, ...params) => { stdout.output([params[0]]); })
+                .and_try_run((_stderr, params) => { stdout.output([params[0]]); })
                 .catch((stderr, err) => { stderr.error([err.description]); })
                 .and_do(_FileSystem.close(args[0])))
                 .catch((stderr, err) => { stderr.error([err.description]); })
@@ -640,7 +641,8 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: diskgc\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _FileSystem.garbageCollect();
+            _FileSystem.garbageCollect()
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellDefrag(stdin, _stdout, stderr) {
@@ -649,7 +651,9 @@ var TSOS;
                 stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: defrag\n"]);
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
-            _FileSystem.defragment();
+            _FileSystem.defragment()
+                .catch((stderr, err) => { stderr.error([err.description]); })
+                .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
         static shellShell(stdin, _stdout, stderr) {
@@ -664,7 +668,7 @@ var TSOS;
             }
             _FileSystem.open(args[0])
                 .and_try(_FileSystem.read(args[0])
-                .and_try_run((_stderr, ...params) => {
+                .and_try_run((_stderr, params) => {
                 _OsShell.handleInput(params[0]);
                 _Console.redrawCanvas();
             })
@@ -683,7 +687,7 @@ var TSOS;
             for (let i = 1; i < args.length; i++) {
                 _FileSystem.open(args[i])
                     .and_try(_FileSystem.read(args[i])
-                    .and_try_run((_stderr, ...params) => {
+                    .and_try_run((_stderr, params) => {
                     const lines = params[0].split(/(\r?\n)+/);
                     let matches = [];
                     for (const line of lines) {
@@ -746,6 +750,20 @@ var TSOS;
                 return TSOS.ExitCode.CANNOT_EXECUTE_COMMAND;
             }
             command.aliases.push(args[1]);
+            return TSOS.ExitCode.SUCCESS;
+        }
+        static shellInfo(stdin, stdout, stderr) {
+            const args = stdin.input();
+            if (args.length !== 1) {
+                stderr.error([TSOS.ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: info <FILE>\n"]);
+                return TSOS.ExitCode.SHELL_MISUSE;
+            }
+            const tsb = _DiskController.get_file(args[0]);
+            if (tsb === 0) {
+                stderr.error([TSOS.ExitCode.GENERIC_ERROR.shellDesc() + ` - File ${args[0]} not found\n`]);
+                return TSOS.ExitCode.GENERIC_ERROR;
+            }
+            stdout.output([`Size: ${_DiskController.file_size(tsb)} Bytes\nDate Created: ${_DiskController.file_create_date(tsb)}\n`]);
             return TSOS.ExitCode.SUCCESS;
         }
     }

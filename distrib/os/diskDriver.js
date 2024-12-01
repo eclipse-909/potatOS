@@ -44,12 +44,12 @@ var TSOS;
                     _Kernel.krnTrace("Formatting disk");
                     err = _DiskController.format(params[4]);
                     if (err.code === 0) {
-                        on_success?.(null);
+                        on_success?.(null, []);
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Create:
                     //params[4] is the file name
@@ -68,12 +68,12 @@ var TSOS;
                         }
                     }
                     if (err === null || err.code === 0) {
-                        on_success?.(null);
+                        on_success?.(null, []);
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Open:
                     //params[4] is the file name
@@ -92,12 +92,12 @@ var TSOS;
                         }
                     }
                     if (err === null || err.code === 0) {
-                        on_success?.(null);
+                        on_success?.(null, []);
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Close:
                     //params[4] is the file name
@@ -110,12 +110,12 @@ var TSOS;
                         _FileSystem.open_files.delete(file);
                     }
                     if (err === null || err.code === 0) {
-                        on_success?.(null);
+                        on_success?.(null, []);
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Read:
                     //params[4] is the file name
@@ -130,12 +130,12 @@ var TSOS;
                         }
                     }
                     if (err === null || err.code === 0) {
-                        on_success?.(null, _FileSystem.open_files.get(file).input().join(""));
+                        on_success?.(null, _FileSystem.open_files.get(file).input());
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Write:
                     //params[4] is the file name
@@ -158,12 +158,12 @@ var TSOS;
                         }
                     }
                     if (err === null || err.code === 0) {
-                        on_success?.(null);
+                        on_success?.(null, []);
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Delete:
                     //params[4] is the file name
@@ -176,12 +176,12 @@ var TSOS;
                         _DiskController.delete(file);
                     }
                     if (err === null || err.code === 0) {
-                        on_success?.(null);
+                        on_success?.(null, []);
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Rename:
                     //params[4] is the file name
@@ -189,19 +189,19 @@ var TSOS;
                     //params[5] is the new file name
                     const new_file = params[5];
                     _Kernel.krnTrace(`Renaming file ${file} to ${new_file}`);
-                    fcb = _FileSystem.open_files.get(file);
-                    err = _DiskController.rename(file, new_file);
-                    if (err.code !== 0) {
-                        _FileSystem.open_files.delete(file);
-                        _FileSystem.open_files.set(file, fcb);
+                    if (_FileSystem.open_files.has(file)) {
+                        err = TSOS.DiskError.FILE_OPEN;
+                    }
+                    else {
+                        err = _DiskController.rename(file, new_file);
                     }
                     if (err === null || err.code === 0) {
-                        on_success?.(null);
+                        on_success?.(null, []);
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Ls:
                     //params[4] is stdout
@@ -226,12 +226,12 @@ var TSOS;
                         }
                     }
                     if (err === null || err.code === 0) {
-                        on_success?.(null);
+                        on_success?.(null, []);
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Recover:
                     //params[4] is the file name
@@ -244,26 +244,36 @@ var TSOS;
                         err = _DiskController.recover(file);
                     }
                     if (err === null || err.code === 0) {
-                        on_success?.(null);
+                        on_success?.(null, []);
                     }
                     else {
                         on_error?.(null, err);
                     }
-                    callback?.(null);
+                    callback?.(null, []);
                     break;
                 case DiskAction.GarbageCollect:
                     //no additional parameters
                     _Kernel.krnTrace("Performing garbage collection on the disk");
                     _DiskController.garbageCollect();
-                    on_success?.(null);
-                    callback?.(null);
+                    on_success?.(null, []);
+                    callback?.(null, []);
                     break;
                 case DiskAction.Defragment:
                     //no additional parameters
                     _Kernel.krnTrace("Defragmenting the disk");
-                    _DiskController.defragment();
-                    on_success?.(null);
-                    callback?.(null);
+                    if (_FileSystem.open_files.size > 0) {
+                        err = TSOS.DiskError.FILE_OPEN;
+                    }
+                    else {
+                        err = _DiskController.defragment();
+                    }
+                    if (err === null || err.code === 0) {
+                        on_success?.(null, []);
+                    }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null, []);
                     break;
             }
         }

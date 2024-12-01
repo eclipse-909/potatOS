@@ -34,15 +34,37 @@ var TSOS;
     const SECTORS = 8;
     const BLOCKS = 8;
     const BLOCK_SIZE = 64;
-    //1 for in-use flag, 1 for tsb, 1 for length of file name in bytes, 2 for length of data in little-endian bytes
-    const DIR_RESERVED = 5;
+    //TODO include size and create date
+    //1 for in-use flag, 1 for tsb, 1 for length of file name in bytes, 2 for length of data in little-endian bytes, 2 for date stored as 0bMMMM_DDDD 0bDYYY_YYYY which represents MM/DD/YY
+    const DIR_RESERVED = 7;
     //1 for in-use flag, 1 for tsb
     const FILE_RESERVED = 2;
+    const IN_USE_INDEX = 0;
+    const TSB_INDEX = 1;
+    const FILE_NAME_LEN_INDEX = 2;
+    const DATA_LEN_LOW_INDEX = 3;
+    const DATA_LEN_HIGH_INDEX = 4;
+    const DATE_LOW_INDEX = 5;
+    const DATE_HIGH_INDEX = 6;
     class DiskController {
         constructor() {
             if (sessionStorage.getItem("formatted") === null) {
                 sessionStorage.setItem("formatted", "false");
             }
+        }
+        decode(arr) {
+            let str = '';
+            for (let i = 0; i < arr.length; i++) {
+                str += String.fromCharCode(arr[i]);
+            }
+            return str;
+        }
+        encode(str) {
+            const arr = new Uint8Array(str.length);
+            for (let i = 0; i < str.length; i++) {
+                arr[i] = str.charCodeAt(i);
+            }
+            return arr;
         }
         //t: 0b1100_0000
         //s: 0b0011_1000
@@ -57,16 +79,15 @@ var TSOS;
         }
         tsbKey(t, s, b) { return t.toString() + s.toString() + b.toString(); }
         file_exists(file_name) { return this.get_file(file_name) !== 0; }
+        //returns TSB of file, or 0 if it doesn't exist
         get_file(file_name) {
-            const encoder = new TextEncoder();
-            const decoder = new TextDecoder();
             for (let s = 0; s < SECTORS; s++) {
                 for (let b = 0; b < BLOCKS; b++) {
-                    const arr = encoder.encode(sessionStorage.getItem(this.tsbKey(0, s, b)));
-                    if ((arr[0] === 0) || (s === 0 && b === 0)) {
+                    const arr = this.encode(sessionStorage.getItem(this.tsbKey(0, s, b)));
+                    if ((arr[IN_USE_INDEX] === 0) || (s === 0 && b === 0)) {
                         continue;
                     }
-                    if (decoder.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[2])) === file_name) {
+                    if (this.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[FILE_NAME_LEN_INDEX])) === file_name) {
                         return this.fromTSB(0, s, b);
                     }
                 }
@@ -75,23 +96,36 @@ var TSOS;
         }
         get_all_files() {
             let files = [];
-            const encoder = new TextEncoder();
-            const decoder = new TextDecoder();
             for (let s = 0; s < SECTORS; s++) {
                 for (let b = 0; b < BLOCKS; b++) {
-                    const arr = encoder.encode(sessionStorage.getItem(this.tsbKey(0, s, b)));
-                    if ((arr[0] === 0) || (s === 0 && b === 0)) {
+                    const val = sessionStorage.getItem(this.tsbKey(0, s, b));
+                    const arr = this.encode(val);
+                    if ((arr[IN_USE_INDEX] === 0) || (s === 0 && b === 0)) {
                         continue;
                     }
-                    files.push(decoder.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[2])));
+                    files.push(this.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[FILE_NAME_LEN_INDEX])));
                 }
             }
             return files;
         }
+        file_size(tsb) {
+            const TSB = this.toTSB(tsb);
+            const arr = this.encode(sessionStorage.getItem(this.tsbKey(TSB.t, TSB.s, TSB.b)));
+            return BLOCK_SIZE * (Math.ceil(((arr[DATA_LEN_HIGH_INDEX] << 8) | arr[DATA_LEN_LOW_INDEX]) / (BLOCK_SIZE - FILE_RESERVED)) + 1);
+        }
+        file_create_date(tsb) {
+            const TSB = this.toTSB(tsb);
+            const arr = this.encode(sessionStorage.getItem(this.tsbKey(TSB.t, TSB.s, TSB.b)));
+            const month = arr[DATE_LOW_INDEX] >> 4 & 0b1111;
+            const day = (arr[DATE_LOW_INDEX] << 1 | arr[DATE_HIGH_INDEX] >> 7) & 0b11111;
+            const year = arr[DATE_HIGH_INDEX] & 0b1111111;
+            const formattedMonth = month.toString().padStart(2, "0");
+            const formattedDay = day.toString().padStart(2, "0");
+            const formattedYear = (year % 100).toString().padStart(2, "0");
+            return `${formattedMonth}/${formattedDay}/${formattedYear}`;
+        }
         is_formatted() { return sessionStorage.getItem("formatted") === "true"; }
         format(full) {
-            const encoder = new TextEncoder();
-            const decoder = new TextDecoder();
             if (!this.is_formatted() || full) {
                 //full
                 for (let t = 0; t < TRACKS; t++) {
@@ -99,9 +133,9 @@ var TSOS;
                         for (let b = 0; b < BLOCKS; b++) {
                             let arr = new Uint8Array(BLOCK_SIZE);
                             if (t === 0 && s === 0 && b === 0) {
-                                arr[0] = 1;
+                                arr[IN_USE_INDEX] = 1;
                             }
-                            sessionStorage.setItem(this.tsbKey(t, s, b), decoder.decode(arr));
+                            sessionStorage.setItem(this.tsbKey(t, s, b), this.decode(arr));
                         }
                     }
                 }
@@ -112,9 +146,9 @@ var TSOS;
                     for (let s = 0; s < SECTORS; s++) {
                         for (let b = 0; b < BLOCKS; b++) {
                             const key = this.tsbKey(t, s, b);
-                            let arr = encoder.encode(sessionStorage.getItem(key));
-                            arr[0] = t === 0 && s === 0 && b === 0 ? 1 : 0;
-                            sessionStorage.setItem(key, decoder.decode(arr));
+                            let arr = this.encode(sessionStorage.getItem(key));
+                            arr[IN_USE_INDEX] = t === 0 && s === 0 && b === 0 ? 1 : 0;
+                            sessionStorage.setItem(key, this.decode(arr));
                         }
                     }
                 }
@@ -124,11 +158,10 @@ var TSOS;
         }
         //Returns the tsb of the next unused block in directory space, or 0 if storage is full.
         nextFreeDir() {
-            const encoder = new TextEncoder();
             for (let s = 0; s < SECTORS; s++) {
                 for (let b = 0; b < BLOCKS; b++) {
-                    const arr = encoder.encode(sessionStorage.getItem(this.tsbKey(0, s, b)));
-                    if (arr[0] === 0) {
+                    const arr = this.encode(sessionStorage.getItem(this.tsbKey(0, s, b)));
+                    if (arr[IN_USE_INDEX] === 0) {
                         return this.fromTSB(0, s, b);
                     }
                 }
@@ -137,14 +170,13 @@ var TSOS;
         }
         //Returns the TSBs of the next n unused block in file space, or [] if storage is full
         nextFreeFiles(n) {
-            const encoder = new TextEncoder();
             let blocks = [];
             for (let t = 1; t < TRACKS; t++) {
                 for (let s = 0; s < SECTORS; s++) {
                     for (let b = 0; b < BLOCKS; b++) {
                         const block = sessionStorage.getItem(this.tsbKey(t, s, b));
-                        const arr = encoder.encode(block);
-                        if (arr[0] === 0) {
+                        const arr = this.encode(block);
+                        if (arr[IN_USE_INDEX] === 0) {
                             blocks.push(this.fromTSB(t, s, b));
                             if (blocks.length === n) {
                                 return blocks;
@@ -163,8 +195,7 @@ var TSOS;
                 return DiskError.FILE_EXISTS;
             }
             //get space for file in directory
-            const encoder = new TextEncoder();
-            const fileNameArr = encoder.encode(file_name);
+            const fileNameArr = this.encode(file_name);
             if (fileNameArr.length > BLOCK_SIZE - DIR_RESERVED) {
                 return DiskError.FILE_NAME_TOO_LONG;
             }
@@ -175,96 +206,97 @@ var TSOS;
             //set file in directory
             const dirTSB = this.toTSB(dir);
             let dirArr = new Uint8Array(BLOCK_SIZE);
-            dirArr[0] = 1;
-            dirArr[2] = fileNameArr.length;
+            dirArr[IN_USE_INDEX] = 1;
+            dirArr[FILE_NAME_LEN_INDEX] = fileNameArr.length;
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const day = now.getDate();
+            const year = now.getFullYear() % 100;
+            dirArr[DATE_LOW_INDEX] = (month << 4) | (day >> 1);
+            dirArr[DATE_HIGH_INDEX] = ((day << 7) | (year & 0b1111111)) & 0xFF;
             for (let i = 0; i < fileNameArr.length; i++) {
                 dirArr[i + DIR_RESERVED] = fileNameArr[i];
             }
-            const decoder = new TextDecoder();
-            sessionStorage.setItem(this.tsbKey(dirTSB.t, dirTSB.s, dirTSB.b), decoder.decode(dirArr));
+            sessionStorage.setItem(this.tsbKey(dirTSB.t, dirTSB.s, dirTSB.b), this.decode(dirArr));
             return dir;
         }
         read(tsb) {
-            const encoder = new TextEncoder();
-            const decoder = new TextDecoder();
             let TSB = this.toTSB(tsb);
-            let arr = encoder.encode(sessionStorage.getItem(this.tsbKey(TSB.t, TSB.s, TSB.b)));
-            if (arr[0] === 0) {
+            let arr = this.encode(sessionStorage.getItem(this.tsbKey(TSB.t, TSB.s, TSB.b)));
+            if (arr[IN_USE_INDEX] === 0) {
                 //unreachable
                 _Kernel.krnTrapError("Attempted to read an unused block in the disk.");
             }
             let content = "";
-            let data_len = (arr[4] << 8) | arr[3]; //length in little-endian
-            tsb = arr[1];
+            let data_len = (arr[DATA_LEN_HIGH_INDEX] << 8) | arr[DATA_LEN_LOW_INDEX]; //length in little-endian
+            tsb = arr[TSB_INDEX];
             while (tsb !== 0) {
                 TSB = this.toTSB(tsb);
-                arr = encoder.encode(sessionStorage.getItem(this.tsbKey(TSB.t, TSB.s, TSB.b)));
-                if (arr[0] === 0) {
+                arr = this.encode(sessionStorage.getItem(this.tsbKey(TSB.t, TSB.s, TSB.b)));
+                if (arr[IN_USE_INDEX] === 0) {
                     //unreachable
                     _Kernel.krnTrapError("Attempted to read an unused block in the disk.");
                 }
-                tsb = arr[1];
+                tsb = arr[TSB_INDEX];
                 if (data_len <= BLOCK_SIZE - FILE_RESERVED) {
-                    content += decoder.decode(arr.slice(FILE_RESERVED, data_len + FILE_RESERVED));
+                    content += this.decode(arr.slice(FILE_RESERVED, data_len + FILE_RESERVED));
                 }
                 else {
-                    content += decoder.decode(arr.slice(FILE_RESERVED));
+                    content += this.decode(arr.slice(FILE_RESERVED));
                 }
                 data_len -= BLOCK_SIZE - FILE_RESERVED;
             }
             return content;
         }
         write(tsb, content) {
-            const encoder = new TextEncoder();
-            const decoder = new TextDecoder();
             let TSB = this.toTSB(tsb);
             let key = this.tsbKey(TSB.t, TSB.s, TSB.b);
-            let arr = encoder.encode(sessionStorage.getItem(key));
+            let arr = this.encode(sessionStorage.getItem(key));
             let dirArr = arr;
             const dirKey = key;
-            if (arr[0] === 0) {
+            if (arr[IN_USE_INDEX] === 0) {
                 //unreachable
                 _Kernel.krnTrapError("Attempted to write to an unused block in the disk.");
             }
-            const content_arr = encoder.encode(content);
+            const content_arr = this.encode(content);
             let bytes_written = 0;
-            tsb = arr[1];
+            tsb = arr[TSB_INDEX];
             //delete all blocks in the file space
             while (tsb !== 0) {
                 TSB = this.toTSB(tsb);
                 key = this.tsbKey(TSB.t, TSB.s, TSB.b);
-                arr = encoder.encode(sessionStorage.getItem(key));
-                if (arr[0] === 0) {
+                arr = this.encode(sessionStorage.getItem(key));
+                if (arr[IN_USE_INDEX] === 0) {
                     //unreachable
                     _Kernel.krnTrapError("Attempted to delete an unused block in the disk.");
                 }
-                tsb = arr[1];
-                arr[0] = 0;
-                sessionStorage.setItem(key, decoder.decode(arr));
+                tsb = arr[TSB_INDEX];
+                arr[IN_USE_INDEX] = 0;
+                sessionStorage.setItem(key, this.decode(arr));
             }
             //get new blocks in file space
             const blocks = this.nextFreeFiles(Math.ceil(content_arr.length / (BLOCK_SIZE - FILE_RESERVED)));
             if (blocks.length === 0) {
                 return DiskError.STORAGE_FULL;
             }
-            dirArr[1] = blocks[0]; //set new tsb link
-            dirArr[3] = content_arr.length & 0xFF; //set length of data
-            dirArr[4] = (content_arr.length >> 8) & 0xFF;
-            sessionStorage.setItem(dirKey, decoder.decode(dirArr));
+            dirArr[TSB_INDEX] = blocks[0]; //set new tsb link
+            dirArr[DATA_LEN_LOW_INDEX] = content_arr.length & 0xFF; //set length of data
+            dirArr[DATA_LEN_HIGH_INDEX] = (content_arr.length >> 8) & 0xFF;
+            sessionStorage.setItem(dirKey, this.decode(dirArr));
             //write into new blocks in file space
             for (let i = 0; i < blocks.length; i++) {
                 TSB = this.toTSB(blocks[i]);
                 key = this.tsbKey(TSB.t, TSB.s, TSB.b);
                 arr = new Uint8Array(BLOCK_SIZE);
-                arr[0] = 1;
+                arr[IN_USE_INDEX] = 1;
                 if (i + 1 < blocks.length) {
-                    arr[1] = blocks[i + 1];
+                    arr[TSB_INDEX] = blocks[i + 1];
                 }
                 for (let ii = FILE_RESERVED; ii < BLOCK_SIZE && bytes_written < content_arr.length; ii++) {
                     arr[ii] = content_arr[bytes_written];
                     bytes_written++;
                 }
-                sessionStorage.setItem(key, decoder.decode(arr));
+                sessionStorage.setItem(key, this.decode(arr));
             }
             return DiskError.SUCCESS;
         }
@@ -276,29 +308,27 @@ var TSOS;
             if (tsb === 0) {
                 return DiskError.FILE_NOT_FOUND;
             }
-            const encoder = new TextEncoder();
-            const decoder = new TextDecoder();
             let TSB = this.toTSB(tsb);
             let key = this.tsbKey(TSB.t, TSB.s, TSB.b);
-            let arr = encoder.encode(sessionStorage.getItem(key));
-            if (arr[0] === 0) {
+            let arr = this.encode(sessionStorage.getItem(key));
+            if (arr[IN_USE_INDEX] === 0) {
                 //unreachable
                 _Kernel.krnTrapError("Attempted to delete an unused block in the disk.");
             }
-            arr[0] = 0;
-            sessionStorage.setItem(key, decoder.decode(arr));
-            tsb = arr[1];
+            arr[IN_USE_INDEX] = 0;
+            sessionStorage.setItem(key, this.decode(arr));
+            tsb = arr[TSB_INDEX];
             while (tsb !== 0) {
                 TSB = this.toTSB(tsb);
                 key = this.tsbKey(TSB.t, TSB.s, TSB.b);
-                arr = encoder.encode(sessionStorage.getItem(key));
-                if (arr[0] === 0) {
+                arr = this.encode(sessionStorage.getItem(key));
+                if (arr[IN_USE_INDEX] === 0) {
                     //unreachable
                     _Kernel.krnTrapError("Attempted to delete an unused block in the disk.");
                 }
-                tsb = arr[1];
-                arr[0] = 0;
-                sessionStorage.setItem(key, decoder.decode(arr));
+                tsb = arr[TSB_INDEX];
+                arr[IN_USE_INDEX] = 0;
+                sessionStorage.setItem(key, this.decode(arr));
             }
             return DiskError.SUCCESS;
         }
@@ -313,77 +343,76 @@ var TSOS;
             if (new_file_name.length > BLOCK_SIZE - DIR_RESERVED) {
                 return DiskError.FILE_NAME_TOO_LONG;
             }
-            const encoder = new TextEncoder();
-            const decoder = new TextDecoder();
             const TSB = this.toTSB(tsb);
             const key = this.tsbKey(TSB.t, TSB.s, TSB.b);
-            let arr = encoder.encode(sessionStorage.getItem(key));
-            const file_name_arr = encoder.encode(new_file_name);
-            arr[2] = file_name_arr.length;
+            let arr = this.encode(sessionStorage.getItem(key));
+            const file_name_arr = this.encode(new_file_name);
+            arr[FILE_NAME_LEN_INDEX] = file_name_arr.length;
             for (let i = 0; i < file_name_arr.length; i++) {
                 arr[i + DIR_RESERVED] = file_name_arr[i];
             }
-            sessionStorage.setItem(key, decoder.decode(arr));
+            sessionStorage.setItem(key, this.decode(arr));
             return DiskError.SUCCESS;
         }
         recover(file_name) {
-            const encoder = new TextEncoder();
-            const decoder = new TextDecoder();
             let tsb = -1;
             let found = false;
             let length = 0;
             let tsbs = [];
             let arr;
             let key;
+            //look for file with matching name
             for (let s = 0; s < SECTORS; s++) {
                 for (let b = 0; b < BLOCKS; b++) {
                     if (s == 0 && b == 0) {
                         continue;
                     }
                     key = this.tsbKey(0, s, b);
-                    arr = encoder.encode(sessionStorage.getItem(key));
-                    if (decoder.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[2])) !== file_name) {
+                    arr = this.encode(sessionStorage.getItem(key));
+                    if (this.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[FILE_NAME_LEN_INDEX])) !== file_name) {
                         continue;
                     }
                     if (found) {
                         return DiskError.UNRECOVERABLE;
                     }
-                    if (arr[0] === 1) {
+                    if (arr[IN_USE_INDEX] === 1) {
                         return DiskError.FILE_EXISTS;
                     }
                     found = true;
                     tsbs.push(this.fromTSB(0, s, b));
-                    tsb = arr[1];
-                    length = (arr[4] << 8) | arr[3];
+                    tsb = arr[TSB_INDEX];
+                    length = (arr[DATA_LEN_HIGH_INDEX] << 8) | arr[DATA_LEN_LOW_INDEX];
                 }
             }
             if (!found) {
                 return DiskError.UNRECOVERABLE;
             }
+            //loop through linked blocks to gather possible data
             while (tsb !== 0) {
                 tsbs.push(tsb);
                 const TSB = this.toTSB(tsb);
                 key = this.tsbKey(TSB.t, TSB.s, TSB.b);
-                arr = encoder.encode(sessionStorage.getItem(key));
-                if (arr[0] === 1 || (tsbs.length - 2) * (BLOCK_SIZE - FILE_RESERVED) > length) {
+                arr = this.encode(sessionStorage.getItem(key));
+                if (arr[IN_USE_INDEX] === 1 || (tsbs.length - 2) * (BLOCK_SIZE - FILE_RESERVED) > length) {
                     return DiskError.UNRECOVERABLE;
                 }
-                tsb = arr[1];
+                tsb = arr[TSB_INDEX];
             }
+            //make sure the length matches
             if ((tsbs.length - 1) * (BLOCK_SIZE - FILE_RESERVED) < length) {
                 return DiskError.UNRECOVERABLE;
             }
+            //set blocks as in-use
             for (const block of tsbs) {
                 const TSB = this.toTSB(block);
                 key = this.tsbKey(TSB.t, TSB.s, TSB.b);
-                arr = encoder.encode(sessionStorage.getItem(key));
-                arr[0] = 1;
-                sessionStorage.setItem(key, decoder.decode(arr));
+                arr = this.encode(sessionStorage.getItem(key));
+                arr[IN_USE_INDEX] = 1;
+                sessionStorage.setItem(key, this.decode(arr));
             }
             return DiskError.SUCCESS;
         }
         garbageCollect() {
-            const encoder = new TextEncoder();
             let tsb = -1;
             let tsbs = [];
             let arr;
@@ -395,8 +424,8 @@ var TSOS;
                         continue;
                     }
                     key = this.tsbKey(0, s, b);
-                    arr = encoder.encode(sessionStorage.getItem(key));
-                    tsb = arr[1];
+                    arr = this.encode(sessionStorage.getItem(key));
+                    tsb = arr[TSB_INDEX];
                     tsbs.push(tsb);
                 }
             }
@@ -407,8 +436,8 @@ var TSOS;
                 while (tsb !== 0) {
                     const TSB = this.toTSB(tsb);
                     key = this.tsbKey(TSB.t, TSB.s, TSB.b);
-                    arr = encoder.encode(sessionStorage.getItem(key));
-                    tsb = arr[1];
+                    arr = this.encode(sessionStorage.getItem(key));
+                    tsb = arr[TSB_INDEX];
                     if (tsb !== 0) {
                         tsbs.push(tsb);
                     }
@@ -421,14 +450,70 @@ var TSOS;
                         if (tsbs.findIndex(block => { return block === this.fromTSB(t, s, b); }) === -1) {
                             const TSB = this.toTSB(tsb);
                             key = this.tsbKey(TSB.t, TSB.s, TSB.b);
-                            arr = encoder.encode(sessionStorage.getItem(key));
-                            arr[1] = 0;
+                            arr = this.encode(sessionStorage.getItem(key));
+                            arr[TSB_INDEX] = 0;
                         }
                     }
                 }
             }
         }
-        defragment() { }
+        save_disk() {
+            let disk = [];
+            for (let t = 0; t < TRACKS; t++) {
+                const row = [];
+                for (let s = 0; s < SECTORS; s++) {
+                    const col = new Array(BLOCKS).fill("");
+                    row.push(col);
+                }
+                disk.push(row);
+            }
+            for (let t = 0; t < TRACKS; t++) {
+                for (let s = 0; s < SECTORS; s++) {
+                    for (let b = 0; b < BLOCKS; b++) {
+                        disk[t][s][b] = sessionStorage.getItem(this.tsbKey(t, s, b));
+                    }
+                }
+            }
+            return disk;
+        }
+        load_disk(disk) {
+            for (let t = 0; t < TRACKS; t++) {
+                for (let s = 0; s < SECTORS; s++) {
+                    for (let b = 0; b < BLOCKS; b++) {
+                        sessionStorage.setItem(this.tsbKey(t, s, b), disk[t][s][b]);
+                    }
+                }
+            }
+        }
+        defragment() {
+            const disk = this.save_disk();
+            const files = [];
+            for (let s = 0; s < SECTORS; s++) {
+                for (let b = 0; b < BLOCKS; b++) {
+                    const arr = this.encode(sessionStorage.getItem(this.tsbKey(0, s, b)));
+                    if ((arr[IN_USE_INDEX] === 0) || (s === 0 && b === 0)) {
+                        continue;
+                    }
+                    files.push({ name: this.decode(arr.slice(DIR_RESERVED, DIR_RESERVED + arr[FILE_NAME_LEN_INDEX])), tsb: this.fromTSB(0, s, b), data: null });
+                }
+            }
+            for (const file of files) {
+                file.data = this.read(file.tsb);
+            }
+            this.format(true);
+            for (const file of files) {
+                const tsb = this.create(file.name);
+                if (tsb instanceof DiskError) {
+                    this.load_disk(disk);
+                    return tsb;
+                }
+                if (file.data === null || file.data.length === 0) {
+                    continue;
+                }
+                this.write(tsb, file.data);
+            }
+            return DiskError.SUCCESS;
+        }
     }
     TSOS.DiskController = DiskController;
 })(TSOS || (TSOS = {}));

@@ -2,12 +2,12 @@ module TSOS {
 	//A functional builder-pattern for making software interrupts relating to the file system
 	class FileCommand {
 		private diskAction: DiskAction;
-		private on_success: null | ((stderr: ErrStream<string[]>, ...params: any[]) => void);
+		private on_success: null | ((stderr: ErrStream<string[]>, params: any[]) => void);
 		private on_error: null | ((stderr: ErrStream<string[]>, err: DiskError) => void);
-		private callback: null | ((stderr: ErrStream<string[]>, ...params: any[]) => void);
+		private callback: null | ((stderr: ErrStream<string[]>, params: any[]) => void);
 		private readonly params: any[];
 
-		public constructor(diskAction: DiskAction, ...params: any[]) {
+		public constructor(diskAction: DiskAction, params: any[]) {
 			this.diskAction = diskAction;
 			this.on_success = null;
 			this.on_error = null;
@@ -18,12 +18,12 @@ module TSOS {
 		//Does the file command only if the previous command succeeds.
 		public and_try(next: FileCommand): FileCommand {
 			if (this.on_success === null) {
-				this.on_success = (stderr: ErrStream<string[]>, ..._params: any[]): void => {
+				this.on_success = (stderr: ErrStream<string[]>, _params: any[]): void => {
 					next.execute(stderr);
 				};
 			} else {
-				const fn: (stderr: ErrStream<string[]>, ..._params: any[]) => void = this.on_success;
-				this.on_success = (stderr: ErrStream<string[]>, ...params: any[]): void => {
+				const fn: (stderr: ErrStream<string[]>, _params: any[]) => void = this.on_success;
+				this.on_success = (stderr: ErrStream<string[]>, params: any[]): void => {
 					fn(stderr, params);
 					next.execute(stderr);
 				};
@@ -48,12 +48,12 @@ module TSOS {
 		//Will always do the file command regardless of if the previous one succeeds or fails.
 		public and_do(next: FileCommand): FileCommand {
 			if (this.callback === null) {
-				this.callback = (stderr: ErrStream<string[]>, ..._params: any[]): void => {
+				this.callback = (stderr: ErrStream<string[]>, _params: any[]): void => {
 					next.execute(stderr);
 				};
 			} else {
-				const fn: (stderr: ErrStream<string[]>, ...params: any[]) => void = this.callback;
-				this.callback = (stderr: ErrStream<string[]>, ...params: any[]): void => {
+				const fn: (stderr: ErrStream<string[]>, params: any[]) => void = this.callback;
+				this.callback = (stderr: ErrStream<string[]>, params: any[]): void => {
 					fn(stderr, params);
 					next.execute(stderr);
 				};
@@ -62,12 +62,12 @@ module TSOS {
 		}
 
 		//Will execute the function only if the previous command succeeds.
-		public and_try_run(on_success: (stderr: ErrStream<string[]>, ...params: any[]) => void): FileCommand {
+		public and_try_run(on_success: (stderr: ErrStream<string[]>, params: any[]) => void): FileCommand {
 			if (this.on_success === null) {
 				this.on_success = on_success;
 			} else {
-				const fn: (stderr: ErrStream<string[]>, ...params: any[]) => void = this.on_success;
-				this.on_success = (stderr: ErrStream<string[]>, ...params: any[]): void => {
+				const fn: (stderr: ErrStream<string[]>, params: any[]) => void = this.on_success;
+				this.on_success = (stderr: ErrStream<string[]>, params: any[]): void => {
 					fn(stderr, params);
 					on_success(stderr, params);
 				};
@@ -76,12 +76,12 @@ module TSOS {
 		}
 
 		//Will always execute the function regardless of if the previous one succeeds or fails.
-		public and_do_run(callback: (stderr: ErrStream<string[]>, ...params: any[]) => void): FileCommand {
+		public and_do_run(callback: (stderr: ErrStream<string[]>, params: any[]) => void): FileCommand {
 			if (this.callback === null) {
 				this.callback = callback;
 			} else {
-				const fn: (stderr: ErrStream<string[]>, ...params: any[]) => void = this.callback;
-				this.callback = (stderr: ErrStream<string[]>, ...params: any[]): void => {
+				const fn: (stderr: ErrStream<string[]>, params: any[]) => void = this.callback;
+				this.callback = (stderr: ErrStream<string[]>, params: any[]): void => {
 					fn(stderr, params);
 					callback(stderr, params);
 				};
@@ -91,8 +91,8 @@ module TSOS {
 
 		public execute(stderr: ErrStream<string[]>): void {
 			if (this.on_success !== null) {
-				const fn: (stderr: ErrStream<string[]>, ...params: any[]) => void = this.on_success;
-				this.on_success = (_stderr: ErrStream<string[]>, ...params: any[]): void => {
+				const fn: (stderr: ErrStream<string[]>, params: any[]) => void = this.on_success;
+				this.on_success = (_stderr: ErrStream<string[]>, params: any[]): void => {
 					fn(stderr, params);
 				};
 			}
@@ -103,8 +103,8 @@ module TSOS {
 				};
 			}
 			if (this.callback !== null) {
-				const fn: (stderr: ErrStream<string[]>, ...params: any[]) => void = this.callback;
-				this.callback = (_stderr: ErrStream<string[]>, ...params: any[]): void => {
+				const fn: (stderr: ErrStream<string[]>, params: any[]) => void = this.callback;
+				this.callback = (_stderr: ErrStream<string[]>, params: any[]): void => {
 					fn(stderr, params);
 				};
 			}
@@ -122,40 +122,40 @@ module TSOS {
 		}
 
 		public format(full: boolean): FileCommand {
-			return new FileCommand(DiskAction.Format, full);
+			return new FileCommand(DiskAction.Format, [full]);
 		}
 
 		public create(file_name: string): FileCommand {
-			return new FileCommand(DiskAction.Create, file_name);
+			return new FileCommand(DiskAction.Create, [file_name]);
 		}
 
 		public open(file_name: string): FileCommand {
-			return new FileCommand(DiskAction.Open, file_name);
+			return new FileCommand(DiskAction.Open, [file_name]);
 		}
 
 		public close(file_name: string): FileCommand {
-			return new FileCommand(DiskAction.Close, file_name);
+			return new FileCommand(DiskAction.Close, [file_name]);
 		}
 
 		//The file must be opened before being read.
 		public read(file_name: string): FileCommand {
-			return new FileCommand(DiskAction.Read, file_name);
+			return new FileCommand(DiskAction.Read, [file_name]);
 		}
 
 		//The file must be opened before being written to.
 		public write(file_name: string, content: string): FileCommand {
-			return new FileCommand(DiskAction.Write, file_name, content);
+			return new FileCommand(DiskAction.Write, [file_name, content]);
 		}
 
 		public delete(file_name: string): FileCommand {
-			return new FileCommand(DiskAction.Delete, file_name);
+			return new FileCommand(DiskAction.Delete, [file_name]);
 		}
 
 		public copy(file_name: string, copied_file_name: string): FileCommand {
 			return this.open(file_name)
 				.and_try(this.read(file_name)
 					.and_try(this.create(copied_file_name)
-						.and_try_run((_stderr: ErrStream<string[]>, ...params: any[]): void => {
+						.and_try_run((_stderr: ErrStream<string[]>, params: any[]): void => {
 							this.write(copied_file_name, params[0])
 								.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);});
 						})
@@ -169,23 +169,23 @@ module TSOS {
 		}
 
 		public rename(file_name: string, new_file_name: string): FileCommand {
-			return new FileCommand(DiskAction.Rename, file_name, new_file_name);
+			return new FileCommand(DiskAction.Rename, [file_name, new_file_name]);
 		}
 
 		public ls(stdout: OutStream<string[]>, sh_hidden: boolean, new_line: boolean): FileCommand {
-			return new FileCommand(DiskAction.Ls, stdout, sh_hidden, new_line);
+			return new FileCommand(DiskAction.Ls, [stdout, sh_hidden, new_line]);
 		}
 
 		public recover(file_name: string): FileCommand {
-			return new FileCommand(DiskAction.Recover, file_name);
+			return new FileCommand(DiskAction.Recover, [file_name]);
 		}
 
 		public garbageCollect(): FileCommand {
-			return new FileCommand(DiskAction.GarbageCollect);
+			return new FileCommand(DiskAction.GarbageCollect, []);
 		}
 
 		public defragment(): FileCommand {
-			return new FileCommand(DiskAction.Defragment);
+			return new FileCommand(DiskAction.Defragment, []);
 		}
 	}
 }

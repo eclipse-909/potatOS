@@ -32,7 +32,7 @@ module TSOS {
 			new ShellCommand(ShellCommand.shellPrompt, "prompt", "<TEXT>... - Sets the prompt to TEXT.\n"),
 			new ShellCommand(ShellCommand.shellDate, "date", "- Displays the current date and time.\n"),
 			new ShellCommand(ShellCommand.shellWhereAmI, "whereami", "- Displays the user's current location.\n"),
-			new ShellCommand(ShellCommand.shellEcho, "echo", "- Displays the given text to standard output.\n"),
+			new ShellCommand(ShellCommand.shellEcho, "echo", "<TEXT>... - Displays the given text to standard output.\n"),
 			new ShellCommand(ShellCommand.shellStatus, "status", "- Displays a message to the task bar.\n"),
 			new ShellCommand(ShellCommand.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message.\n"),
 			new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.\n"),
@@ -94,7 +94,7 @@ module TSOS {
 			new ShellCommand(
 				ShellCommand.shellLs,
 				"ls",
-				"[-la] - Outputs a list of open_files in the directory.\n   -a Show hidden open_files.\n   -l Separate files with a new line.\n",
+				"[-la] - Lists the files in the directory.\n   -a Show hidden open_files.\n   -l Separate files with a new line.\n",
 				[["-a", "-l", "-la", "-al"]]
 			),
 			new ShellCommand(
@@ -104,12 +104,13 @@ module TSOS {
 				[["FILE"]]
 			),
 			new ShellCommand(ShellCommand.shellDiskGC, "diskgc", "- Performs garbage collection on the disk, and cleans up data that has no file.\n", [["FILE"]]),
-			// new ShellCommand(ShellCommand.shellDefrag, "defrag", "- Defragments the disk.\n", [["FILE"]]),
+			new ShellCommand(ShellCommand.shellDefrag, "defrag", "- Defragments the disk.\n", [["FILE"]]),
 			new ShellCommand(ShellCommand.shellShell, "shell", "<FILE.sh> - Executes the shell file.\n", [["FILE"]]),
 			new ShellCommand(ShellCommand.shellGrep, "grep", "<PATTERN> <FILE>... - Search for PATTERN in each FILE or standard input.\n", [[], ["FILE"], ["REPEAT"]]),
 			new ShellCommand(ShellCommand.shellGetSchedule, "getschedule", "- Print the current CPU scheduling mode.\n"),
 			// new ShellCommand(ShellCommand.shellLink, "link", "<FILE> <LINK_NAME> - Create a link to FILE.\n", [["FILE"], ["FILE"]]),
 			new ShellCommand(ShellCommand.shellAlias, "alias", "<COMMAND> <ALIAS> - Create an alias for COMMAND.\n"),
+			new ShellCommand(ShellCommand.shellInfo, "info", "<FILE> - Display the size and creation date of a file.\n", [["FILE"]]),
 		] as const;
 
 		static shellVer(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
@@ -604,7 +605,7 @@ module TSOS {
 			}
 			_FileSystem.open(args[0])
 				.and_try(_FileSystem.read(args[0])
-					.and_try_run((_stderr: ErrStream<string[]>, ...params: any[]): void => {stdout.output([params[0]]);})
+					.and_try_run((_stderr: ErrStream<string[]>, params: any[]): void => {stdout.output([params[0]]);})
 					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
 					.and_do(_FileSystem.close(args[0]))
 				)
@@ -722,7 +723,8 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: diskgc\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_FileSystem.garbageCollect();
+			_FileSystem.garbageCollect()
+				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
 
@@ -732,7 +734,9 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: defrag\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
-			_FileSystem.defragment();
+			_FileSystem.defragment()
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
 
@@ -748,7 +752,7 @@ module TSOS {
 			}
 			_FileSystem.open(args[0])
 				.and_try(_FileSystem.read(args[0])
-					.and_try_run((_stderr: ErrStream<string[]>, ...params: any[]): void => {
+					.and_try_run((_stderr: ErrStream<string[]>, params: any[]): void => {
 						_OsShell.handleInput(params[0]);
 						_Console.redrawCanvas();
 					})
@@ -769,7 +773,7 @@ module TSOS {
 			for (let i: number = 1; i < args.length; i++) {
 				_FileSystem.open(args[i])
 					.and_try(_FileSystem.read(args[i])
-						.and_try_run((_stderr: ErrStream<string[]>, ...params: any[]): void => {
+						.and_try_run((_stderr: ErrStream<string[]>, params: any[]): void => {
 							const lines: string[] = params[0].split(/(\r?\n)+/);
 							let matches: string[] = [];
 							for (const line of lines) {
@@ -836,6 +840,21 @@ module TSOS {
 				return ExitCode.CANNOT_EXECUTE_COMMAND;
 			}
 			command.aliases.push(args[1]);
+			return ExitCode.SUCCESS;
+		}
+
+		static shellInfo(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
+			if (args.length !== 1) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: info <FILE>\n"]);
+				return ExitCode.SHELL_MISUSE;
+			}
+			const tsb: number = _DiskController.get_file(args[0]);
+			if (tsb === 0) {
+				stderr.error([ExitCode.GENERIC_ERROR.shellDesc() + ` - File ${args[0]} not found\n`]);
+				return ExitCode.GENERIC_ERROR;
+			}
+			stdout.output([`Size: ${_DiskController.file_size(tsb)} Bytes\nDate Created: ${_DiskController.file_create_date(tsb)}\n`]);
 			return ExitCode.SUCCESS;
 		}
 	}

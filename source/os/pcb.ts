@@ -51,22 +51,59 @@ module TSOS {
 				_StdErr.error(["Binary too large, could not load\n"]);
 				return undefined;
 			}
-			const alloc: {base: number, limit: number} | undefined = _MMU.malloc(bin.length);
-			if (alloc === undefined) {
-				_StdErr.error(["Out of memory, could not allocate for new process\n"]);
-				return undefined;
-			}
-			pcb.base = alloc.base;
-			pcb.limit = alloc.limit;
-
-			//write bin to memory
-			bin.forEach((value: number, vPtr: number): void => {
-				//Bypass MMU because the MMU can only read and write to memory for processes that are running
-				_MemoryController.write(pcb.base + vPtr, value);
-			});
-
 			pcb.pid = ProcessControlBlock.highestPID;
 			ProcessControlBlock.highestPID++;
+			const alloc: {base: number, limit: number} | undefined = _MMU.malloc(bin.length);
+			if (alloc === undefined) {
+				//create swap file
+				let bin_clone: Uint8Array;
+				if (_MMU.fixedSegments) {
+					bin_clone = new Uint8Array(_MMU.segmentSize);
+					for (let i: number = 0; i < bin.length; i++) {
+						bin_clone[i] = bin[i];
+					}
+				} else {
+					bin_clone = bin;
+				}
+				const file: string = `.swap${pcb.pid}`;
+				const write_command: FileCommand = _FileSystem.write(file, _DiskController.decode(bin_clone))
+					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {
+						stderr.error([err.description]);
+						kill(pcb.pid, ExitCode.GENERIC_ERROR);
+					});
+				if (_DiskController.file_exists(file)) {
+					if (_FileSystem.open_files.has(file)) {
+						write_command.execute(_StdErr);
+					} else {
+						_FileSystem.open(file)
+							.and_try(write_command)
+							.execute(_StdErr);
+					}
+				} else {
+					_FileSystem.create(file)
+						.and_try(write_command)
+						.catch((stderr: ErrStream<string[]>, err: DiskError): void => {
+							stderr.error([err.description]);
+							kill(pcb.pid, ExitCode.GENERIC_ERROR);
+						})
+						.and_do(_FileSystem.close(file))//will be re-opened when ran and in ready-queue
+						.execute(_StdErr);
+				}
+				pcb.base = -1;
+				pcb.limit = -1;
+				pcb.segment = -1;
+				pcb.onDisk = true;
+			} else {
+				pcb.base = alloc.base;
+				pcb.limit = alloc.limit;
+				pcb.segment = Math.floor(pcb.base / 0x100);
+				pcb.onDisk = false;
+				//write bin to memory
+				bin.forEach((value: number, vPtr: number): void => {
+					//Bypass MMU because the MMU can only read and write to memory for processes that are running
+					_MemoryController.write(pcb.base + vPtr, value);
+				});
+			}
 			pcb.status = Status.resident;
 			pcb.IR = OpCode.BRK;//0-initialized
 			pcb.PC = 0x0000;
@@ -79,17 +116,26 @@ module TSOS {
 			pcb.cpuTime = 0;
 			pcb.waitTime = 0;
 			pcb.priority = 0;
-			pcb.onDisk = false;
-			pcb.segment = Math.floor(pcb.base / 0x100);
 
 			//Estimate how long this binary should take
 			pcb.estimateTime(bin);
 			return pcb;
 		}
 
+		public free_mem(): void {
+			if (!this.onDisk) {
+				_MMU.free(this.base);
+			}
+		}
+
 		//This must be called when a process is killed
 		public free(): void {
-			_MMU.free(this.base);
+			this.free_mem();
+			//try to delete the associated swap file, and ignore any errors
+			const file: string = `.swap${this.pid}`;
+			_FileSystem.close(file)
+				.and_do(_FileSystem.delete(file))
+				.execute(null);
 		}
 
 		//Uses the length of the binary and the number of branch instructions, and sets this.timeEstimate

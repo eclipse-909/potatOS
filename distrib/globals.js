@@ -11,7 +11,7 @@
 // Global CONSTANTS (TypeScript 1.5 introduced const. Very cool.)
 //
 const APP_NAME = "potatOS"; // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION = "0.4.11"; // What did you expect?
+const APP_VERSION = "0.4.13"; // What did you expect?
 const CPU_CLOCK_INTERVAL = 0; // This is in ms (milliseconds) so 1000 = 1 second.
 var IRQ;
 (function (IRQ) {
@@ -25,7 +25,9 @@ var IRQ;
     IRQ[IRQ["disk"] = 6] = "disk";
 })(IRQ || (IRQ = {}));
 const KEYBOARD_IRQ = IRQ.keyboard; //Stupid glados always making me do stuff
-const MEM_SIZE = 0x300;
+const PAGE_SIZE = 0x100;
+const NUM_PAGES = 0x03;
+const MEM_SIZE = PAGE_SIZE * NUM_PAGES;
 //bytes are unchecked
 function leToU16(lowByte, highByte) { return (highByte << 8) | lowByte; }
 //
@@ -54,6 +56,7 @@ let _KernelInputQueue = null;
 let _KernelBuffers = null;
 let _Scheduler = null;
 let _Dispatcher = null;
+let _Swapper = null;
 // Standard input, output, and error
 let _StdIn = null;
 let _StdOut = null;
@@ -71,7 +74,7 @@ let _hardwareClockID = null;
 // For testing (and enrichment)...
 const Glados = null; // This is the function Glados() in glados-ip*.js http://alanclasses.github.io/TSOS/test/ .
 let _GLaDOS = null; // If the above is linked in, this is the instantiated instance of Glados.
-const onDocumentLoad = function () {
+const onDocumentLoad = () => {
     setInterval(TSOS.Control.createPotato, 300);
     TSOS.Control.hostInit();
     setInterval(() => {

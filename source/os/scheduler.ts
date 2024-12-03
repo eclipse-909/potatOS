@@ -37,6 +37,14 @@ module TSOS {
 		//Enqueues the pcb into the readyQueue. Inserts it if using ScheduleMode.P_SJF.
 		public ready(pcb: ProcessControlBlock): void {
 			pcb.status = Status.ready;
+			const file: string = `.swap${pcb.pid}`;
+			if (pcb.onDisk && !_FileSystem.open_files.has(file)) {
+				_FileSystem.open(file)
+					.catch((_stderr: ErrStream<string[]>, err: DiskError): void => {
+						_Kernel.krnTrapError(`Failed to ready process ${pcb.pid}. Could not open swap file. ${err.description}`);
+					})
+					.execute(null);
+			}
 			if (this.scheduleMode !== ScheduleMode.RR || this.quantum > 0) {
 				this.readyQueue.enqueue(pcb);
 			} else {
@@ -48,7 +56,9 @@ module TSOS {
 				});
 				const next: ProcessControlBlock | null = this.readyQueue.peek();
 				if (next !== null && this.currPCB !== null && next.timeEstimate < this.currPCB.timeEstimate) {
-					_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));//preemptive
+					if (!_KernelInterruptQueue.contains((item: Interrupt): boolean => {return item.irq === IRQ.contextSwitch;})) {
+						_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));//preemptive
+					}
 					return;
 				}
 			} else if (this.scheduleMode === ScheduleMode.NP_P) {
@@ -57,11 +67,13 @@ module TSOS {
 				});
 				const next: ProcessControlBlock | null = this.readyQueue.peek();
 				if (next !== null && this.currPCB !== null && next.priority < this.currPCB.priority) {
-					_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));//preemptive
+					if (!_KernelInterruptQueue.contains((item: Interrupt): boolean => {return item.irq === IRQ.contextSwitch;})) {
+						_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));//preemptive
+					}
 					return;
 				}
 			}
-			if (this.currPCB === null) {
+			if (this.currPCB === null && !_KernelInterruptQueue.contains((item: Interrupt): boolean => {return item.irq === IRQ.contextSwitch;})) {
 				_KernelInterruptQueue.enqueue(new Interrupt(IRQ.contextSwitch, []));
 			}
 		}
@@ -85,7 +97,7 @@ module TSOS {
 				return false;
 			}
 			if (this.currPCB !== null) {
-				this.currPCB.status = Status.ready
+				this.currPCB.status = Status.ready;
 				_Scheduler.updateCurrPCB();
 				this.ready(this.currPCB);
 			}
@@ -96,6 +108,9 @@ module TSOS {
 				nextPcb = this.readyQueue.pop();//The queue is reversed if q < 0
 			}
 			nextPcb.status = Status.running;
+			if (nextPcb.onDisk) {
+				_Swapper.swap(this.currPCB, nextPcb);
+			}
 			this.currPCB = nextPcb;
 			return true;
 		}

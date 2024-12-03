@@ -64,6 +64,14 @@ var TSOS;
         sort(compareFn) {
             this.q.sort(compareFn);
         }
+        contains(compareFn) {
+            for (const i of this.q) {
+                if (compareFn(i)) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
     TSOS.Queue = Queue;
 })(TSOS || (TSOS = {}));

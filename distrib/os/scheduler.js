@@ -35,6 +35,14 @@ var TSOS;
         //Enqueues the pcb into the readyQueue. Inserts it if using ScheduleMode.P_SJF.
         ready(pcb) {
             pcb.status = TSOS.Status.ready;
+            const file = `.swap${pcb.pid}`;
+            if (pcb.onDisk && !_FileSystem.open_files.has(file)) {
+                _FileSystem.open(file)
+                    .catch((_stderr, err) => {
+                    _Kernel.krnTrapError(`Failed to ready process ${pcb.pid}. Could not open swap file. ${err.description}`);
+                })
+                    .execute(null);
+            }
             if (this.scheduleMode !== ScheduleMode.RR || this.quantum > 0) {
                 this.readyQueue.enqueue(pcb);
             }
@@ -47,7 +55,9 @@ var TSOS;
                 });
                 const next = this.readyQueue.peek();
                 if (next !== null && this.currPCB !== null && next.timeEstimate < this.currPCB.timeEstimate) {
-                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, [])); //preemptive
+                    if (!_KernelInterruptQueue.contains((item) => { return item.irq === IRQ.contextSwitch; })) {
+                        _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, [])); //preemptive
+                    }
                     return;
                 }
             }
@@ -57,11 +67,13 @@ var TSOS;
                 });
                 const next = this.readyQueue.peek();
                 if (next !== null && this.currPCB !== null && next.priority < this.currPCB.priority) {
-                    _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, [])); //preemptive
+                    if (!_KernelInterruptQueue.contains((item) => { return item.irq === IRQ.contextSwitch; })) {
+                        _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, [])); //preemptive
+                    }
                     return;
                 }
             }
-            if (this.currPCB === null) {
+            if (this.currPCB === null && !_KernelInterruptQueue.contains((item) => { return item.irq === IRQ.contextSwitch; })) {
                 _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.contextSwitch, []));
             }
         }
@@ -97,6 +109,9 @@ var TSOS;
                 nextPcb = this.readyQueue.pop(); //The queue is reversed if q < 0
             }
             nextPcb.status = TSOS.Status.running;
+            if (nextPcb.onDisk) {
+                _Swapper.swap(this.currPCB, nextPcb);
+            }
             this.currPCB = nextPcb;
             return true;
         }

@@ -57,7 +57,7 @@ module TSOS {
 			}
 		}
 
-		private decode(arr: Uint8Array): string {
+		public decode(arr: Uint8Array): string {
 			let str: string = '';
 			for (let i: number = 0; i < arr.length; i++) {
 				str += String.fromCharCode(arr[i]);
@@ -65,7 +65,7 @@ module TSOS {
 			return str;
 		}
 
-		private encode(str: string): Uint8Array {
+		public encode(str: string): Uint8Array {
 			const arr = new Uint8Array(str.length);
 			for (let i: number = 0; i < str.length; i++) {
 				arr[i] = str.charCodeAt(i);

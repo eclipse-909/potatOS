@@ -47,20 +47,63 @@ var TSOS;
                 _StdErr.error(["Binary too large, could not load\n"]);
                 return undefined;
             }
-            const alloc = _MMU.malloc(bin.length);
-            if (alloc === undefined) {
-                _StdErr.error(["Out of memory, could not allocate for new process\n"]);
-                return undefined;
-            }
-            pcb.base = alloc.base;
-            pcb.limit = alloc.limit;
-            //write bin to memory
-            bin.forEach((value, vPtr) => {
-                //Bypass MMU because the MMU can only read and write to memory for processes that are running
-                _MemoryController.write(pcb.base + vPtr, value);
-            });
             pcb.pid = ProcessControlBlock.highestPID;
             ProcessControlBlock.highestPID++;
+            const alloc = _MMU.malloc(bin.length);
+            if (alloc === undefined) {
+                //create swap file
+                let bin_clone;
+                if (_MMU.fixedSegments) {
+                    bin_clone = new Uint8Array(_MMU.segmentSize);
+                    for (let i = 0; i < bin.length; i++) {
+                        bin_clone[i] = bin[i];
+                    }
+                }
+                else {
+                    bin_clone = bin;
+                }
+                const file = `.swap${pcb.pid}`;
+                const write_command = _FileSystem.write(file, _DiskController.decode(bin_clone))
+                    .catch((stderr, err) => {
+                    stderr.error([err.description]);
+                    TSOS.kill(pcb.pid, TSOS.ExitCode.GENERIC_ERROR);
+                });
+                if (_DiskController.file_exists(file)) {
+                    if (_FileSystem.open_files.has(file)) {
+                        write_command.execute(_StdErr);
+                    }
+                    else {
+                        _FileSystem.open(file)
+                            .and_try(write_command)
+                            .execute(_StdErr);
+                    }
+                }
+                else {
+                    _FileSystem.create(file)
+                        .and_try(write_command)
+                        .catch((stderr, err) => {
+                        stderr.error([err.description]);
+                        TSOS.kill(pcb.pid, TSOS.ExitCode.GENERIC_ERROR);
+                    })
+                        .and_do(_FileSystem.close(file)) //will be re-opened when ran and in ready-queue
+                        .execute(_StdErr);
+                }
+                pcb.base = -1;
+                pcb.limit = -1;
+                pcb.segment = -1;
+                pcb.onDisk = true;
+            }
+            else {
+                pcb.base = alloc.base;
+                pcb.limit = alloc.limit;
+                pcb.segment = Math.floor(pcb.base / 0x100);
+                pcb.onDisk = false;
+                //write bin to memory
+                bin.forEach((value, vPtr) => {
+                    //Bypass MMU because the MMU can only read and write to memory for processes that are running
+                    _MemoryController.write(pcb.base + vPtr, value);
+                });
+            }
             pcb.status = Status.resident;
             pcb.IR = TSOS.OpCode.BRK; //0-initialized
             pcb.PC = 0x0000;
@@ -73,15 +116,23 @@ var TSOS;
             pcb.cpuTime = 0;
             pcb.waitTime = 0;
             pcb.priority = 0;
-            pcb.onDisk = false;
-            pcb.segment = Math.floor(pcb.base / 0x100);
             //Estimate how long this binary should take
             pcb.estimateTime(bin);
             return pcb;
         }
+        free_mem() {
+            if (!this.onDisk) {
+                _MMU.free(this.base);
+            }
+        }
         //This must be called when a process is killed
         free() {
-            _MMU.free(this.base);
+            this.free_mem();
+            //try to delete the associated swap file, and ignore any errors
+            const file = `.swap${this.pid}`;
+            _FileSystem.close(file)
+                .and_do(_FileSystem.delete(file))
+                .execute(null);
         }
         //Uses the length of the binary and the number of branch instructions, and sets this.timeEstimate
         estimateTime(bin) {

@@ -13,7 +13,7 @@
 //
 
 const APP_NAME: string    = "potatOS";   // 'cause Bob and I were at a loss for a better name.
-const APP_VERSION: string = "0.4.11";   // What did you expect?
+const APP_VERSION: string = "0.4.13";   // What did you expect?
 
 const CPU_CLOCK_INTERVAL: number = 0;   // This is in ms (milliseconds) so 1000 = 1 second.
 
@@ -29,7 +29,9 @@ enum IRQ {
 }
 const KEYBOARD_IRQ: IRQ = IRQ.keyboard;//Stupid glados always making me do stuff
 
-const MEM_SIZE: number = 0x300;
+const PAGE_SIZE: number = 0x100;
+const NUM_PAGES: number = 0x03;
+const MEM_SIZE: number = PAGE_SIZE * NUM_PAGES;
 
 //bytes are unchecked
 function leToU16(lowByte: number, highByte: number) {return (highByte << 8) | lowByte;}
@@ -66,6 +68,7 @@ let _KernelBuffers = null;
 
 let _Scheduler: TSOS.Scheduler = null;
 let _Dispatcher: TSOS.Dispatcher = null;
+let _Swapper: TSOS.Swapper = null;
 
 // Standard input, output, and error
 let _StdIn: TSOS.Console = null;
@@ -90,10 +93,10 @@ let _hardwareClockID: number = null;
 const Glados: any = null;  // This is the function Glados() in glados-ip*.js http://alanclasses.github.io/TSOS/test/ .
 let _GLaDOS: any = null; // If the above is linked in, this is the instantiated instance of Glados.
 
-const onDocumentLoad = function () {
+const onDocumentLoad: () => void = (): void => {
 	setInterval(TSOS.Control.createPotato, 300);
 	TSOS.Control.hostInit();
-	setInterval(() => {
+	setInterval((): void => {
 		document.getElementById("footerDate").innerHTML = new Date().toString();
 	}, 1000);
 };

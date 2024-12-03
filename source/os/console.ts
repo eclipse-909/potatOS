@@ -270,6 +270,7 @@ module TSOS {
 			};
 		}
 
+		//BUG when the input is being drawn at the bottom of the console, it will write on top of itself rather than scroll to make a new line
 		private printInput(text: string): void {
 			if (this.inputBuffer === null) {
 				//new text

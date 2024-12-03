@@ -56,6 +56,7 @@ var TSOS;
             _Scheduler = new TSOS.Scheduler();
             Control.updatePcbMeta();
             _Dispatcher = new TSOS.Dispatcher();
+            _Swapper = new TSOS.Swapper();
             _MemoryController = new TSOS.MemoryController();
             _DiskController = new TSOS.DiskController();
             _MMU = new TSOS.MMU();
@@ -106,11 +107,9 @@ var TSOS;
             let str = "<tr>" +
                 "<th>PID</th>" +
                 "<th>Status</th>" +
-                "<th>Turnaround Time</th>" +
-                "<th>Wait Time</th>" +
                 "<th>Priority</th>" +
                 "<th>Location</th>" + //location means - memory/disk
-                "<th>Segment</th>" + //0, 1, or 2
+                "<th>Segment</th>" + //0, 1, 2, or N/A
                 "<th>Base</th>" +
                 "<th>Limit</th>" +
                 "<th>IR</th>" +
@@ -130,13 +129,11 @@ var TSOS;
             return "<tr>" +
                 `<td>${pcb.pid.toString()}</td>` +
                 `<td>${TSOS.Status[pcb.status]}</td>` +
-                `<td>${pcb.cpuTime + pcb.waitTime}</td>` +
-                `<td>${pcb.waitTime}</td>` +
                 `<td>${pcb.priority}</td>` +
                 `<td>${pcb.onDisk ? "Disk" : "Memory"}</td>` +
-                `<td>${pcb.segment}</td>` +
-                `<td>0x${pcb.base.toString(16).toUpperCase().padStart(4, '0')}</td>` +
-                `<td>0x${pcb.limit.toString(16).toUpperCase().padStart(4, '0')}</td>` +
+                "<td>" + (pcb.onDisk ? "N/A" : pcb.segment) + "</td>" +
+                "<td>" + (pcb.onDisk ? "N/A" : `0x${pcb.base.toString(16).toUpperCase().padStart(4, '0')}`) + "</td>" +
+                "<td>" + (pcb.onDisk ? "N/A" : `0x${pcb.limit.toString(16).toUpperCase().padStart(4, '0')}`) + "</td>" +
                 `<td>${TSOS.OpCode[pcb.IR]}</td>` +
                 `<td>0x${pcb.PC.toString(16).toUpperCase().padStart(4, '0')}</td>` +
                 `<td>0x${pcb.Acc.toString(16).toUpperCase().padStart(2, '0')}</td>` +
@@ -189,12 +186,12 @@ var TSOS;
         static increaseValue() {
             const input = document.getElementById('numberInput');
             let currentValue = parseInt(input.value, 16);
-            if (currentValue < 255) {
+            if (currentValue < NUM_PAGES - 1) {
                 currentValue++;
                 Control.updateMemDisplay(currentValue);
             }
             else {
-                currentValue = 255;
+                currentValue = NUM_PAGES - 1;
             }
             input.value = "0x" + currentValue.toString(16).toUpperCase().padStart(2, '0');
         }

@@ -1,6 +1,6 @@
 module TSOS {
 	//A functional builder-pattern for making software interrupts relating to the file system
-	class FileCommand {
+	export class FileCommand {
 		private diskAction: DiskAction;
 		private on_success: null | ((stderr: ErrStream<string[]>, params: any[]) => void);
 		private on_error: null | ((stderr: ErrStream<string[]>, err: DiskError) => void);

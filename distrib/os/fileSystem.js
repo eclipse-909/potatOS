@@ -110,6 +110,7 @@ var TSOS;
             _KernelInterruptQueue.enqueue(new TSOS.Interrupt(IRQ.disk, [this.diskAction, this.on_success, this.on_error, this.callback].concat(this.params)));
         }
     }
+    TSOS.FileCommand = FileCommand;
     class FileSystem {
         //Since the shell is the only thing that uses files, and files cannot be opened in two places simultaneously,
         //we might as well just have a map right here that tracks the open files.

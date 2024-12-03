@@ -64,7 +64,7 @@ module TSOS {
 			let newBase: number = 0x0000;
 			let newLimit: number = 0x0000;
 			//If there is room before the first process
-			if (this.processAllocs[0].base > size) {
+			if (this.processAllocs[0].base >= size) {
 				newLimit = size - 1;
 				this.processAllocs.unshift({base: newBase, limit: newLimit});
 				return {base: newBase, limit: newLimit};
@@ -94,7 +94,7 @@ module TSOS {
 			let insertionIndex: number = -1;
 			let minSize: number = MEM_SIZE;//Just a large number
 			//If there is room before the first process
-			if (this.processAllocs[0].base > size) {
+			if (this.processAllocs[0].base >= size) {
 				newLimit = size - 1;
 				minSize = this.processAllocs[0].base - 1;
 				insertionIndex = 0;
@@ -128,7 +128,7 @@ module TSOS {
 			let insertionIndex: number = -1;
 			let maxSize: number = 0;//small number
 			//If there is room before the first process
-			if (this.processAllocs[0].base > size) {
+			if (this.processAllocs[0].base >= size) {
 				newLimit = size - 1;
 				maxSize = this.processAllocs[0].base - 1;
 				insertionIndex = 0;

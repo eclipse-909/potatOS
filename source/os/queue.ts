@@ -74,5 +74,14 @@ module TSOS {
 		public sort(compareFn?: (a: T, b: T) => number): void {
 			this.q.sort(compareFn);
 		}
+
+		public contains(compareFn: (item: T) => boolean): boolean {
+			for (const i of this.q) {
+				if (compareFn(i)) {
+					return true;
+				}
+			}
+			return false;
+		}
 	}
 }

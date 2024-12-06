@@ -35,7 +35,7 @@ module TSOS {
 			new ShellCommand(ShellCommand.shellEcho, "echo", "<TEXT>... - Displays the given text to standard output.\n"),
 			new ShellCommand(ShellCommand.shellStatus, "status", "- Displays a message to the task bar.\n"),
 			new ShellCommand(ShellCommand.shellBSOD, "bsod", "- Simulates an OS error and displays a 'Blue Screen Of Death' message.\n"),
-			new ShellCommand(ShellCommand.shellLoad, "load", "- Loads the binary program from the HTML input field to the disk.\n"),
+			new ShellCommand(ShellCommand.shellLoad, "load", "[FILE.exe] - Loads the binary program into memory from the program input field, or from FILE.exe.\n", [["FILE"]]),
 			new ShellCommand(ShellCommand.shellRun, "run", "<PROCESS_ID> [&] - Run the program in memory with the PROCESS_ID. Use ampersand to run in background asynchronously.\n"),
 			new ShellCommand(ShellCommand.shellClh, "clh", "- Clears the host log.\n"),
 			new ShellCommand(ShellCommand.shellClearMem, "clearmem", "- Clears memory of all resident/terminated processes.\n"),
@@ -111,6 +111,7 @@ module TSOS {
 			// new ShellCommand(ShellCommand.shellLink, "link", "<FILE> <LINK_NAME> - Create a link to FILE.\n", [["FILE"], ["FILE"]]),
 			new ShellCommand(ShellCommand.shellAlias, "alias", "<COMMAND> <ALIAS> - Create an alias for COMMAND.\n"),
 			new ShellCommand(ShellCommand.shellInfo, "info", "<FILE> - Display the size and creation date of a file.\n", [["FILE"]]),
+			new ShellCommand(ShellCommand.shellSave, "save", "<FILE.exe> - Saves the binary in the program input to the FILE.exe (do not include extension).\n", [["FILE"]]),
 		] as const;
 
 		static shellVer(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
@@ -288,12 +289,7 @@ module TSOS {
 			return ExitCode.SUCCESS;
 		}
 
-		static shellLoad(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
-			const args: string[] = stdin.input();
-			if (args.length !== 0) {
-				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - No argument required. Usage: load\n"]);
-				return ExitCode.SHELL_MISUSE;
-			}
+		static getProgramInputBin(): Uint8Array {
 			//Is it okay to do GUI stuff here?
 			const textArea: HTMLTextAreaElement = document.getElementById("taProgramInput") as HTMLTextAreaElement;
 			let input: string = textArea.value;
@@ -303,7 +299,7 @@ module TSOS {
 			// If you're curious why I'm also allowing hex numbers and separators to be formatted as '0xAD, 0x04, 0x00',
 			// it's because I made an assembler for this instruction set that outputs the binary this way.
 
-			const bin: Uint8Array = Uint8Array.from(hexArray.map(hex => {
+			return Uint8Array.from(hexArray.map(hex => {
 				const cleanedHex: string = hex.startsWith('0x') ? hex.slice(2) : hex;
 				let num: number = parseInt(cleanedHex, 16);
 				if (num < 0 || num > 0xff) {
@@ -311,23 +307,52 @@ module TSOS {
 				}
 				return num;
 			}));
-			//textArea.value = "";//don't clear input area on load
-			if (bin.some(Number.isNaN)) {
-				stderr.error([
-					ExitCode.SHELL_MISUSE.shellDesc()
-					+ " - Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '\"\n"
-				]);
-				return ExitCode.GENERIC_ERROR;
+		}
+
+		static shellLoad(stdin: InStream<string[]>, stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
+			if (args.length === 0) {
+				const bin: Uint8Array = ShellCommand.getProgramInputBin();
+				if (bin.some(Number.isNaN)) {
+					stderr.error([
+						ExitCode.SHELL_MISUSE.shellDesc()
+						+ " - Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '\"\n"
+					]);
+					return ExitCode.GENERIC_ERROR;
+				}
+				const pcb: ProcessControlBlock | undefined = ProcessControlBlock.new(bin);
+				if (pcb === undefined) {
+					//Error message is handled in ProcessControlBlock.new()
+					return ExitCode.GENERIC_ERROR;
+				}
+				_Scheduler.load(pcb);
+				stdout.output([`Program loaded into memory with process ID ${pcb.pid}.\n`]);
+				Control.updatePcbDisplay();
+				Control.updateMemDisplay();
+			} else if (args.length === 1) {
+				if (!args[0].match(/^.+\.exe$/)) {
+					stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - The provided file is not a .exe (executable) file.\n"]);
+					return ExitCode.SHELL_MISUSE;
+				}
+				_FileSystem.open(args[0])
+					.and_try(_FileSystem.read(args[0])
+						.and_try_run((_stderr: ErrStream<string[]>, params: any[]): void => {
+							const pcb: ProcessControlBlock | undefined = ProcessControlBlock.new(_DiskController.encode(params[0]));
+							if (pcb === undefined) {return;}
+							_Scheduler.load(pcb);
+							stdout.output([`Program loaded into memory with process ID ${pcb.pid}.\n`]);
+							Control.updatePcbDisplay();
+							Control.updateMemDisplay();
+						})
+						.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+						.and_do(_FileSystem.close(args[0]))
+					)
+					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.execute(stderr);
+			} else {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: load [FILE]\n"]);
+				return ExitCode.SHELL_MISUSE;
 			}
-			const pcb: ProcessControlBlock | undefined = ProcessControlBlock.new(bin);
-			if (pcb === undefined) {
-				//Error message is handled in ProcessControlBlock.new()
-				return ExitCode.GENERIC_ERROR;
-			}
-			_Scheduler.load(pcb);
-			stdout.output([`Program loaded into memory with process ID ${pcb.pid}.\n`]);
-			Control.updatePcbDisplay();
-			Control.updateMemDisplay();
 			return ExitCode.SUCCESS;
 		}
 
@@ -855,6 +880,41 @@ module TSOS {
 				return ExitCode.GENERIC_ERROR;
 			}
 			stdout.output([`Size: ${_DiskController.file_size(tsb)} Bytes\nDate Created: ${_DiskController.file_create_date(tsb)}\n`]);
+			return ExitCode.SUCCESS;
+		}
+
+		static shellSave(stdin: InStream<string[]>, _stdout: OutStream<string[]>, stderr: ErrStream<string[]>): ExitCode {
+			const args: string[] = stdin.input();
+			if (args.length !== 1) {
+				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: save <FILE>\n"]);
+				return ExitCode.SHELL_MISUSE;
+			}
+			const bin: Uint8Array = ShellCommand.getProgramInputBin();
+			if (bin.some(Number.isNaN)) {
+				stderr.error([
+					ExitCode.SHELL_MISUSE.shellDesc()
+					+ " - Invalid binary syntax. Hex values must range from 0x00-0xFF, have the format of '0xFF' or 'FF', and be separated either by ' ' or ', '\"\n"
+				]);
+				return ExitCode.GENERIC_ERROR;
+			}
+			let file: string = args[0];
+			if (!args[0].match(/^.+\.exe$/)) {
+				file = args[0] + ".exe";
+			}
+			const write_command: FileCommand = _FileSystem.write(file, _DiskController.decode(bin))
+				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.and_do(_FileSystem.close(file));
+			if (_DiskController.file_exists(file)) {
+				_FileSystem.open(file)
+					.and_try(write_command)
+					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.execute(stderr);
+			} else {
+				_FileSystem.create(file)
+					.and_try(write_command)
+					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.execute(stderr);
+			}
 			return ExitCode.SUCCESS;
 		}
 	}

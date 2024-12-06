@@ -19,7 +19,8 @@ module TSOS {
 		name: string;
 		args: string[];
 		connector?: string; // Symbol like ||, &&, or ;
-		redirector?: string; // Symbol like >>, >, <, |, etc
+		redirector?: string; // Symbol like >, <, |, etc
+		file?: string;
 	}
 
 	export class ShellProcess {
@@ -71,7 +72,6 @@ module TSOS {
 		];
 		//Must be used in between a command and an argument that specifies input or output.
 		redirectors: string[] = [
-			">>",   //stdout to file (append contents).
 			">",    //stdout to file (overwrite contents).
 			"2>&1", //stderr to stdout.
 			"2>",   //stderr to file.
@@ -169,7 +169,7 @@ module TSOS {
 				let pushed: boolean = false;
 				for (const connector of this.connectors) {
 					if (input.slice(i, i + connector.length) === connector) {
-						if (buffer) {
+						if (buffer.length > 0) {
 							tokens.push({type: 'WORD', value: buffer});
 							buffer = '';
 						}
@@ -183,7 +183,7 @@ module TSOS {
 				// Check if the current and next character form a redirector
 				for (const redirector of this.redirectors) {
 					if (input.slice(i, i + redirector.length) === redirector) {
-						if (buffer) {
+						if (buffer.length > 0) {
 							tokens.push({type: 'WORD', value: buffer});
 							buffer = '';
 						}
@@ -202,7 +202,7 @@ module TSOS {
 				return undefined;
 			}
 			// Add remaining inputBuffer as a word
-			if (buffer) {
+			if (buffer.length > 0) {
 				tokens.push({type: 'WORD', value: buffer});
 			}
 			return tokens;
@@ -217,41 +217,51 @@ module TSOS {
 			} else if (tokens[tokens.length - 1].type !== 'WORD') {
 				unexpectedToken = tokens[tokens.length - 1];
 			}
-			if (unexpectedToken) {
+			if (unexpectedToken !== null) {
 				_StdOut.print(`Invalid token: '${unexpectedToken.value}', expected command or argument.\n`);
 				_Console.putPrompt();
 				return undefined;
 			}
-			for (const token of tokens) {
-				if (token.type === 'WORD') {
-					if (!currentCommand) {
-						currentCommand = {name: token.value, args: []};//set current command
+			for (let i: number = 0; i < tokens.length; i++) {
+				if (tokens[i].type === 'WORD') {
+					if (currentCommand === null) {
+						currentCommand = {name: tokens[i].value, args: []};//set current command
 					} else {
-						currentCommand.args.push(token.value);//add argument to current command
+						currentCommand.args.push(tokens[i].value);//add argument to current command
 					}
-				} else if (token.type === 'CONNECTOR') {
-					if (currentCommand) {
-						currentCommand.connector = token.value;//add connector to current command
+				} else if (tokens[i].type === 'CONNECTOR') {
+					if (currentCommand !== null) {
+						currentCommand.connector = tokens[i].value;//add connector to current command
 						commands.push(currentCommand);
 						currentCommand = null;
 					} else {
-						_StdOut.print(`Invalid token: '${token.value}', expected command or argument.\n`);
+						_StdOut.print(`Invalid token: '${tokens[i].value}', expected command or argument.\n`);
 						_Console.putPrompt();
 						return undefined;
 					}
-				} else if (token.type === 'REDIRECTOR') {
-					if (currentCommand) {
-						currentCommand.redirector = token.value;//add connector to current command
-						commands.push(currentCommand);
-						currentCommand = null;
+				} else if (tokens[i].type === 'REDIRECTOR') {
+					if (currentCommand !== null) {
+						currentCommand.redirector = tokens[i].value;//add connector to current command
+						if (i === tokens.length - 1) {
+							_StdOut.print(`Missing token: expected file after redirector '${tokens[i].value}'.\n`);
+							_Console.putPrompt();
+							return undefined;
+						}
+						i++;
+						if (tokens[i].type !== 'WORD') {
+							_StdOut.print(`Unexpected token: expected file after redirector '${tokens[i - 1].value}', found '${tokens[i].value}'.\n`);
+							_Console.putPrompt();
+							return undefined;
+						}
+						currentCommand.file = tokens[i].value;
 					} else {
-						_StdOut.print(`Invalid token: '${token.value}', expected command or argument.\n`);
+						_StdOut.print(`Invalid token: '${tokens[i].value}', expected command or argument.\n`);
 						_Console.putPrompt();
 						return undefined;
 					}
 				}
 			}
-			if (currentCommand) {
+			if (currentCommand !== null) {
 				commands.push(currentCommand);
 			}
 			return commands;
@@ -315,25 +325,125 @@ module TSOS {
 				}
 
 				//redirect io
+				//unfortunately using interrupts would require an entire rewrite of potatOS, so I'm just going invoke the disk controller directly
+				let fcb: FCB | DiskError;
 				switch (currCmd.redirector) {
-					case ">>":
-						_StdErr.error(["Syntax error - unimplemented operator: >> - file redirection is not supported yet.\n"]);
-						return;
 					case ">":
-						_StdErr.error(["Syntax error - unimplemented operator: > - file redirection is not supported yet.\n"]);
-						return;
+						if (!_DiskController.is_formatted()) {
+							_StdErr.error([`${DiskError.DISK_NOT_FORMATTED.description}\n`]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+						}
+						if (currCmd.file === undefined) {
+							_StdErr.error(["Expected file after redirector '>'.\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						}
+						if (_DiskController.file_exists(currCmd.file)) {
+							if (_FileSystem.open_files.has(currCmd.file)) {
+								fcb = _FileSystem.open_files.get(currCmd.file);
+							} else {
+								fcb = FCB.open(currCmd.file);
+							}
+						} else {
+							fcb = FCB.create(currCmd.file);
+						}
+						if (fcb instanceof DiskError) {
+							_StdErr.error([fcb.description + "\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						} else if (fcb.tsb === 0) {
+							_StdErr.error(["File not found.\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						}
+						stdout = fcb;
+						break;
 					case "2>&1":
+						if (currCmd.args.length > 0) {
+							_StdErr.error(["Expected 0 arguments after redirector '2>&1'.\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						}
 						stderr.error = stdout.output;
 						break;
 					case "2>":
-						_StdErr.error(["Syntax error - unimplemented operator: 2> - file redirection is not supported yet.\n"]);
-						return;
+						if (!_DiskController.is_formatted()) {
+							_StdErr.error([`${DiskError.DISK_NOT_FORMATTED.description}\n`]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+						}
+						if (currCmd.file === undefined) {
+							_StdErr.error(["Expected file after redirector '2>'.\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						}
+						if (_DiskController.file_exists(currCmd.file)) {
+							if (_FileSystem.open_files.has(currCmd.file)) {
+								fcb = _FileSystem.open_files.get(currCmd.file);
+							} else {
+								fcb = FCB.open(currCmd.file);
+							}
+						} else {
+							fcb = FCB.create(currCmd.file);
+						}
+						if (fcb instanceof DiskError) {
+							_StdErr.error([fcb.description + "\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						} else if (fcb.tsb === 0) {
+							_StdErr.error(["File not found.\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						}
+						stderr = fcb;
+						break;
 					case "<":
-						_StdErr.error(["Syntax error - unimplemented operator: < - file redirection is not supported yet.\n"]);
-						return;
+						if (!_DiskController.is_formatted()) {
+							_StdErr.error([`${DiskError.DISK_NOT_FORMATTED.description}\n`]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+						}
+						if (currCmd.file === undefined) {
+							_StdErr.error(["Expected file after redirector '<'.\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						}
+						if (_DiskController.file_exists(currCmd.file)) {
+							if (_FileSystem.open_files.has(currCmd.file)) {
+								fcb = _FileSystem.open_files.get(currCmd.file);
+							} else {
+								fcb = FCB.open(currCmd.file);
+							}
+						} else {
+							fcb = FCB.create(currCmd.file);
+						}
+						if (fcb instanceof DiskError) {
+							_StdErr.error([fcb.description + "\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						} else if (fcb.tsb === 0) {
+							_StdErr.error(["File not found.\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
+							return;
+						}
+						stdin = fcb;
+						break;
 					case "|":
 						if (!nextCmd) {
 							_StdErr.error(["Syntax error - token expected: | <command> - expected command.\n"]);
+							this.tryEnableInput();
+							_Console.putPrompt();
 							return;
 						}
 						stdout = this;

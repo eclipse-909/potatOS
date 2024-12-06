@@ -1,5 +1,6 @@
 module TSOS {
-	//A functional builder-pattern for making software interrupts relating to the file system
+	//A functional builder-pattern for making software interrupts relating to the file system.
+	//This uses callback functions to manipulate files because there is no way to wait for file actions.
 	export class FileCommand {
 		private diskAction: DiskAction;
 		private on_success: null | ((stderr: ErrStream<string[]>, params: any[]) => void);
@@ -40,6 +41,20 @@ module TSOS {
 				this.on_error = (stderr: ErrStream<string[]>, err: DiskError): void => {
 					fn(stderr, err);
 					on_error(stderr, err);
+				};
+			}
+			return this;
+		}
+
+		//Sets this.on_error to a function that prints the err description to stderr.
+		public catch_default(): FileCommand {
+			if (this.on_error === null) {
+				this.on_error = (stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);};
+			} else {
+				const fn: (stderr: ErrStream<string[]>, err: DiskError) => void = this.on_error;
+				this.on_error = (stderr: ErrStream<string[]>, err: DiskError): void => {
+					fn(stderr, err);
+					stderr.error([err.description]);
 				};
 			}
 			return this;
@@ -147,6 +162,17 @@ module TSOS {
 			return new FileCommand(DiskAction.Write, [file_name, content]);
 		}
 
+		//The file must be opened before being written to.
+		public append(file_name: string, content: string): FileCommand {
+			return this.read(file_name)
+				.and_try_run((stderr: ErrStream<string[]>, params: any[]): void => {
+					this.write(file_name, params[0] + content)
+						.catch_default()
+						.execute(stderr);
+				})
+				.catch_default();
+		}
+
 		public delete(file_name: string): FileCommand {
 			return new FileCommand(DiskAction.Delete, [file_name]);
 		}
@@ -157,15 +183,15 @@ module TSOS {
 					.and_try(this.create(copied_file_name)
 						.and_try_run((_stderr: ErrStream<string[]>, params: any[]): void => {
 							this.write(copied_file_name, params[0])
-								.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);});
+								.catch_default();
 						})
-						.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+						.catch_default()
 						.and_do(this.close(copied_file_name))
 					)
-					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.catch_default()
 					.and_do(this.close(file_name))
 				)
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);});
+				.catch_default();
 		}
 
 		public rename(file_name: string, new_file_name: string): FileCommand {

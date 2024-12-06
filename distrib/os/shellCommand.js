@@ -278,9 +278,9 @@ var TSOS;
                     TSOS.Control.updatePcbDisplay();
                     TSOS.Control.updateMemDisplay();
                 })
-                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .catch_default()
                     .and_do(_FileSystem.close(args[0])))
-                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .catch_default()
                     .execute(stderr);
             }
             else {
@@ -528,7 +528,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _FileSystem.format(full)
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -539,7 +539,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _FileSystem.create(args[0])
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .and_do(_FileSystem.close(args[0]))
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
@@ -553,9 +553,9 @@ var TSOS;
             _FileSystem.open(args[0])
                 .and_try(_FileSystem.read(args[0])
                 .and_try_run((_stderr, params) => { stdout.output([params[0]]); })
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .and_do(_FileSystem.close(args[0])))
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -567,9 +567,9 @@ var TSOS;
             }
             _FileSystem.open(args[0])
                 .and_try(_FileSystem.write(args[0], args[1])
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .and_do(_FileSystem.close(args[0])))
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -581,7 +581,7 @@ var TSOS;
             }
             for (const arg of args) {
                 _FileSystem.delete(arg)
-                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .catch_default()
                     .execute(stderr);
             }
             return TSOS.ExitCode.SUCCESS;
@@ -593,7 +593,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _FileSystem.copy(args[0], args[1])
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -604,7 +604,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _FileSystem.rename(args[0], args[1])
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -647,7 +647,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _FileSystem.ls(stdout, sh_hidden, list)
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -658,7 +658,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _FileSystem.recover(args[0])
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -679,7 +679,7 @@ var TSOS;
                 return TSOS.ExitCode.SHELL_MISUSE;
             }
             _FileSystem.defragment()
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -699,9 +699,9 @@ var TSOS;
                 _OsShell.handleInput(params[0]);
                 _Console.redrawCanvas();
             })
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .and_do(_FileSystem.close(args[0])))
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .execute(stderr);
             return TSOS.ExitCode.SUCCESS;
         }
@@ -726,9 +726,9 @@ var TSOS;
                         stdout.output([matches.join("\n") + (i === args.length - 1 ? "" : "\n")]);
                     }
                 })
-                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .catch_default()
                     .and_do(_FileSystem.close(args[i])))
-                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .catch_default()
                     .execute(stderr);
             }
             return TSOS.ExitCode.SUCCESS;
@@ -812,18 +812,18 @@ var TSOS;
                 file = args[0] + ".exe";
             }
             const write_command = _FileSystem.write(file, _DiskController.decode(bin))
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .and_do(_FileSystem.close(file));
             if (_DiskController.file_exists(file)) {
                 _FileSystem.open(file)
                     .and_try(write_command)
-                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .catch_default()
                     .execute(stderr);
             }
             else {
                 _FileSystem.create(file)
                     .and_try(write_command)
-                    .catch((stderr, err) => { stderr.error([err.description]); })
+                    .catch_default()
                     .execute(stderr);
             }
             return TSOS.ExitCode.SUCCESS;

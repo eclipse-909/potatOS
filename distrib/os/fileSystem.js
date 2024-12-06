@@ -1,6 +1,7 @@
 var TSOS;
 (function (TSOS) {
-    //A functional builder-pattern for making software interrupts relating to the file system
+    //A functional builder-pattern for making software interrupts relating to the file system.
+    //This uses callback functions to manipulate files because there is no way to wait for file actions.
     class FileCommand {
         diskAction;
         on_success;
@@ -40,6 +41,20 @@ var TSOS;
                 this.on_error = (stderr, err) => {
                     fn(stderr, err);
                     on_error(stderr, err);
+                };
+            }
+            return this;
+        }
+        //Sets this.on_error to a function that prints the err description to stderr.
+        catch_default() {
+            if (this.on_error === null) {
+                this.on_error = (stderr, err) => { stderr.error([err.description]); };
+            }
+            else {
+                const fn = this.on_error;
+                this.on_error = (stderr, err) => {
+                    fn(stderr, err);
+                    stderr.error([err.description]);
                 };
             }
             return this;
@@ -138,6 +153,16 @@ var TSOS;
         write(file_name, content) {
             return new FileCommand(TSOS.DiskAction.Write, [file_name, content]);
         }
+        //The file must be opened before being written to.
+        append(file_name, content) {
+            return this.read(file_name)
+                .and_try_run((stderr, params) => {
+                this.write(file_name, params[0] + content)
+                    .catch_default()
+                    .execute(stderr);
+            })
+                .catch_default();
+        }
         delete(file_name) {
             return new FileCommand(TSOS.DiskAction.Delete, [file_name]);
         }
@@ -147,13 +172,13 @@ var TSOS;
                 .and_try(this.create(copied_file_name)
                 .and_try_run((_stderr, params) => {
                 this.write(copied_file_name, params[0])
-                    .catch((stderr, err) => { stderr.error([err.description]); });
+                    .catch_default();
             })
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .and_do(this.close(copied_file_name)))
-                .catch((stderr, err) => { stderr.error([err.description]); })
+                .catch_default()
                 .and_do(this.close(file_name)))
-                .catch((stderr, err) => { stderr.error([err.description]); });
+                .catch_default();
         }
         rename(file_name, new_file_name) {
             return new FileCommand(TSOS.DiskAction.Rename, [file_name, new_file_name]);

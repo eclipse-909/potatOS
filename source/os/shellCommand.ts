@@ -344,10 +344,10 @@ module TSOS {
 							Control.updatePcbDisplay();
 							Control.updateMemDisplay();
 						})
-						.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+						.catch_default()
 						.and_do(_FileSystem.close(args[0]))
 					)
-					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.catch_default()
 					.execute(stderr);
 			} else {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid arguments. Usage: load [FILE]\n"]);
@@ -604,7 +604,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			_FileSystem.format(full)
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
@@ -616,7 +616,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			_FileSystem.create(args[0])
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.and_do(_FileSystem.close(args[0]))
 				.execute(stderr);
 			return ExitCode.SUCCESS;
@@ -631,10 +631,10 @@ module TSOS {
 			_FileSystem.open(args[0])
 				.and_try(_FileSystem.read(args[0])
 					.and_try_run((_stderr: ErrStream<string[]>, params: any[]): void => {stdout.output([params[0]]);})
-					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.catch_default()
 					.and_do(_FileSystem.close(args[0]))
 				)
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
@@ -647,10 +647,10 @@ module TSOS {
 			}
 			_FileSystem.open(args[0])
 				.and_try(_FileSystem.write(args[0], args[1])
-					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.catch_default()
 					.and_do(_FileSystem.close(args[0]))
 				)
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.execute(stderr)
 			return ExitCode.SUCCESS;
 		}
@@ -663,7 +663,7 @@ module TSOS {
 			}
 			for (const arg of args) {
 				_FileSystem.delete(arg)
-					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.catch_default()
 					.execute(stderr);
 			}
 			return ExitCode.SUCCESS;
@@ -676,7 +676,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			_FileSystem.copy(args[0], args[1])
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
@@ -688,7 +688,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			_FileSystem.rename(args[0], args[1])
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
@@ -725,7 +725,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			_FileSystem.ls(stdout, sh_hidden, list)
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
@@ -737,7 +737,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			_FileSystem.recover(args[0])
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
@@ -760,7 +760,7 @@ module TSOS {
 				return ExitCode.SHELL_MISUSE;
 			}
 			_FileSystem.defragment()
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
@@ -781,10 +781,10 @@ module TSOS {
 						_OsShell.handleInput(params[0]);
 						_Console.redrawCanvas();
 					})
-					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.catch_default()
 					.and_do(_FileSystem.close(args[0]))
 				)
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.execute(stderr);
 			return ExitCode.SUCCESS;
 		}
@@ -810,10 +810,10 @@ module TSOS {
 								stdout.output([matches.join("\n") + (i === args.length - 1 ? "" : "\n")]);
 							}
 						})
-						.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+						.catch_default()
 						.and_do(_FileSystem.close(args[i]))
 					)
-					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.catch_default()
 					.execute(stderr);
 			}
 			return ExitCode.SUCCESS;
@@ -902,17 +902,17 @@ module TSOS {
 				file = args[0] + ".exe";
 			}
 			const write_command: FileCommand = _FileSystem.write(file, _DiskController.decode(bin))
-				.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+				.catch_default()
 				.and_do(_FileSystem.close(file));
 			if (_DiskController.file_exists(file)) {
 				_FileSystem.open(file)
 					.and_try(write_command)
-					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.catch_default()
 					.execute(stderr);
 			} else {
 				_FileSystem.create(file)
 					.and_try(write_command)
-					.catch((stderr: ErrStream<string[]>, err: DiskError): void => {stderr.error([err.description]);})
+					.catch_default()
 					.execute(stderr);
 			}
 			return ExitCode.SUCCESS;

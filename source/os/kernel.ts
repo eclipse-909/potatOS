@@ -29,6 +29,9 @@ module TSOS {
 			_krnDiskDriver.driverEntry();                    // Call the driverEntry() initialization routine.
 			this.krnTrace(_krnDiskDriver.status);
 			_FileSystem = new FileSystem();
+			if (sessionStorage.getItem("formatted") !== null) {
+				Control.updateDiskDisplay();
+			}
 
 			// ... more?
 

@@ -72,7 +72,12 @@ h2 {
 
 #middle {
   flex-wrap: wrap;
-  padding-bottom: 20px;
+  padding: 20px 0;
+  align-items: flex-start;
+}
+
+#left-middle {
+  flex-direction: column;
 }
 
 #consoleButtons {
@@ -154,6 +159,71 @@ table#memTable th, table#memTable td {
 #cpuDisplay table {
   table-layout: fixed;
   width: 375px;
+}
+
+#diskDisplay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+#diskTables {
+  max-height: 300px;
+  max-width: 600px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1px solid #ccc;
+}
+
+#fileIndexTable, #fileTable {
+  border-collapse: collapse;
+  border: 1px solid #ccc;
+  table-layout: fixed;
+  width: 930px;
+}
+
+#fileIndexTable th, #fileIndexTable td,
+#fileTable th, #fileTable td {
+  border: 1px solid #ddd;
+  padding: 3px;
+  text-align: left;
+}
+
+#fileIndexTable th, #fileTable th {
+  background-color: #f4f4f4;
+  font-weight: bold;
+}
+
+#fileIndexTable td, #fileTable td {
+  white-space: nowrap;
+}
+
+#fileIndexTable th:nth-child(1), #fileTable th:nth-child(1),
+#fileIndexTable td:nth-child(1), #fileTable td:nth-child(1) {
+  width: 55px;
+}
+
+#fileIndexTable th:nth-child(2), #fileTable th:nth-child(2),
+#fileIndexTable td:nth-child(2), #fileTable td:nth-child(2) {
+  width: 55px;
+}
+
+#fileIndexTable th:nth-child(3), #fileTable th:nth-child(3),
+#fileIndexTable td:nth-child(3), #fileTable td:nth-child(3) {
+  width: 55px;
+}
+
+#fileIndexTable th:nth-child(4), #fileIndexTable td:nth-child(4) {
+  width: 75px;
+}
+
+#fileIndexTable th:nth-child(5), #fileIndexTable td:nth-child(5) {
+  width: 55px;
+}
+
+#fileIndexTable th:nth-child(6), #fileIndexTable td:nth-child(6) {
+  width: 75px;
 }
 
 #pcbDisplay {
@@ -246,6 +316,7 @@ table#memTable th, table#memTable td {
   justify-content: center;
   align-items: center;
   flex-direction: column;
+  padding-top: 15px;
 }
 
 .footerText {

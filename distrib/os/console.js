@@ -268,6 +268,7 @@ var TSOS;
                 y: this.getLineYPos(this.getInputLineNum() + line)
             };
         }
+        //BUG when the input is being drawn at the bottom of the console, it will write on top of itself rather than scroll to make a new line
         printInput(text) {
             if (this.inputBuffer === null) {
                 //new text

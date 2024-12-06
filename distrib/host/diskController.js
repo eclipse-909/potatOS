@@ -154,6 +154,7 @@ var TSOS;
                 }
             }
             sessionStorage.setItem("formatted", "true");
+            TSOS.Control.updateDiskDisplay();
             return DiskError.SUCCESS;
         }
         //Returns the tsb of the next unused block in directory space, or 0 if storage is full.
@@ -218,6 +219,7 @@ var TSOS;
                 dirArr[i + DIR_RESERVED] = fileNameArr[i];
             }
             sessionStorage.setItem(this.tsbKey(dirTSB.t, dirTSB.s, dirTSB.b), this.decode(dirArr));
+            TSOS.Control.updateDiskDisplay();
             return dir;
         }
         read(tsb) {
@@ -298,6 +300,7 @@ var TSOS;
                 }
                 sessionStorage.setItem(key, this.decode(arr));
             }
+            TSOS.Control.updateDiskDisplay();
             return DiskError.SUCCESS;
         }
         delete(file_name) {
@@ -330,6 +333,7 @@ var TSOS;
                 arr[IN_USE_INDEX] = 0;
                 sessionStorage.setItem(key, this.decode(arr));
             }
+            TSOS.Control.updateDiskDisplay();
             return DiskError.SUCCESS;
         }
         rename(file_name, new_file_name) {
@@ -352,6 +356,7 @@ var TSOS;
                 arr[i + DIR_RESERVED] = file_name_arr[i];
             }
             sessionStorage.setItem(key, this.decode(arr));
+            TSOS.Control.updateDiskDisplay();
             return DiskError.SUCCESS;
         }
         recover(file_name) {
@@ -410,6 +415,7 @@ var TSOS;
                 arr[IN_USE_INDEX] = 1;
                 sessionStorage.setItem(key, this.decode(arr));
             }
+            TSOS.Control.updateDiskDisplay();
             return DiskError.SUCCESS;
         }
         garbageCollect() {
@@ -456,6 +462,7 @@ var TSOS;
                     }
                 }
             }
+            TSOS.Control.updateDiskDisplay();
         }
         save_disk() {
             let disk = [];
@@ -512,7 +519,49 @@ var TSOS;
                 }
                 this.write(tsb, file.data);
             }
+            TSOS.Control.updateDiskDisplay();
             return DiskError.SUCCESS;
+        }
+        get_html_table_file_index_string() {
+            let str = "";
+            for (let s = 0; s < SECTORS; s++) {
+                for (let b = 0; b < BLOCKS; b++) {
+                    const key = this.tsbKey(0, s, b);
+                    const item = sessionStorage.getItem(key);
+                    const arr = this.encode(item);
+                    const TSB = this.toTSB(arr[TSB_INDEX]);
+                    str += `<tr>`
+                        + `<td>${key}</td>`
+                        + `<td>${arr[IN_USE_INDEX]}</td>`
+                        + `<td>${this.tsbKey(TSB.t, TSB.s, TSB.b)}</td>`
+                        + `<td>${arr[FILE_NAME_LEN_INDEX]}</td>`
+                        + `<td>${(arr[DATA_LEN_HIGH_INDEX] << 8) | arr[DATA_LEN_LOW_INDEX]}</td>`
+                        + `<td>${this.file_create_date(this.fromTSB(0, s, b))}</td>`
+                        + `<td>${item.substring(DIR_RESERVED)}</td>`
+                        + `</tr>`;
+                }
+            }
+            return str;
+        }
+        get_html_table_file_string() {
+            let str = "";
+            for (let t = 1; t < TRACKS; t++) {
+                for (let s = 0; s < SECTORS; s++) {
+                    for (let b = 0; b < BLOCKS; b++) {
+                        const key = this.tsbKey(t, s, b);
+                        const item = sessionStorage.getItem(key);
+                        const arr = this.encode(item);
+                        const TSB = this.toTSB(arr[TSB_INDEX]);
+                        str += `<tr>`
+                            + `<td>${key}</td>`
+                            + `<td>${arr[IN_USE_INDEX]}</td>`
+                            + `<td>${this.tsbKey(TSB.t, TSB.s, TSB.b)}</td>`
+                            + `<td>${item.substring(FILE_RESERVED)}</td>`
+                            + `</tr>`;
+                    }
+                }
+            }
+            return str;
         }
     }
     TSOS.DiskController = DiskController;

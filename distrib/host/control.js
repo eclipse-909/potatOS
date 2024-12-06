@@ -240,6 +240,18 @@ var TSOS;
             _Console.scrollBy(event.deltaY < 0 ? -3 : 3);
             _Console.redrawCanvas();
         }
+        static updateDiskDisplay() {
+            document.getElementById("fileIndexTable").innerHTML = "<tr>" +
+                "<th>TSB</th>" +
+                "<th>In-Use</th>" +
+                "<th>Next TSB</th>" +
+                "<th>Name Len</th>" +
+                "<th>Data Len</th>" +
+                "<th>Create Date</th>" +
+                "<th>Data</th>" +
+                "</tr>" + _DiskController.get_html_table_file_index_string();
+            document.getElementById("fileTable").innerHTML = _DiskController.get_html_table_file_string();
+        }
     }
     TSOS.Control = Control;
 })(TSOS || (TSOS = {}));

@@ -28,6 +28,9 @@ var TSOS;
             _krnDiskDriver.driverEntry(); // Call the driverEntry() initialization routine.
             this.krnTrace(_krnDiskDriver.status);
             _FileSystem = new TSOS.FileSystem();
+            if (sessionStorage.getItem("formatted") !== null) {
+                TSOS.Control.updateDiskDisplay();
+            }
             // ... more?
             this.krnTrace("Enabling the interrupts.");
             this.krnEnableInterrupts();

@@ -165,6 +165,7 @@ module TSOS {
 				}
 			}
 			sessionStorage.setItem("formatted", "true");
+			Control.updateDiskDisplay();
 			return DiskError.SUCCESS;
 		}
 
@@ -228,6 +229,7 @@ module TSOS {
 				dirArr[i + DIR_RESERVED] = fileNameArr[i];
 			}
 			sessionStorage.setItem(this.tsbKey(dirTSB.t, dirTSB.s, dirTSB.b), this.decode(dirArr));
+			Control.updateDiskDisplay();
 			return dir;
 		}
 
@@ -309,6 +311,7 @@ module TSOS {
 				}
 				sessionStorage.setItem(key, this.decode(arr));
 			}
+			Control.updateDiskDisplay();
 			return DiskError.SUCCESS;
 		}
 
@@ -340,6 +343,7 @@ module TSOS {
 				arr[IN_USE_INDEX] = 0;
 				sessionStorage.setItem(key, this.decode(arr));
 			}
+			Control.updateDiskDisplay();
 			return DiskError.SUCCESS;
 		}
 
@@ -361,6 +365,7 @@ module TSOS {
 				arr[i + DIR_RESERVED] = file_name_arr[i];
 			}
 			sessionStorage.setItem(key, this.decode(arr));
+			Control.updateDiskDisplay();
 			return DiskError.SUCCESS;
 		}
 
@@ -416,6 +421,7 @@ module TSOS {
 				arr[IN_USE_INDEX] = 1;
 				sessionStorage.setItem(key, this.decode(arr));
 			}
+			Control.updateDiskDisplay();
 			return DiskError.SUCCESS;
 		}
 
@@ -461,6 +467,7 @@ module TSOS {
 					}
 				}
 			}
+			Control.updateDiskDisplay();
 		}
 
 		private save_disk(): string[][][] {
@@ -516,7 +523,51 @@ module TSOS {
 				if (file.data === null || file.data.length === 0) {continue;}
 				this.write(tsb, file.data);
 			}
+			Control.updateDiskDisplay();
 			return DiskError.SUCCESS;
+		}
+
+		public get_html_table_file_index_string(): string {
+			let str: string = "";
+			for (let s: number = 0; s < SECTORS; s++) {
+				for (let b: number = 0; b < BLOCKS; b++) {
+					const key: string = this.tsbKey(0, s, b);
+					const item: string = sessionStorage.getItem(key);
+					const arr: Uint8Array = this.encode(item);
+					const TSB: {t: number, s: number, b: number} = this.toTSB(arr[TSB_INDEX]);
+					str += `<tr>`
+						+ `<td>${key}</td>`
+						+ `<td>${arr[IN_USE_INDEX]}</td>`
+						+ `<td>${this.tsbKey(TSB.t, TSB.s, TSB.b)}</td>`
+						+ `<td>${arr[FILE_NAME_LEN_INDEX]}</td>`
+						+ `<td>${(arr[DATA_LEN_HIGH_INDEX] << 8) | arr[DATA_LEN_LOW_INDEX]}</td>`
+						+ `<td>${this.file_create_date(this.fromTSB(0, s, b))}</td>`
+						+ `<td>${item.substring(DIR_RESERVED)}</td>`
+						+ `</tr>`;
+				}
+			}
+			return str;
+		}
+
+		public get_html_table_file_string(): string {
+			let str: string = "";
+			for (let t: number = 1; t < TRACKS; t++) {
+				for (let s: number = 0; s < SECTORS; s++) {
+					for (let b: number = 0; b < BLOCKS; b++) {
+						const key: string = this.tsbKey(t, s, b);
+						const item: string = sessionStorage.getItem(key);
+						const arr: Uint8Array = this.encode(item);
+						const TSB: { t: number, s: number, b: number } = this.toTSB(arr[TSB_INDEX]);
+						str += `<tr>`
+							+ `<td>${key}</td>`
+							+ `<td>${arr[IN_USE_INDEX]}</td>`
+							+ `<td>${this.tsbKey(TSB.t, TSB.s, TSB.b)}</td>`
+							+ `<td>${item.substring(FILE_RESERVED)}</td>`
+							+ `</tr>`;
+					}
+				}
+			}
+			return str;
 		}
 	}
 }

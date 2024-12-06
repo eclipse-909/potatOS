@@ -115,27 +115,44 @@
    </div>
 
    <div id="middle">
-      <div id="cpuDisplay">
-         <label class="fryLabel">CPU</label>
+      <div id="left-middle">
+         <div id="cpuDisplay">
+            <label class="fryLabel">CPU</label>
+            <br>
+            <table>
+               <tr>
+                  <th>IR</th>
+                  <th>PC</th>
+                  <th>Acc</th>
+                  <th>Xreg</th>
+                  <th>Yreg</th>
+                  <th>Zflag</th>
+               </tr>
+               <tr>
+                  <td id="IR">BRK</td>
+                  <td id="PC">0x0000</td>
+                  <td id="Acc">0x00</td>
+                  <td id="xReg">0x00</td>
+                  <td id="yReg">0x00</td>
+                  <td id="zFlag">false</td>
+               </tr>
+            </table>
+         </div>
+
+         <div id="userProgramInput">
+            <label class="fryLabel">User Program Input</label>
+            <br>
+            <textarea name="taProgramInput" id="taProgramInput" rows="8" cols="48"></textarea>
+         </div>
+      </div>
+
+      <div id="diskDisplay">
+         <label class="fryLabel">Disk</label>
          <br>
-         <table class="regTable">
-            <tr>
-               <th>IR</th>
-               <th>PC</th>
-               <th>Acc</th>
-               <th>Xreg</th>
-               <th>Yreg</th>
-               <th>Zflag</th>
-            </tr>
-            <tr>
-               <td id="IR">BRK</td>
-               <td id="PC">0x0000</td>
-               <td id="Acc">0x00</td>
-               <td id="xReg">0x00</td>
-               <td id="yReg">0x00</td>
-               <td id="zFlag">false</td>
-            </tr>
-         </table>
+         <div id="diskTables">
+            <table id="fileIndexTable"></table>
+            <table id="fileTable"></table>
+         </div>
       </div>
 
       <div id="pcbDisplay">
@@ -145,12 +162,10 @@
             <label id="Quantum"></label>
          </div>
          <br>
-         <table id="pcbTable" class="regTable">
+         <table id="pcbTable">
             <tr>
                <th>PID</th>
                <th>Status</th>
-               <th>Turnaround Time</th>
-               <th>Wait Time</th>
                <th>Priority</th>
                <th>Location</th>
                <th>Segment</th>
@@ -164,12 +179,6 @@
                <th>Zflag</th>
             </tr>
          </table>
-      </div>
-
-      <div id="userProgramInput">
-         <label class="fryLabel">User Program Input</label>
-         <br>
-         <textarea name="taProgramInput" id="taProgramInput" rows="8" cols="48"></textarea>
       </div>
    </div>
 

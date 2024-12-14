@@ -55,6 +55,10 @@ module TSOS {
 			ProcessControlBlock.highestPID++;
 			const alloc: {base: number, limit: number} | undefined = _MMU.malloc(bin.length);
 			if (alloc === undefined) {
+				if (!_DiskController.is_formatted()) {
+					_StdErr.error(["Disk is not formatted, cannot create swap file.\n"]);
+					return undefined;
+				}
 				//create swap file
 				let bin_clone: Uint8Array;
 				if (_MMU.fixedSegments) {

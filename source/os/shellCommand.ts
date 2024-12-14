@@ -295,10 +295,6 @@ module TSOS {
 			let input: string = textArea.value;
 			input = input.replace(/\s+/g, ' ').trim();
 			const hexArray: string[] = input.split(/[\s,]+/);
-
-			// If you're curious why I'm also allowing hex numbers and separators to be formatted as '0xAD, 0x04, 0x00',
-			// it's because I made an assembler for this instruction set that outputs the binary this way.
-
 			return Uint8Array.from(hexArray.map(hex => {
 				const cleanedHex: string = hex.startsWith('0x') ? hex.slice(2) : hex;
 				let num: number = parseInt(cleanedHex, 16);

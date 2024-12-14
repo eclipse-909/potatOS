@@ -353,7 +353,7 @@ var TSOS;
                             _Console.putPrompt();
                             return;
                         }
-                        stdout = fcb; //BUG writing to the file this way writes to TSB 000 instead of the correct one
+                        stdout = fcb;
                         break;
                     case "2>&1":
                         if (currCmd.args.length > 0) {

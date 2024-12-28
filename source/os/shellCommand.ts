@@ -885,6 +885,10 @@ module TSOS {
 				stderr.error([ExitCode.SHELL_MISUSE.shellDesc() + " - Invalid argument. Usage: save <FILE>\n"]);
 				return ExitCode.SHELL_MISUSE;
 			}
+			if (!_DiskController.is_formatted()) {
+				stderr.error([ExitCode.GENERIC_ERROR.shellDesc() + " - Disk is not formatted. Please use 'format' command."]);
+				return ExitCode.GENERIC_ERROR;
+			}
 			const bin: Uint8Array = ShellCommand.getProgramInputBin();
 			if (bin.some(Number.isNaN)) {
 				stderr.error([

@@ -381,7 +381,12 @@ var TSOS;
             this.inputEnabled = true;
             return { xPos: CANVAS_MARGIN + _DrawingContext.measureText(promptLines[promptLines.length - 1]).width, yPos };
         }
-        putPrompt() { this.drawPrompt(CANVAS_MARGIN, this.getLineYPos(this.getOutputLineNum())); }
+        putPrompt() {
+            if (this.inputBuffer !== "") {
+                this.pushInputToPrev();
+            }
+            this.drawPrompt(CANVAS_MARGIN, this.getLineYPos(this.getOutputLineNum()));
+        }
         clearScreen() {
             _DrawingContext.clearRect(0, 0, _Canvas.width, CANVAS_HEIGHT);
             this.prevLines = [];

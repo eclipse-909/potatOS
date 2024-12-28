@@ -388,7 +388,12 @@ module TSOS {
 			return {xPos: CANVAS_MARGIN + _DrawingContext.measureText(promptLines[promptLines.length - 1]).width, yPos};
 		}
 
-		public putPrompt(): void {this.drawPrompt(CANVAS_MARGIN, this.getLineYPos(this.getOutputLineNum()));}
+		public putPrompt(): void {
+			if (this.inputBuffer !== "") {
+				this.pushInputToPrev();
+			}
+			this.drawPrompt(CANVAS_MARGIN, this.getLineYPos(this.getOutputLineNum()));
+		}
 
 		public clearScreen(): void {
 			_DrawingContext.clearRect(0, 0, _Canvas.width, CANVAS_HEIGHT);

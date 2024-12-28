@@ -26,8 +26,8 @@ module TSOS {
 			return fcb
 		}
 
-		error(buffer: string[]): void | DiskError {return _DiskController.write(this.tsb, buffer.join(""));}
+		error(buffer: string[]): void | DiskError {return _DiskController.append(this.tsb, buffer.join(""));}
 		input(): string[] {return [_DiskController.read(this.tsb)];}
-		output(buffer: string[]): void | DiskError {return _DiskController.write(this.tsb, buffer.join(""));}
+		output(buffer: string[]): void | DiskError {return _DiskController.append(this.tsb, buffer.join(""));}
 	}
 }

@@ -155,13 +155,7 @@ var TSOS;
         }
         //The file must be opened before being written to.
         append(file_name, content) {
-            return this.read(file_name)
-                .and_try_run((stderr, params) => {
-                this.write(file_name, params[0] + content)
-                    .catch_default()
-                    .execute(stderr);
-            })
-                .catch_default();
+            return new FileCommand(TSOS.DiskAction.Append, [file_name, content]);
         }
         delete(file_name) {
             return new FileCommand(TSOS.DiskAction.Delete, [file_name]);

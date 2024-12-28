@@ -8,12 +8,13 @@ var TSOS;
         DiskAction[DiskAction["Close"] = 3] = "Close";
         DiskAction[DiskAction["Read"] = 4] = "Read";
         DiskAction[DiskAction["Write"] = 5] = "Write";
-        DiskAction[DiskAction["Delete"] = 6] = "Delete";
-        DiskAction[DiskAction["Rename"] = 7] = "Rename";
-        DiskAction[DiskAction["Ls"] = 8] = "Ls";
-        DiskAction[DiskAction["Recover"] = 9] = "Recover";
-        DiskAction[DiskAction["GarbageCollect"] = 10] = "GarbageCollect";
-        DiskAction[DiskAction["Defragment"] = 11] = "Defragment";
+        DiskAction[DiskAction["Append"] = 6] = "Append";
+        DiskAction[DiskAction["Delete"] = 7] = "Delete";
+        DiskAction[DiskAction["Rename"] = 8] = "Rename";
+        DiskAction[DiskAction["Ls"] = 9] = "Ls";
+        DiskAction[DiskAction["Recover"] = 10] = "Recover";
+        DiskAction[DiskAction["GarbageCollect"] = 11] = "GarbageCollect";
+        DiskAction[DiskAction["Defragment"] = 12] = "Defragment";
     })(DiskAction = TSOS.DiskAction || (TSOS.DiskAction = {}));
     class DiskDriver extends TSOS.DeviceDriver {
         constructor() {
@@ -38,6 +39,7 @@ var TSOS;
             let err = null;
             let fcb;
             let file;
+            let content;
             switch (params[0]) {
                 case DiskAction.Format:
                     //params[4] is a boolean for if it's a full format
@@ -141,7 +143,39 @@ var TSOS;
                     //params[4] is the file name
                     file = params[4];
                     //params[5] is the content to write
-                    const content = params[5];
+                    content = params[5];
+                    _Kernel.krnTrace(`Writing to file ${file}`);
+                    if (!_DiskController.is_formatted()) {
+                        err = TSOS.DiskError.DISK_NOT_FORMATTED;
+                    }
+                    else {
+                        if (!_FileSystem.open_files.has(file)) {
+                            err = TSOS.DiskError.FILE_NOT_OPEN;
+                        }
+                        else {
+                            const fcb = _FileSystem.open_files.get(file);
+                            let res = _DiskController.write(fcb.tsb, "");
+                            if (res.code === TSOS.DiskErrorCode.Success) {
+                                res = fcb.output([content]);
+                            }
+                            if (res instanceof TSOS.DiskError) {
+                                err = res;
+                            }
+                        }
+                    }
+                    if (err === null || err.code === 0) {
+                        on_success?.(null, []);
+                    }
+                    else {
+                        on_error?.(null, err);
+                    }
+                    callback?.(null, []);
+                    break;
+                case DiskAction.Append:
+                    //params[4] is the file name
+                    file = params[4];
+                    //params[5] is the content to write
+                    content = params[5];
                     _Kernel.krnTrace(`Writing to file ${file}`);
                     if (!_DiskController.is_formatted()) {
                         err = TSOS.DiskError.DISK_NOT_FORMATTED;

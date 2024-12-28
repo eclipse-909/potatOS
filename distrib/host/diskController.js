@@ -276,6 +276,13 @@ var TSOS;
                 arr[IN_USE_INDEX] = 0;
                 sessionStorage.setItem(key, this.decode(arr));
             }
+            //stop early if erasing content
+            if (content_arr.length === 0) {
+                dirArr[TSB_INDEX] = 0;
+                sessionStorage.setItem(dirKey, this.decode(dirArr));
+                TSOS.Control.updateDiskDisplay();
+                return DiskError.SUCCESS;
+            }
             //get new blocks in file space
             const blocks = this.nextFreeFiles(Math.ceil(content_arr.length / (BLOCK_SIZE - FILE_RESERVED)));
             if (blocks.length === 0) {
@@ -302,6 +309,11 @@ var TSOS;
             }
             TSOS.Control.updateDiskDisplay();
             return DiskError.SUCCESS;
+        }
+        append(tsb, content) {
+            //TODO you could write out all the logic to make this slightly faster, but this is so much easier
+            const new_content = this.read(tsb) + content;
+            return this.write(tsb, new_content);
         }
         delete(file_name) {
             if (!this.is_formatted()) {

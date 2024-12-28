@@ -55,6 +55,7 @@ var TSOS;
         ];
         //Must be used in between a command and an argument that specifies input or output.
         redirectors = [
+            ">>", //stdout to file (append contents)
             ">", //stdout to file (overwrite contents).
             "2>&1", //stderr to stdout.
             "2>", //stderr to file.
@@ -318,6 +319,43 @@ var TSOS;
                 //unfortunately using interrupts would require an entire rewrite of potatOS, so I'm just going invoke the disk controller directly
                 let fcb;
                 switch (currCmd.redirector) {
+                    case ">>":
+                        if (!_DiskController.is_formatted()) {
+                            _StdErr.error([`${TSOS.DiskError.DISK_NOT_FORMATTED.description}\n`]);
+                            this.tryEnableInput();
+                            _Console.putPrompt();
+                        }
+                        if (currCmd.file === undefined) {
+                            _StdErr.error(["Expected file after redirector '>>'.\n"]);
+                            this.tryEnableInput();
+                            _Console.putPrompt();
+                            return;
+                        }
+                        if (_DiskController.file_exists(currCmd.file)) {
+                            if (_FileSystem.open_files.has(currCmd.file)) {
+                                fcb = _FileSystem.open_files.get(currCmd.file);
+                            }
+                            else {
+                                fcb = TSOS.FCB.open(currCmd.file);
+                            }
+                        }
+                        else {
+                            fcb = TSOS.FCB.create(currCmd.file);
+                        }
+                        if (fcb instanceof TSOS.DiskError) {
+                            _StdErr.error([fcb.description + "\n"]);
+                            this.tryEnableInput();
+                            _Console.putPrompt();
+                            return;
+                        }
+                        else if (fcb.tsb === 0) {
+                            _StdErr.error(["File not found.\n"]);
+                            this.tryEnableInput();
+                            _Console.putPrompt();
+                            return;
+                        }
+                        stdout = fcb;
+                        break;
                     case ">":
                         if (!_DiskController.is_formatted()) {
                             _StdErr.error([`${TSOS.DiskError.DISK_NOT_FORMATTED.description}\n`]);
@@ -353,6 +391,7 @@ var TSOS;
                             _Console.putPrompt();
                             return;
                         }
+                        _DiskController.write(fcb.tsb, "");
                         stdout = fcb;
                         break;
                     case "2>&1":

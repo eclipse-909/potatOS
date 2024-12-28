@@ -23,9 +23,9 @@ var TSOS;
             fcb.tsb = tsb;
             return fcb;
         }
-        error(buffer) { return _DiskController.write(this.tsb, buffer.join("")); }
+        error(buffer) { return _DiskController.append(this.tsb, buffer.join("")); }
         input() { return [_DiskController.read(this.tsb)]; }
-        output(buffer) { return _DiskController.write(this.tsb, buffer.join("")); }
+        output(buffer) { return _DiskController.append(this.tsb, buffer.join("")); }
     }
     TSOS.FCB = FCB;
 })(TSOS || (TSOS = {}));

@@ -287,6 +287,13 @@ module TSOS {
 				arr[IN_USE_INDEX] = 0;
 				sessionStorage.setItem(key, this.decode(arr));
 			}
+			//stop early if erasing content
+			if (content_arr.length === 0) {
+				dirArr[TSB_INDEX] = 0;
+				sessionStorage.setItem(dirKey, this.decode(dirArr));
+				Control.updateDiskDisplay();
+				return DiskError.SUCCESS;
+			}
 			//get new blocks in file space
 			const blocks: number[] = this.nextFreeFiles(Math.ceil(content_arr.length / (BLOCK_SIZE - FILE_RESERVED)));
 			if (blocks.length === 0) {
@@ -313,6 +320,12 @@ module TSOS {
 			}
 			Control.updateDiskDisplay();
 			return DiskError.SUCCESS;
+		}
+
+		public append(tsb: number, content: string): DiskError {
+			//TODO you could write out all the logic to make this slightly faster, but this is so much easier
+			const new_content:string = this.read(tsb) + content;
+			return this.write(tsb, new_content);
 		}
 
 		public delete(file_name: string): DiskError {

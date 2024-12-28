@@ -164,13 +164,7 @@ module TSOS {
 
 		//The file must be opened before being written to.
 		public append(file_name: string, content: string): FileCommand {
-			return this.read(file_name)
-				.and_try_run((stderr: ErrStream<string[]>, params: any[]): void => {
-					this.write(file_name, params[0] + content)
-						.catch_default()
-						.execute(stderr);
-				})
-				.catch_default();
+			return new FileCommand(DiskAction.Append, [file_name, content]);
 		}
 
 		public delete(file_name: string): FileCommand {

@@ -6,6 +6,7 @@ module TSOS {
 		Close,
 		Read,
 		Write,
+		Append,
 		Delete,
 		Rename,
 		Ls,
@@ -39,6 +40,7 @@ module TSOS {
 			let err: DiskError | null = null;
 			let fcb: DiskError | FCB;
 			let file: string;
+			let content: string;
 			switch (params[0] as DiskAction) {
 				case DiskAction.Format:
 					//params[4] is a boolean for if it's a full format
@@ -131,7 +133,36 @@ module TSOS {
 					//params[4] is the file name
 					file = params[4];
 					//params[5] is the content to write
-					const content: string = params[5];
+					content = params[5];
+					_Kernel.krnTrace(`Writing to file ${file}`);
+					if (!_DiskController.is_formatted()) {
+						err = DiskError.DISK_NOT_FORMATTED;
+					} else {
+						if (!_FileSystem.open_files.has(file)) {
+							err = DiskError.FILE_NOT_OPEN;
+						} else {
+							const fcb: FCB = _FileSystem.open_files.get(file);
+							let res: DiskError | void = _DiskController.write(fcb.tsb, "");
+							if (res.code === DiskErrorCode.Success) {
+								res = fcb.output([content]);
+							}
+							if (res instanceof DiskError) {
+								err = res;
+							}
+						}
+					}
+					if (err === null || err.code === 0) {
+						on_success?.(null, []);
+					} else {
+						on_error?.(null, err);
+					}
+					callback?.(null, []);
+					break;
+				case DiskAction.Append:
+					//params[4] is the file name
+					file = params[4];
+					//params[5] is the content to write
+					content = params[5];
 					_Kernel.krnTrace(`Writing to file ${file}`);
 					if (!_DiskController.is_formatted()) {
 						err = DiskError.DISK_NOT_FORMATTED;
